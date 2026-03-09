@@ -1,0 +1,11 @@
+[package]
+name = "bitstruct"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "A zero-cost, hardware-aligned bitfield and enumeration generator."
+repository = "https://github.com/dilipvamsi/bitstruct"
+
+[dependencies]
+paste = "1.0.15"
+bytemuck = { version = "1.16", features = ["derive"] }
