@@ -1,4 +1,4 @@
-use bitstruct::{bitenum, bytestruct};
+use bitcraft::{bitenum, bytestruct};
 
 // 2-bit Packet Priority
 bitenum! {

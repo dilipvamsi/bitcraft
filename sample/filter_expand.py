@@ -11,7 +11,7 @@ def filter_expansion(content):
     # Skip the compiler fluff at the top (std prelude)
     start_idx = 0
     for i, line in enumerate(lines):
-        if 'bitstruct' in line and (line.startswith('use') or line.startswith('extern')):
+        if ('bitstruct' in line or 'bitcraft' in line) and (line.startswith('use') or line.startswith('extern')):
             start_idx = i
             break
 
@@ -29,7 +29,7 @@ def filter_expansion(content):
             # - struct definitions
             # - enum definitions
             # - impl StructName blocks
-            # - impl ::bitstruct::... blocks
+            # - impl ::bitcraft::... blocks
 
             # Simple check for interesting start
             if (clean_line.startswith('pub struct') or

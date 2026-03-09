@@ -1,4 +1,4 @@
-use bitstruct::{bitenum, bitstruct, bytestruct};
+use bitcraft::{bitenum, bitstruct, bytestruct};
 
 bitenum! {
     pub enum TestEnum(2) {

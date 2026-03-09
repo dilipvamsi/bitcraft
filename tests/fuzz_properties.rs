@@ -1,4 +1,4 @@
-use bitstruct::{bitenum, bitstruct, bytestruct, byteval};
+use bitcraft::{bitenum, bitstruct, bytestruct, byteval};
 use proptest::prelude::*;
 
 bitenum! {

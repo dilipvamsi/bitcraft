@@ -1,4 +1,4 @@
-use bitstruct::{bitenum, bitstruct};
+use bitcraft::{bitenum, bitstruct};
 
 // CPU Power States (2-bit)
 bitenum! {

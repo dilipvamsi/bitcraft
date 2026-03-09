@@ -1,4 +1,4 @@
-use bitstruct::{BitstructError, bitenum, bitstruct, bytestruct, byteval};
+use bitcraft::{BitstructError, bitenum, bitstruct, bytestruct, byteval};
 
 #[test]
 fn test_bitstruct_error_display() {

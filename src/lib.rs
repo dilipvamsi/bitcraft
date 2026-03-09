@@ -1,8 +1,8 @@
-//! # bitstruct
+//! # bitcraft
 //!
 //! **The zero-cost, hardware-aligned bitfield and enumeration engine for Rust.**
 //!
-//! `bitstruct` is a high-performance declarative macro library designed for systems where every bit counts.
+//! `bitcraft` is a high-performance declarative macro library designed for systems where every bit counts.
 //! It allows defining types where logical fields map directly to bit-ranges with zero runtime overhead.
 //!
 //! ## Core Macros
@@ -21,14 +21,14 @@
 //!
 //! ## 🧩 Showcasing Interoperability
 //!
-//! `bitstruct` is designed for high-performance systems where data must move seamlessly between the CPU, the network, and other languages.
+//! `bitcraft` is designed for high-performance systems where data must move seamlessly between the CPU, the network, and other languages.
 //!
 //! ### Zero-Copy Network & Buffer Parsing
 //!
-//! Using the [**`bytemuck`**](https://docs.rs/bytemuck) crate, you can cast raw byte slices directly into typed bitstructs with zero memory movement:
+//! Using the [**`bytemuck`**](https://docs.rs/bytemuck) crate, you can cast raw byte slices directly into typed bitfields with zero memory movement:
 //!
 //! ```rust
-//! # use bitstruct::bitstruct;
+//! # use bitcraft::bitstruct;
 //! bitstruct! {
 //!     pub struct EthernetHeader(u16) {
 //!         pub protocol: u16 = 16,
@@ -45,7 +45,7 @@
 //! Every `bitstruct!` and `bytestruct!` is marked `#[repr(transparent)]`. This guarantees that its memory layout is identical to the underlying primitive, making it safe to pass directly to C/C++ libraries.
 //!
 //! ```rust
-//! # use bitstruct::bitstruct;
+//! # use bitcraft::bitstruct;
 //! bitstruct! {
 //!     pub struct FfiFlags(u8) {
 //!         pub readable: bool = 1,
@@ -61,10 +61,10 @@
 //!
 //! ### Hardware Register Access (MMIO)
 //!
-//! Because `bitstruct` uses **LSB-first** mapping, your logical field definitions match the physical bit-offsets used in hardware datasheets for Little-Endian systems (x86, ARM).
+//! Because `bitcraft` uses **LSB-first** mapping, your logical field definitions match the physical bit-offsets used in hardware datasheets for Little-Endian systems (x86, ARM).
 //!
 //! ```rust
-//! # use bitstruct::bitstruct;
+//! # use bitcraft::bitstruct;
 //! bitstruct! {
 //!     pub struct StatusRegister(u32) {
 //!         pub ready: bool = 1,
@@ -80,7 +80,7 @@
 //! ## Usage Example
 //!
 //! ```rust
-//! use bitstruct::{bitstruct, bitenum};
+//! use bitcraft::{bitstruct, bitenum};
 //!
 //! bitenum! {
 //!     /// Represent the state of an active process.
@@ -447,7 +447,7 @@ pub const fn write_le_bits<const SHIFT: usize, const BITS: usize, const N: usize
 /// # Example
 ///
 /// ```rust
-/// use bitstruct::bitstruct;
+/// use bitcraft::bitstruct;
 ///
 /// bitstruct! {
 ///     /// A configuration bitmask.
@@ -505,14 +505,14 @@ macro_rules! bitstruct {
             // Start the TT (Token-Tree) muncher recursion to generate field-specific methods.
             $crate::bitstruct!(@impl_getters_setters $base_type, 0, $($field_vis $field_name $field_type $bits)*);
 
-            /// Returns the raw interior integer value of the bitstruct.
+            /// Returns the raw interior integer value.
             ///
             /// This is useful for serializing the struct or passing it to external APIs.
             #[inline(always)]
             #[allow(dead_code)]
             pub const fn to_bits(self) -> $base_type { self.0 }
 
-            /// Creates a new bitstruct instance from a raw integer value.
+            /// Creates a new instance from a raw integer value.
             ///
             /// # Safety
             /// While this method is safe, providing values with bits set outside
@@ -565,7 +565,7 @@ macro_rules! bitstruct {
             }
 
             #[allow(dead_code)]
-            #[doc = concat!("Returns a cloned copy of the bitstruct with the `", stringify!($field_name), "` flag specified.")]
+            #[doc = concat!("Returns a cloned copy of the bitfield with the `", stringify!($field_name), "` flag specified.")]
             $field_vis const fn [<with_ $field_name>](self, val: bool) -> Self {
                 let val_masked = val as $base_type;
                 // Clear the target bits using the inverted mask, then OR with the new value.
@@ -580,7 +580,7 @@ macro_rules! bitstruct {
             }
 
             #[allow(dead_code)]
-            #[doc = concat!("Returns a cloned copy of the bitstruct with the `", stringify!($field_name), "` flag specified. Returns `Ok(Self)` since booleans cannot overflow.")]
+            #[doc = concat!("Returns a cloned copy of the bitfield with the `", stringify!($field_name), "` flag specified. Returns `Ok(Self)` since booleans cannot overflow.")]
             $field_vis const fn [<try_with_ $field_name>](self, val: bool) -> Result<Self, $crate::BitstructError> {
                 Ok(self.[<with_ $field_name>](val))
             }
@@ -622,7 +622,7 @@ macro_rules! bitstruct {
             }
 
             #[allow(dead_code)]
-            #[doc = concat!("Returns a cloned copy of the bitstruct with the `", stringify!($field_name), "` property mapped. Masks inputs over ", stringify!($bits), " bits.")]
+            #[doc = concat!("Returns a cloned copy of the bitfield with the `", stringify!($field_name), "` property mapped. Masks inputs over ", stringify!($bits), " bits.")]
             $field_vis const fn [<with_ $field_name>](self, val: $field_type) -> Self {
                 debug_assert!((val as $base_type) <= Self::[<$field_name:upper _MASK>], "Value overflows allocated bits");
                 let val_masked = (val as $base_type) & Self::[<$field_name:upper _MASK>];
@@ -683,7 +683,7 @@ macro_rules! bitstruct {
             }
 
             #[allow(dead_code)]
-            #[doc = concat!("Returns a cloned copy of the bitstruct bounded by the `", stringify!($field_type), "` enumeration supplied to `", stringify!($field_name), "`.")]
+            #[doc = concat!("Returns a cloned copy of the bitfield bounded by the `", stringify!($field_type), "` enumeration supplied to `", stringify!($field_name), "`.")]
             $field_vis const fn [<with_ $field_name>](self, val: $field_type) -> Self {
                 debug_assert!((val.to_bits() as $base_type) <= Self::[<$field_name:upper _MASK>], "Enum variant overflows allocated bits");
                 // Cast the enum's inner value up to the bitfield's base storage type before shifting
@@ -729,7 +729,7 @@ macro_rules! bitstruct {
 /// # Example
 ///
 /// ```rust
-/// use bitstruct::bytestruct;
+/// use bitcraft::bytestruct;
 ///
 /// bytestruct! {
 ///     pub struct Example(2) {
@@ -1123,7 +1123,7 @@ macro_rules! bytestruct {
 ///
 /// # Example
 /// ```rust
-/// use bitstruct::byteval;
+/// use bitcraft::byteval;
 /// byteval! { pub struct OrderId(3); } // 3-byte array field
 /// let id = OrderId::from_u32(0x123456);
 /// assert_eq!(id.value(), 0x123456);
@@ -1191,7 +1191,7 @@ impl_bits!(
 /// # Example
 ///
 /// ```rust
-/// use bitstruct::bitenum;
+/// use bitcraft::bitenum;
 ///
 /// bitenum! {
 ///     /// Connection state tracking.
@@ -2044,7 +2044,7 @@ mod tests {
 ///
 /// ### Disallowing Signed Base Types
 /// ```compile_fail
-/// use bitstruct::bitstruct;
+/// use bitcraft::bitstruct;
 /// bitstruct! {
 ///     struct SignedBase(i32) { val: u32 = 32 }
 /// }
@@ -2052,7 +2052,7 @@ mod tests {
 ///
 /// ### Disallowing Signed Field Types
 /// ```compile_fail
-/// use bitstruct::bitstruct;
+/// use bitcraft::bitstruct;
 /// bitstruct! {
 ///     struct SignedField(u32) { val: i32 = 32 }
 /// }
@@ -2060,7 +2060,7 @@ mod tests {
 ///
 /// ### Disallowing Signed Enum Values
 /// ```compile_fail
-/// use bitstruct::bitenum;
+/// use bitcraft::bitenum;
 /// bitenum! {
 ///     enum SignedValue(8) { NEG = -1 }
 /// }
@@ -2068,7 +2068,7 @@ mod tests {
 ///
 /// ### Disallowing Negative Bit Widths
 /// ```compile_fail
-/// use bitstruct::bitstruct;
+/// use bitcraft::bitstruct;
 /// bitstruct! {
 ///     struct NegativeWidth(u32) { val: u8 = -1 }
 /// }

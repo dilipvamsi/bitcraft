@@ -1,6 +1,6 @@
 # Bitstruct Macro Showcase & Expansion ⚙️
 
-This document explains the functionality of the `bitstruct` engine and provides the **struct equivalent** code that the Rust compiler actually expands during compilation, reflecting the latest performance optimizations.
+This document explains the functionality of the `bitcraft` engine and provides the **struct equivalent** code that the Rust compiler actually expands during compilation, reflecting the latest performance optimizations.
 
 ---
 
@@ -147,14 +147,14 @@ impl Node {
     pub const fn b(self) -> u16 {
         // Optimized helper: for this case, it performs a 16-bit LE-load 
         // since the span is byte-aligned (after internal resolution).
-        let val = ::bitstruct::read_le_bits::<{ Self::B_OFFSET }, 12, _>(&self.0);
+        let val = ::bitcraft::read_le_bits::<{ Self::B_OFFSET }, 12, _>(&self.0);
         val as u16
     }
 
     #[inline]
     pub fn set_b(&mut self, val: u16) {
         debug_assert!((val as u128) <= Self::B_MASK);
-        ::bitstruct::write_le_bits::<{ Self::B_OFFSET }, 12, _>(&mut self.0, val as u128);
+        ::bitcraft::write_le_bits::<{ Self::B_OFFSET }, 12, _>(&mut self.0, val as u128);
     }
 }
 ```
@@ -195,7 +195,7 @@ impl Id24 {
 
     #[inline]
     pub const fn value(self) -> u32 {
-        let val = ::bitstruct::read_le_bits::<{ Self::VALUE_OFFSET }, 24, _>(&self.0);
+        let val = ::bitcraft::read_le_bits::<{ Self::VALUE_OFFSET }, 24, _>(&self.0);
         val as u32
     }
 }

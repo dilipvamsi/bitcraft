@@ -1,4 +1,4 @@
-use bitstruct::{bitenum, bitstruct, bytestruct, byteval};
+use bitcraft::{bitenum, bitstruct, bytestruct, byteval};
 
 bitenum! {
     /// A sample enumeration for status tracking.

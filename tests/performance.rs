@@ -1,4 +1,4 @@
-use bitstruct::{bitenum, bitstruct, bytestruct, byteval};
+use bitcraft::{bitenum, bitstruct, bytestruct, byteval};
 use std::hint::black_box;
 use std::time::Instant;
 

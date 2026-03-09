@@ -42,7 +42,7 @@ clean:
 
 # Show help
 help:
-	@echo "bitstruct - Zero-Cost Bitfield Engine"
+	@echo "bitcraft - Zero-Cost Bitfield Engine"
 	@echo ""
 	@echo "Usage:"
 	@echo "  make normal      Run unit tests, doc-tests, and core integration tests."
@@ -55,6 +55,9 @@ help:
 
 # Convert sample/sample.rs to sample/expanded_sample.rs
 expand-sample:
-	@echo "==> Expanding bitstruct engine for inspection (Selective)"
-	cargo expand --example sample 2>/dev/null | python3 sample/filter_expand.py > sample/expanded_sample.rs || true
+	@echo "==> Expanding bitcraft engine for inspection (Selective)"
+	@mkdir -p examples
+	@cp sample/sample.rs examples/sample.rs
+	@cargo expand --example sample 2>/dev/null | python3 sample/filter_expand.py > sample/expanded_sample.rs || true
+	@rm -rf examples
 	@echo "Generated sample/expanded_sample.rs with selective expansion"

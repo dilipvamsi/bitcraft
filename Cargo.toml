@@ -1,14 +1,14 @@
 [package]
-name = "bitstruct"
+name = "bitcraft"
 version = "0.9.0"
 edition = "2024"
 license = "MIT"
 description = "A zero-cost, hardware-aligned bitfield and enumeration generator."
-repository = "https://github.com/dilipvamsi/bitstruct"
-homepage = "https://github.com/dilipvamsi/bitstruct"
-documentation = "https://docs.rs/bitstruct"
+repository = "https://github.com/dilipvamsi/bitcraft"
+homepage = "https://github.com/dilipvamsi/bitcraft"
+documentation = "https://docs.rs/bitcraft"
 readme = "README.md"
-keywords = ["bitfield", "bitstruct", "no-std", "performance", "embedded"]
+keywords = ["bitfield", "bitcraft", "no-std", "performance", "embedded"]
 categories = ["embedded", "data-structures", "no-std"]
 authors = ["Dilip Vamsi Moturi"]
 rust-version = "1.85"

@@ -1,4 +1,4 @@
-pub struct Status(pub <::bitstruct::Bits<2> as ::bitstruct::BitenumType>::Prim);
+pub struct Status(pub <::bitcraft::Bits<2> as ::bitcraft::BitenumType>::Prim);
 
 impl core::fmt::Debug for Status {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -28,9 +28,9 @@ impl Status {
     /// The maximum value allowed for this enumeration variant based on the allocated $bits bits.
     ///
     /// Useful for manually validating raw input before conversion.
-    pub const MASK: <::bitstruct::Bits<2> as ::bitstruct::BitenumType>::Prim = {
-        type Prim = <::bitstruct::Bits<2> as ::bitstruct::BitenumType>::Prim;
-        let total_bits = <Prim as ::bitstruct::BitLength>::BITS;
+    pub const MASK: <::bitcraft::Bits<2> as ::bitcraft::BitenumType>::Prim = {
+        type Prim = <::bitcraft::Bits<2> as ::bitcraft::BitenumType>::Prim;
+        let total_bits = <Prim as ::bitcraft::BitLength>::BITS;
         (!0 as Prim) >> (total_bits - 2)
     };
     /// Returns true if the raw value corresponds to a defined enumeration variant.
@@ -50,7 +50,7 @@ impl Status {
     #[allow(dead_code)]
     pub const fn to_bits(
         self,
-    ) -> <::bitstruct::Bits<2> as ::bitstruct::BitenumType>::Prim {
+    ) -> <::bitcraft::Bits<2> as ::bitcraft::BitenumType>::Prim {
         self.0
     }
     /// Creates an enumeration variant from a raw integer value.
@@ -60,7 +60,7 @@ impl Status {
     #[inline(always)]
     #[allow(dead_code)]
     pub const fn from_bits(
-        val: <::bitstruct::Bits<2> as ::bitstruct::BitenumType>::Prim,
+        val: <::bitcraft::Bits<2> as ::bitcraft::BitenumType>::Prim,
     ) -> Self {
         if true {
             if !(val <= Self::MASK) {
@@ -82,13 +82,13 @@ impl Status {
     #[inline(always)]
     #[allow(dead_code)]
     pub const fn try_from_bits(
-        val: <::bitstruct::Bits<2> as ::bitstruct::BitenumType>::Prim,
-    ) -> Result<Self, ::bitstruct::BitstructError> {
+        val: <::bitcraft::Bits<2> as ::bitcraft::BitenumType>::Prim,
+    ) -> Result<Self, ::bitcraft::BitstructError> {
         let s = Self(val);
         if s.is_defined() {
             Ok(s)
         } else {
-            Err(::bitstruct::BitstructError::InvalidVariant {
+            Err(::bitcraft::BitstructError::InvalidVariant {
                 value: val as u128,
                 enum_name: "Status",
             })
@@ -96,7 +96,7 @@ impl Status {
     }
 }
 
-impl ::bitstruct::ValidField for Status {
+impl ::bitcraft::ValidField for Status {
     const ASSERT_VALID: () = ();
 }
 
@@ -118,7 +118,7 @@ impl Config {
     #[doc(hidden)]
     const ENABLED_OFFSET: usize = 0;
     #[doc(hidden)]
-    const ENABLED_MASK: u16 = (!0 as u16) >> (<u16 as ::bitstruct::BitLength>::BITS - 1);
+    const ENABLED_MASK: u16 = (!0 as u16) >> (<u16 as ::bitcraft::BitLength>::BITS - 1);
     #[allow(dead_code)]
     #[inline]
     ///Returns the boolean value mapping to the `enabled` flag.
@@ -134,7 +134,7 @@ impl Config {
             | (val_masked << Self::ENABLED_OFFSET);
     }
     #[allow(dead_code)]
-    ///Returns a cloned copy of the bitstruct with the `enabled` flag specified.
+    ///Returns a cloned copy of the bitfield with the `enabled` flag specified.
     pub const fn with_enabled(self, val: bool) -> Self {
         let val_masked = val as u16;
         Self(
@@ -147,22 +147,22 @@ impl Config {
     pub fn try_set_enabled(
         &mut self,
         val: bool,
-    ) -> Result<(), ::bitstruct::BitstructError> {
+    ) -> Result<(), ::bitcraft::BitstructError> {
         self.set_enabled(val);
         Ok(())
     }
     #[allow(dead_code)]
-    ///Returns a cloned copy of the bitstruct with the `enabled` flag specified. Returns `Ok(Self)` since booleans cannot overflow.
+    ///Returns a cloned copy of the bitfield with the `enabled` flag specified. Returns `Ok(Self)` since booleans cannot overflow.
     pub const fn try_with_enabled(
         self,
         val: bool,
-    ) -> Result<Self, ::bitstruct::BitstructError> {
+    ) -> Result<Self, ::bitcraft::BitstructError> {
         Ok(self.with_enabled(val))
     }
     #[doc(hidden)]
     const MODE_OFFSET: usize = 0 + 1;
     #[doc(hidden)]
-    const MODE_MASK: u16 = (!0 as u16) >> (<u16 as ::bitstruct::BitLength>::BITS - 3);
+    const MODE_MASK: u16 = (!0 as u16) >> (<u16 as ::bitcraft::BitLength>::BITS - 3);
     #[allow(dead_code)]
     #[inline]
     ///Returns the `mode` property as a `u8`.
@@ -187,7 +187,7 @@ impl Config {
             | (val_masked << Self::MODE_OFFSET);
     }
     #[allow(dead_code)]
-    ///Returns a cloned copy of the bitstruct with the `mode` property mapped. Masks inputs over 3 bits.
+    ///Returns a cloned copy of the bitfield with the `mode` property mapped. Masks inputs over 3 bits.
     pub const fn with_mode(self, val: u8) -> Self {
         if true {
             if !((val as u16) <= Self::MODE_MASK) {
@@ -206,9 +206,9 @@ impl Config {
     }
     #[allow(dead_code)]
     ///Strict inline mutation to apply the `mode` property. Returns a `BitstructError` if the value overflows 3 bits.
-    pub fn try_set_mode(&mut self, val: u8) -> Result<(), ::bitstruct::BitstructError> {
+    pub fn try_set_mode(&mut self, val: u8) -> Result<(), ::bitcraft::BitstructError> {
         if (val as u16) > Self::MODE_MASK {
-            return Err(::bitstruct::BitstructError::Overflow {
+            return Err(::bitcraft::BitstructError::Overflow {
                 value: (val as u16) as u128,
                 allocated_bits: 3,
             });
@@ -223,9 +223,9 @@ impl Config {
     pub const fn try_with_mode(
         self,
         val: u8,
-    ) -> Result<Self, ::bitstruct::BitstructError> {
+    ) -> Result<Self, ::bitcraft::BitstructError> {
         if (val as u16) > Self::MODE_MASK {
-            return Err(::bitstruct::BitstructError::Overflow {
+            return Err(::bitcraft::BitstructError::Overflow {
                 value: (val as u16) as u128,
                 allocated_bits: 3,
             });
@@ -241,7 +241,7 @@ impl Config {
     #[doc(hidden)]
     const STATUS_OFFSET: usize = 0 + 1 + 3;
     #[doc(hidden)]
-    const STATUS_MASK: u16 = (!0 as u16) >> (<u16 as ::bitstruct::BitLength>::BITS - 2);
+    const STATUS_MASK: u16 = (!0 as u16) >> (<u16 as ::bitcraft::BitLength>::BITS - 2);
     #[allow(dead_code)]
     ///Returns the `status` variant strictly typed to the `Status` enumeration.
     pub const fn status(self) -> Status {
@@ -264,7 +264,7 @@ impl Config {
             | (val_masked << Self::STATUS_OFFSET);
     }
     #[allow(dead_code)]
-    ///Returns a cloned copy of the bitstruct bounded by the `Status` enumeration supplied to `status`.
+    ///Returns a cloned copy of the bitfield bounded by the `Status` enumeration supplied to `status`.
     pub const fn with_status(self, val: Status) -> Self {
         if true {
             if !((val.to_bits() as u16) <= Self::STATUS_MASK) {
@@ -286,9 +286,9 @@ impl Config {
     pub fn try_set_status(
         &mut self,
         val: Status,
-    ) -> Result<(), ::bitstruct::BitstructError> {
+    ) -> Result<(), ::bitcraft::BitstructError> {
         if (val.to_bits() as u16) > Self::STATUS_MASK {
-            return Err(::bitstruct::BitstructError::Overflow {
+            return Err(::bitcraft::BitstructError::Overflow {
                 value: val.to_bits() as u128,
                 allocated_bits: 2,
             });
@@ -303,9 +303,9 @@ impl Config {
     pub const fn try_with_status(
         self,
         val: Status,
-    ) -> Result<Self, ::bitstruct::BitstructError> {
+    ) -> Result<Self, ::bitcraft::BitstructError> {
         if (val.to_bits() as u16) > Self::STATUS_MASK {
-            return Err(::bitstruct::BitstructError::Overflow {
+            return Err(::bitcraft::BitstructError::Overflow {
                 value: val.to_bits() as u128,
                 allocated_bits: 2,
             });
@@ -321,7 +321,7 @@ impl Config {
     #[doc(hidden)]
     const DATA_OFFSET: usize = 0 + 1 + 3 + 2;
     #[doc(hidden)]
-    const DATA_MASK: u16 = (!0 as u16) >> (<u16 as ::bitstruct::BitLength>::BITS - 10);
+    const DATA_MASK: u16 = (!0 as u16) >> (<u16 as ::bitcraft::BitLength>::BITS - 10);
     #[allow(dead_code)]
     #[inline]
     ///Returns the `data` property as a `u16`.
@@ -346,7 +346,7 @@ impl Config {
             | (val_masked << Self::DATA_OFFSET);
     }
     #[allow(dead_code)]
-    ///Returns a cloned copy of the bitstruct with the `data` property mapped. Masks inputs over 10 bits.
+    ///Returns a cloned copy of the bitfield with the `data` property mapped. Masks inputs over 10 bits.
     pub const fn with_data(self, val: u16) -> Self {
         if true {
             if !((val as u16) <= Self::DATA_MASK) {
@@ -365,9 +365,9 @@ impl Config {
     }
     #[allow(dead_code)]
     ///Strict inline mutation to apply the `data` property. Returns a `BitstructError` if the value overflows 10 bits.
-    pub fn try_set_data(&mut self, val: u16) -> Result<(), ::bitstruct::BitstructError> {
+    pub fn try_set_data(&mut self, val: u16) -> Result<(), ::bitcraft::BitstructError> {
         if (val as u16) > Self::DATA_MASK {
-            return Err(::bitstruct::BitstructError::Overflow {
+            return Err(::bitcraft::BitstructError::Overflow {
                 value: (val as u16) as u128,
                 allocated_bits: 10,
             });
@@ -382,9 +382,9 @@ impl Config {
     pub const fn try_with_data(
         self,
         val: u16,
-    ) -> Result<Self, ::bitstruct::BitstructError> {
+    ) -> Result<Self, ::bitcraft::BitstructError> {
         if (val as u16) > Self::DATA_MASK {
-            return Err(::bitstruct::BitstructError::Overflow {
+            return Err(::bitcraft::BitstructError::Overflow {
                 value: (val as u16) as u128,
                 allocated_bits: 10,
             });
@@ -397,7 +397,7 @@ impl Config {
             ),
         )
     }
-    /// Returns the raw interior integer value of the bitstruct.
+    /// Returns the raw interior integer value.
     ///
     /// This is useful for serializing the struct or passing it to external APIs.
     #[inline(always)]
@@ -405,7 +405,7 @@ impl Config {
     pub const fn to_bits(self) -> u16 {
         self.0
     }
-    /// Creates a new bitstruct instance from a raw integer value.
+    /// Creates a new instance from a raw integer value.
     ///
     /// # Safety
     /// While this method is safe, providing values with bits set outside
@@ -484,7 +484,7 @@ impl Coordinate {
     #[inline]
     ///Returns the `x` property as a `u16`.
     pub const fn x(self) -> u16 {
-        let val = ::bitstruct::read_le_bits::<{ Self::X_OFFSET }, { 16 }, _>(&self.0);
+        let val = ::bitcraft::read_le_bits::<{ Self::X_OFFSET }, { 16 }, _>(&self.0);
         val as u16
     }
     #[allow(dead_code)]
@@ -499,7 +499,7 @@ impl Coordinate {
                 }
             }
         }
-        ::bitstruct::write_le_bits::<
+        ::bitcraft::write_le_bits::<
             { Self::X_OFFSET },
             { 16 },
             _,
@@ -517,7 +517,7 @@ impl Coordinate {
                 }
             }
         }
-        ::bitstruct::write_le_bits::<
+        ::bitcraft::write_le_bits::<
             { Self::X_OFFSET },
             { 16 },
             _,
@@ -526,9 +526,9 @@ impl Coordinate {
     }
     #[allow(dead_code)]
     ///Strict inline mutation to apply the `x` property. Returns a `BitstructError` if the value overflows 16 bits.
-    pub fn try_set_x(&mut self, val: u16) -> Result<(), ::bitstruct::BitstructError> {
+    pub fn try_set_x(&mut self, val: u16) -> Result<(), ::bitcraft::BitstructError> {
         if (val as u128) > Self::X_MASK {
-            return Err(::bitstruct::BitstructError::Overflow {
+            return Err(::bitcraft::BitstructError::Overflow {
                 value: val as u128,
                 allocated_bits: 16,
             });
@@ -538,12 +538,9 @@ impl Coordinate {
     }
     #[allow(dead_code)]
     ///Strict cloned evaluation to apply the `x` property. Returns a `BitstructError` if the value overflows 16 bits.
-    pub const fn try_with_x(
-        self,
-        val: u16,
-    ) -> Result<Self, ::bitstruct::BitstructError> {
+    pub const fn try_with_x(self, val: u16) -> Result<Self, ::bitcraft::BitstructError> {
         if (val as u128) > Self::X_MASK {
-            return Err(::bitstruct::BitstructError::Overflow {
+            return Err(::bitcraft::BitstructError::Overflow {
                 value: val as u128,
                 allocated_bits: 16,
             });
@@ -558,7 +555,7 @@ impl Coordinate {
     #[inline]
     ///Returns the `y` property as a `u16`.
     pub const fn y(self) -> u16 {
-        let val = ::bitstruct::read_le_bits::<{ Self::Y_OFFSET }, { 16 }, _>(&self.0);
+        let val = ::bitcraft::read_le_bits::<{ Self::Y_OFFSET }, { 16 }, _>(&self.0);
         val as u16
     }
     #[allow(dead_code)]
@@ -573,7 +570,7 @@ impl Coordinate {
                 }
             }
         }
-        ::bitstruct::write_le_bits::<
+        ::bitcraft::write_le_bits::<
             { Self::Y_OFFSET },
             { 16 },
             _,
@@ -591,7 +588,7 @@ impl Coordinate {
                 }
             }
         }
-        ::bitstruct::write_le_bits::<
+        ::bitcraft::write_le_bits::<
             { Self::Y_OFFSET },
             { 16 },
             _,
@@ -600,9 +597,9 @@ impl Coordinate {
     }
     #[allow(dead_code)]
     ///Strict inline mutation to apply the `y` property. Returns a `BitstructError` if the value overflows 16 bits.
-    pub fn try_set_y(&mut self, val: u16) -> Result<(), ::bitstruct::BitstructError> {
+    pub fn try_set_y(&mut self, val: u16) -> Result<(), ::bitcraft::BitstructError> {
         if (val as u128) > Self::Y_MASK {
-            return Err(::bitstruct::BitstructError::Overflow {
+            return Err(::bitcraft::BitstructError::Overflow {
                 value: val as u128,
                 allocated_bits: 16,
             });
@@ -612,12 +609,9 @@ impl Coordinate {
     }
     #[allow(dead_code)]
     ///Strict cloned evaluation to apply the `y` property. Returns a `BitstructError` if the value overflows 16 bits.
-    pub const fn try_with_y(
-        self,
-        val: u16,
-    ) -> Result<Self, ::bitstruct::BitstructError> {
+    pub const fn try_with_y(self, val: u16) -> Result<Self, ::bitcraft::BitstructError> {
         if (val as u128) > Self::Y_MASK {
-            return Err(::bitstruct::BitstructError::Overflow {
+            return Err(::bitcraft::BitstructError::Overflow {
                 value: val as u128,
                 allocated_bits: 16,
             });
@@ -632,7 +626,7 @@ impl Coordinate {
     #[inline]
     ///Returns the `flags` property as a `u8`.
     pub const fn flags(self) -> u8 {
-        let val = ::bitstruct::read_le_bits::<{ Self::FLAGS_OFFSET }, { 8 }, _>(&self.0);
+        let val = ::bitcraft::read_le_bits::<{ Self::FLAGS_OFFSET }, { 8 }, _>(&self.0);
         val as u8
     }
     #[allow(dead_code)]
@@ -647,7 +641,7 @@ impl Coordinate {
                 }
             }
         }
-        ::bitstruct::write_le_bits::<
+        ::bitcraft::write_le_bits::<
             { Self::FLAGS_OFFSET },
             { 8 },
             _,
@@ -665,7 +659,7 @@ impl Coordinate {
                 }
             }
         }
-        ::bitstruct::write_le_bits::<
+        ::bitcraft::write_le_bits::<
             { Self::FLAGS_OFFSET },
             { 8 },
             _,
@@ -674,9 +668,9 @@ impl Coordinate {
     }
     #[allow(dead_code)]
     ///Strict inline mutation to apply the `flags` property. Returns a `BitstructError` if the value overflows 8 bits.
-    pub fn try_set_flags(&mut self, val: u8) -> Result<(), ::bitstruct::BitstructError> {
+    pub fn try_set_flags(&mut self, val: u8) -> Result<(), ::bitcraft::BitstructError> {
         if (val as u128) > Self::FLAGS_MASK {
-            return Err(::bitstruct::BitstructError::Overflow {
+            return Err(::bitcraft::BitstructError::Overflow {
                 value: val as u128,
                 allocated_bits: 8,
             });
@@ -689,9 +683,9 @@ impl Coordinate {
     pub const fn try_with_flags(
         self,
         val: u8,
-    ) -> Result<Self, ::bitstruct::BitstructError> {
+    ) -> Result<Self, ::bitcraft::BitstructError> {
         if (val as u128) > Self::FLAGS_MASK {
-            return Err(::bitstruct::BitstructError::Overflow {
+            return Err(::bitcraft::BitstructError::Overflow {
                 value: val as u128,
                 allocated_bits: 8,
             });
@@ -764,11 +758,7 @@ impl PackedId {
     #[inline]
     ///Returns the `value` property as a `u32`.
     pub const fn value(self) -> u32 {
-        let val = ::bitstruct::read_le_bits::<
-            { Self::VALUE_OFFSET },
-            { 24 },
-            _,
-        >(&self.0);
+        let val = ::bitcraft::read_le_bits::<{ Self::VALUE_OFFSET }, { 24 }, _>(&self.0);
         val as u32
     }
     #[allow(dead_code)]
@@ -783,7 +773,7 @@ impl PackedId {
                 }
             }
         }
-        ::bitstruct::write_le_bits::<
+        ::bitcraft::write_le_bits::<
             { Self::VALUE_OFFSET },
             { 24 },
             _,
@@ -801,7 +791,7 @@ impl PackedId {
                 }
             }
         }
-        ::bitstruct::write_le_bits::<
+        ::bitcraft::write_le_bits::<
             { Self::VALUE_OFFSET },
             { 24 },
             _,
@@ -810,12 +800,9 @@ impl PackedId {
     }
     #[allow(dead_code)]
     ///Strict inline mutation to apply the `value` property. Returns a `BitstructError` if the value overflows 24 bits.
-    pub fn try_set_value(
-        &mut self,
-        val: u32,
-    ) -> Result<(), ::bitstruct::BitstructError> {
+    pub fn try_set_value(&mut self, val: u32) -> Result<(), ::bitcraft::BitstructError> {
         if (val as u128) > Self::VALUE_MASK {
-            return Err(::bitstruct::BitstructError::Overflow {
+            return Err(::bitcraft::BitstructError::Overflow {
                 value: val as u128,
                 allocated_bits: 24,
             });
@@ -828,9 +815,9 @@ impl PackedId {
     pub const fn try_with_value(
         self,
         val: u32,
-    ) -> Result<Self, ::bitstruct::BitstructError> {
+    ) -> Result<Self, ::bitcraft::BitstructError> {
         if (val as u128) > Self::VALUE_MASK {
-            return Err(::bitstruct::BitstructError::Overflow {
+            return Err(::bitcraft::BitstructError::Overflow {
                 value: val as u128,
                 allocated_bits: 24,
             });
