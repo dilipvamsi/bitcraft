@@ -173,6 +173,20 @@ impl IsUnsignedInt for u32 { const ASSERT_UNSIGNED: () = (); }
 impl IsUnsignedInt for u64 { const ASSERT_UNSIGNED: () = (); }
 impl IsUnsignedInt for u128 { const ASSERT_UNSIGNED: () = (); }
 
+/// **Internal Trait**: Used to retrieve the bit-width of a primitive type or array.
+#[doc(hidden)]
+pub trait BitLength {
+    /// The number of bits in the type.
+    const BITS: usize;
+}
+
+impl BitLength for u8 { const BITS: usize = 8; }
+impl BitLength for u16 { const BITS: usize = 16; }
+impl BitLength for u32 { const BITS: usize = 32; }
+impl BitLength for u64 { const BITS: usize = 64; }
+impl BitLength for u128 { const BITS: usize = 128; }
+impl<const N: usize> BitLength for [u8; N] { const BITS: usize = N << 3; }
+
 /// **Internal Trait**: Used to enforce that only valid types are used as fields.
 #[doc(hidden)]
 pub trait ValidField {
@@ -185,6 +199,142 @@ impl ValidField for u16 { const ASSERT_VALID: () = (); }
 impl ValidField for u32 { const ASSERT_VALID: () = (); }
 impl ValidField for u64 { const ASSERT_VALID: () = (); }
 impl ValidField for u128 { const ASSERT_VALID: () = (); }
+
+/// **Internal Function**: Reads bit-ranges from a byte array. Optimized via const-generics and alignment-aware fast paths.
+///
+/// # Arguments
+/// * `SHIFT` - The bit offset from the start of the array.
+/// * `BITS` - The number of bits to read.
+/// * `N` - The total size of the byte array.
+///
+/// This function utilizes LLVM's constant folding to eliminate branches. For byte-aligned fields,
+/// it bypasses bit-shifting loops entirely and uses direct LE-byte conversion.
+#[doc(hidden)]
+#[inline(always)]
+pub const fn read_le_bits<const SHIFT: usize, const BITS: usize, const N: usize>(arr: &[u8; N]) -> u128 {
+    let start = SHIFT >> 3;
+    let off = SHIFT & 7;
+    let len = ((SHIFT + BITS + 7) >> 3) - start;
+
+    // Fast path: Byte-aligned reads that fit in primitives.
+    if off == 0 {
+        if BITS == 8 { return arr[start] as u128; }
+        if BITS == 16 && start + 2 <= N {
+            return u16::from_le_bytes([arr[start], arr[start+1]]) as u128;
+        }
+        if BITS == 32 && start + 4 <= N {
+            return u32::from_le_bytes([arr[start], arr[start+1], arr[start+2], arr[start+3]]) as u128;
+        }
+        if BITS == 64 && start + 8 <= N {
+            return u64::from_le_bytes([
+                arr[start], arr[start+1], arr[start+2], arr[start+3],
+                arr[start+4], arr[start+5], arr[start+6], arr[start+7]
+            ]) as u128;
+        }
+        if BITS == 128 && start + 16 <= N {
+           return u128::from_le_bytes([
+                arr[start], arr[start+1], arr[start+2], arr[start+3],
+                arr[start+4], arr[start+5], arr[start+6], arr[start+7],
+                arr[start+8], arr[start+9], arr[start+10], arr[start+11],
+                arr[start+12], arr[start+13], arr[start+14], arr[start+15],
+            ]);
+        }
+    }
+
+    if len <= 8 {
+        let mut v = 0u64;
+        let mut i = 0;
+        while i < len {
+            v |= (arr[start + i] as u64) << (i << 3);
+            i += 1;
+        }
+        let mask = if BITS == 64 { !0u64 } else { !0u64 >> (64 - BITS) };
+        ((v >> off) & mask) as u128
+    } else {
+        let mut v = 0u128;
+        let mut i = 0;
+        while i < len {
+            v |= (arr[start + i] as u128) << (i << 3);
+            i += 1;
+        }
+        let mask = if BITS == 128 { !0u128 } else { !0u128 >> (128 - BITS) };
+        (v >> off) & mask
+    }
+}
+
+/// **Internal Function**: Writes bit-ranges to a byte array. Optimized via const-generics and alignment-aware fast paths.
+///
+/// # Arguments
+/// * `SHIFT` - The bit offset from the start of the array.
+/// * `BITS` - The number of bits to write.
+/// * `N` - The total size of the byte array.
+///
+/// For byte-aligned fields, this function creates a zero-cost mapping to direct byte-array indexing,
+/// avoiding expensive multi-byte masks and shifts when possible.
+#[doc(hidden)]
+#[inline(always)]
+pub const fn write_le_bits<const SHIFT: usize, const BITS: usize, const N: usize>(arr: &mut [u8; N], val: u128) {
+    let start = SHIFT >> 3;
+    let off = SHIFT & 7;
+    let len = ((SHIFT + BITS + 7) >> 3) - start;
+
+    // Fast path: Byte-aligned writes that fit in primitives.
+    if off == 0 {
+        if BITS == 8 { arr[start] = val as u8; return; }
+        if BITS == 16 && start + 2 <= N {
+            let bytes = (val as u16).to_le_bytes();
+            arr[start] = bytes[0]; arr[start+1] = bytes[1];
+            return;
+        }
+        if BITS == 32 && start + 4 <= N {
+            let bytes = (val as u32).to_le_bytes();
+            arr[start] = bytes[0]; arr[start+1] = bytes[1]; arr[start+2] = bytes[2]; arr[start+3] = bytes[3];
+            return;
+        }
+        if BITS == 64 && start + 8 <= N {
+            let bytes = (val as u64).to_le_bytes();
+            let mut i = 0; while i < 8 { arr[start + i] = bytes[i]; i += 1; }
+            return;
+        }
+        if BITS == 128 && start + 16 <= N {
+            let bytes = (val as u128).to_le_bytes();
+            let mut i = 0; while i < 16 { arr[start + i] = bytes[i]; i += 1; }
+            return;
+        }
+    }
+
+    if len <= 8 {
+        let mut v = 0u64;
+        let mut i = 0;
+        while i < len {
+            v |= (arr[start + i] as u64) << (i << 3);
+            i += 1;
+        }
+        let mask = if BITS == 64 { !0u64 } else { !0u64 >> (64 - BITS) };
+        let shifted_mask = mask << off;
+        v = (v & !shifted_mask) | ((val as u64) << off);
+        let mut i = 0;
+        while i < len {
+            arr[start + i] = (v >> (i << 3)) as u8;
+            i += 1;
+        }
+    } else {
+        let mut v = 0u128;
+        let mut i = 0;
+        while i < len {
+            v |= (arr[start + i] as u128) << (i << 3);
+            i += 1;
+        }
+        let mask = if BITS == 128 { !0u128 } else { !0u128 >> (128 - BITS) };
+        let shifted_mask = mask << off;
+        v = (v & !shifted_mask) | (val << off);
+        let mut i = 0;
+        while i < len {
+            arr[start + i] = (v >> (i << 3)) as u8;
+            i += 1;
+        }
+    }
+}
 
 /// A declarative macro for generating zero-cost, strictly packed bitfields.
 ///
@@ -246,7 +396,7 @@ macro_rules! bitstruct {
             $crate::bitstruct!(@check_fields $($field_type)*);
 
             let total_bits = 0 $( + $bits )*;
-            assert!(total_bits <= core::mem::size_of::<$base_type>() * 8, "Sum of field bits exceeds base type size");
+            assert!(total_bits <= <$base_type as $crate::BitLength>::BITS, "Sum of field bits exceeds base type size");
         };
 
         impl $struct_name {
@@ -289,31 +439,35 @@ macro_rules! bitstruct {
     // TT Muncher: Specialized traversal arm for `bool` type fields.
     // Bools are handled specifically to return Rust native `true`/`false` rather than `1`/`0`.
     (@impl_getters_setters $base_type:ty, $shift:expr, $field_vis:vis $field_name:ident bool $bits:tt $($rest:tt)*) => {
-        #[allow(dead_code)]
-        #[doc = concat!("Returns the boolean value mapping to the `", stringify!($field_name), "` flag.")]
-        $field_vis const fn $field_name(self) -> bool {
-            let mask = (!0 as $base_type) >> ((std::mem::size_of::<$base_type>() * 8) - $bits);
-            ((self.0 >> $shift) & mask) != 0
-        }
-
         $crate::paste::paste! {
+            #[doc(hidden)]
+            const [<$field_name:upper _OFFSET>]: usize = $shift;
+
+            #[doc(hidden)]
+            const [<$field_name:upper _MASK>]: $base_type = (!0 as $base_type) >> (<$base_type as $crate::BitLength>::BITS - $bits);
+
             #[allow(dead_code)]
+            #[inline]
+            #[doc = concat!("Returns the boolean value mapping to the `", stringify!($field_name), "` flag.")]
+            $field_vis const fn $field_name(self) -> bool {
+                ((self.0 >> Self::[<$field_name:upper _OFFSET>]) & Self::[<$field_name:upper _MASK>]) != 0
+            }
+
+            #[allow(dead_code)]
+            #[inline]
             #[doc = concat!("Inline mutation to set the `", stringify!($field_name), "` flag.")]
             $field_vis fn [<set_ $field_name>](&mut self, val: bool) {
                 // bool inherently cannot overflow its bit requirement.
-                let mask = (!0 as $base_type) >> ((std::mem::size_of::<$base_type>() * 8) - $bits);
                 let val_masked = val as $base_type;
-                self.0 = (self.0 & !(mask << $shift)) | (val_masked << $shift);
+                self.0 = (self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]);
             }
 
             #[allow(dead_code)]
             #[doc = concat!("Returns a cloned copy of the bitstruct with the `", stringify!($field_name), "` flag specified.")]
             $field_vis const fn [<with_ $field_name>](self, val: bool) -> Self {
-                // Generate a mask for the field (e.g. 1 bit for bool).
-                let mask = (!0 as $base_type) >> ((std::mem::size_of::<$base_type>() * 8) - $bits);
                 let val_masked = val as $base_type;
                 // Clear the target bits using the inverted mask, then OR with the new value.
-                Self((self.0 & !(mask << $shift)) | (val_masked << $shift))
+                Self((self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]))
             }
 
             #[allow(dead_code)]
@@ -342,53 +496,56 @@ macro_rules! bitstruct {
 
     // Standard integer implementation: Extracts the requested bit width, shifting by the accumulated offset.
     (@impl_int $base_type:ty, $shift:expr, $field_vis:vis $field_name:ident $field_type:tt $bits:tt $($rest:tt)*) => {
-        #[allow(dead_code)]
-        #[doc = concat!("Returns the `", stringify!($field_name), "` property as a `", stringify!($field_type), "`.")]
-        $field_vis const fn $field_name(self) -> $field_type {
-            let mask = (!0 as $base_type) >> ((std::mem::size_of::<$base_type>() * 8) - $bits);
-            ((self.0 >> $shift) & mask) as $field_type
-        }
-
         $crate::paste::paste! {
+            #[doc(hidden)]
+            const [<$field_name:upper _OFFSET>]: usize = $shift;
+
+            #[doc(hidden)]
+            const [<$field_name:upper _MASK>]: $base_type = (!0 as $base_type) >> (<$base_type as $crate::BitLength>::BITS - $bits);
+
             #[allow(dead_code)]
+            #[inline]
+            #[doc = concat!("Returns the `", stringify!($field_name), "` property as a `", stringify!($field_type), "`.")]
+            $field_vis const fn $field_name(self) -> $field_type {
+                ((self.0 >> Self::[<$field_name:upper _OFFSET>]) & Self::[<$field_name:upper _MASK>]) as $field_type
+            }
+
+            #[allow(dead_code)]
+            #[inline]
             #[doc = concat!("Inline mutation to apply the `", stringify!($field_name), "` property. Masks inputs over ", stringify!($bits), " bits.")]
             $field_vis fn [<set_ $field_name>](&mut self, val: $field_type) {
-                let mask = (!0 as $base_type) >> ((std::mem::size_of::<$base_type>() * 8) - $bits);
-                debug_assert!((val as $base_type) <= mask, "Value {} overflows allocated {} bits", val, $bits);
-                let val_masked = (val as $base_type) & mask;
-                self.0 = (self.0 & !(mask << $shift)) | (val_masked << $shift);
+                debug_assert!((val as $base_type) <= Self::[<$field_name:upper _MASK>], "Value {} overflows allocated {} bits", val, $bits);
+                let val_masked = (val as $base_type) & Self::[<$field_name:upper _MASK>];
+                self.0 = (self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]);
             }
 
             #[allow(dead_code)]
             #[doc = concat!("Returns a cloned copy of the bitstruct with the `", stringify!($field_name), "` property mapped. Masks inputs over ", stringify!($bits), " bits.")]
             $field_vis const fn [<with_ $field_name>](self, val: $field_type) -> Self {
-                let mask = (!0 as $base_type) >> ((std::mem::size_of::<$base_type>() * 8) - $bits);
-                debug_assert!((val as $base_type) <= mask, "Value overflows allocated bits");
-                let val_masked = (val as $base_type) & mask;
-                Self((self.0 & !(mask << $shift)) | (val_masked << $shift))
+                debug_assert!((val as $base_type) <= Self::[<$field_name:upper _MASK>], "Value overflows allocated bits");
+                let val_masked = (val as $base_type) & Self::[<$field_name:upper _MASK>];
+                Self((self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]))
             }
 
             #[allow(dead_code)]
             #[doc = concat!("Strict inline mutation to apply the `", stringify!($field_name), "` property. Returns a `BitstructError` if the value overflows ", stringify!($bits), " bits.")]
             $field_vis fn [<try_set_ $field_name>](&mut self, val: $field_type) -> Result<(), $crate::BitstructError> {
-                let mask = (!0 as $base_type) >> ((std::mem::size_of::<$base_type>() * 8) - $bits);
-                if (val as $base_type) > mask {
+                if (val as $base_type) > Self::[<$field_name:upper _MASK>] {
                     return Err($crate::BitstructError::Overflow { value: (val as $base_type) as u128, allocated_bits: $bits });
                 }
-                let val_masked = (val as $base_type) & mask;
-                self.0 = (self.0 & !(mask << $shift)) | (val_masked << $shift);
+                let val_masked = (val as $base_type) & Self::[<$field_name:upper _MASK>];
+                self.0 = (self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]);
                 Ok(())
             }
 
             #[allow(dead_code)]
             #[doc = concat!("Strict cloned evaluation to apply the `", stringify!($field_name), "` property. Returns a `BitstructError` if the value overflows ", stringify!($bits), " bits.")]
             $field_vis const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
-                let mask = (!0 as $base_type) >> ((std::mem::size_of::<$base_type>() * 8) - $bits);
-                if (val as $base_type) > mask {
+                if (val as $base_type) > Self::[<$field_name:upper _MASK>] {
                     return Err($crate::BitstructError::Overflow { value: (val as $base_type) as u128, allocated_bits: $bits });
                 }
-                let val_masked = (val as $base_type) & mask;
-                Ok(Self((self.0 & !(mask << $shift)) | (val_masked << $shift)))
+                let val_masked = (val as $base_type) & Self::[<$field_name:upper _MASK>];
+                Ok(Self((self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>])))
             }
         }
 
@@ -399,57 +556,58 @@ macro_rules! bitstruct {
     // TT Muncher Fallback: Handles strictly-typed BitEnums (Types not caught by bool/u8/u16/u32/u64).
     // Uses `from_bits` to upcast/downcast the extracted integer bits back into the Enum variant safely.
     (@impl_getters_setters $base_type:ty, $shift:expr, $field_vis:vis $field_name:ident $field_type:tt $bits:tt $($rest:tt)*) => {
-        #[allow(dead_code)]
-        #[doc = concat!("Returns the `", stringify!($field_name), "` variant strictly typed to the `", stringify!($field_type), "` enumeration.")]
-        $field_vis const fn $field_name(self) -> $field_type {
-            let mask = (!0 as $base_type) >> ((std::mem::size_of::<$base_type>() * 8) - $bits);
-            // Extract the bits, then cast them into the Enum's base primitive via `_` inference.
-            // This relies on the bitenum! macro providing a `from_bits` method.
-            $field_type::from_bits(((self.0 >> $shift) & mask) as _)
-        }
-
         $crate::paste::paste! {
+            #[doc(hidden)]
+            const [<$field_name:upper _OFFSET>]: usize = $shift;
+
+            #[doc(hidden)]
+            const [<$field_name:upper _MASK>]: $base_type = (!0 as $base_type) >> (<$base_type as $crate::BitLength>::BITS - $bits);
+
+            #[allow(dead_code)]
+            #[doc = concat!("Returns the `", stringify!($field_name), "` variant strictly typed to the `", stringify!($field_type), "` enumeration.")]
+            $field_vis const fn $field_name(self) -> $field_type {
+                // Extract the bits, then cast them into the Enum's base primitive via `_` inference.
+                // This relies on the bitenum! macro providing a `from_bits` method.
+                $field_type::from_bits(((self.0 >> Self::[<$field_name:upper _OFFSET>]) & Self::[<$field_name:upper _MASK>]) as _)
+            }
+
             #[allow(dead_code)]
             #[doc = concat!("Inline mutation to apply the bounded `", stringify!($field_type), "` enumeration to the `", stringify!($field_name), "` property.")]
             $field_vis fn [<set_ $field_name>](&mut self, val: $field_type) {
-                let mask = (!0 as $base_type) >> ((std::mem::size_of::<$base_type>() * 8) - $bits);
-                debug_assert!((val.to_bits() as $base_type) <= mask, "Enum variant overflows allocated {} bits", $bits);
+                debug_assert!((val.to_bits() as $base_type) <= Self::[<$field_name:upper _MASK>], "Enum variant overflows allocated {} bits", $bits);
                 // Cast the enum's inner value up to the bitfield's base storage type before shifting
-                let val_masked = (val.to_bits() as $base_type) & mask;
-                self.0 = (self.0 & !(mask << $shift)) | (val_masked << $shift);
+                let val_masked = (val.to_bits() as $base_type) & Self::[<$field_name:upper _MASK>];
+                self.0 = (self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]);
             }
 
             #[allow(dead_code)]
             #[doc = concat!("Returns a cloned copy of the bitstruct bounded by the `", stringify!($field_type), "` enumeration supplied to `", stringify!($field_name), "`.")]
             $field_vis const fn [<with_ $field_name>](self, val: $field_type) -> Self {
-                let mask = (!0 as $base_type) >> ((std::mem::size_of::<$base_type>() * 8) - $bits);
-                debug_assert!((val.to_bits() as $base_type) <= mask, "Enum variant overflows allocated bits");
+                debug_assert!((val.to_bits() as $base_type) <= Self::[<$field_name:upper _MASK>], "Enum variant overflows allocated bits");
                 // Cast the enum's inner value up to the bitfield's base storage type before shifting
-                let val_masked = (val.to_bits() as $base_type) & mask;
-                Self((self.0 & !(mask << $shift)) | (val_masked << $shift))
+                let val_masked = (val.to_bits() as $base_type) & Self::[<$field_name:upper _MASK>];
+                Self((self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]))
             }
 
             #[allow(dead_code)]
             #[doc = concat!("Strict inline mutation to apply the bounded `", stringify!($field_type), "` enumeration to the `", stringify!($field_name), "` property. Returns a `BitstructError` if the value overflows ", stringify!($bits), " bits.")]
             $field_vis fn [<try_set_ $field_name>](&mut self, val: $field_type) -> Result<(), $crate::BitstructError> {
-                let mask = (!0 as $base_type) >> ((std::mem::size_of::<$base_type>() * 8) - $bits);
-                if (val.to_bits() as $base_type) > mask {
+                if (val.to_bits() as $base_type) > Self::[<$field_name:upper _MASK>] {
                     return Err($crate::BitstructError::Overflow { value: val.to_bits() as u128, allocated_bits: $bits });
                 }
-                let val_masked = (val.to_bits() as $base_type) & mask;
-                self.0 = (self.0 & !(mask << $shift)) | (val_masked << $shift);
+                let val_masked = (val.to_bits() as $base_type) & Self::[<$field_name:upper _MASK>];
+                self.0 = (self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]);
                 Ok(())
             }
 
             #[allow(dead_code)]
             #[doc = concat!("Strict cloned evaluation to apply the bounded `", stringify!($field_type), "` enumeration to the `", stringify!($field_name), "` property. Returns a `BitstructError` if the value overflows ", stringify!($bits), " bits.")]
             $field_vis const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
-                let mask = (!0 as $base_type) >> ((std::mem::size_of::<$base_type>() * 8) - $bits);
-                if (val.to_bits() as $base_type) > mask {
+                if (val.to_bits() as $base_type) > Self::[<$field_name:upper _MASK>] {
                     return Err($crate::BitstructError::Overflow { value: val.to_bits() as u128, allocated_bits: $bits });
                 }
-                let val_masked = (val.to_bits() as $base_type) & mask;
-                Ok(Self((self.0 & !(mask << $shift)) | (val_masked << $shift)))
+                let val_masked = (val.to_bits() as $base_type) & Self::[<$field_name:upper _MASK>];
+                Ok(Self((self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>])))
             }
         }
 
@@ -510,7 +668,7 @@ macro_rules! bytestruct {
         const _: () = {
             assert!($N >= 1 && $N <= 16, "bytestruct! requires 1-16 bytes");
             let bit_sum = 0 $( + $bits )*;
-            assert!(bit_sum <= $N * 8, "Sum of field bits exceeds array size");
+            assert!(bit_sum <= $N << 3, "Sum of field bits exceeds array size");
 
             // Compile-time check: Ensure each field type is valid.
             $crate::bitstruct!(@check_fields $($field_type)*);
@@ -529,6 +687,7 @@ macro_rules! bytestruct {
 
             // Implementation of to_uXX/from_uXX and to_bits/from_bits.
             $crate::bytestruct!(@impl_conversions $name, $N);
+
             // Route fields based on the total array size and choose the appropriate acting primitive.
             $crate::bytestruct!(@route_fields $name, $N, $($field_vis $field_name $field_type $bits)*);
         }
@@ -635,7 +794,7 @@ macro_rules! bytestruct {
             let mut i = 0;
             // Constant-length while loop that LLVM can easily unroll for small $N$.
             while i < $N {
-                val |= (self.0[i] as $prim) << (i * 8);
+                val |= (self.0[i] as $prim) << (i << 3);
                 i += 1;
             }
             val
@@ -647,7 +806,7 @@ macro_rules! bytestruct {
             let mut arr = [0u8; $N];
             let mut i = 0;
             while i < $N {
-                arr[i] = (val >> (i * 8)) as u8;
+                arr[i] = (val >> (i << 3)) as u8;
                 i += 1;
             }
             Self(arr)
@@ -685,24 +844,32 @@ macro_rules! bytestruct {
 
     // Boolean arm
     (@impl_fields $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident bool $bits:tt $($rest:tt)*) => {
-        #[allow(dead_code)]
-        #[doc = concat!("Returns the boolean value mapping to the `", stringify!($field_name), "` flag.")]
-        $field_vis const fn $field_name(self) -> bool {
-            let val = $crate::bytestruct!(@read_localized_prim self.0, $shift, 1);
-            val != 0
-        }
-
         $crate::paste::paste! {
+            #[doc(hidden)]
+            const [<$field_name:upper _OFFSET>]: usize = $shift;
+
+            #[doc(hidden)]
+            #[allow(dead_code)]
+            const [<$field_name:upper _MASK>]: u128 = (!0u128) >> (128 - $bits);
+
+            #[allow(dead_code)]
+            #[inline]
+            #[doc = concat!("Returns the boolean value mapping to the `", stringify!($field_name), "` flag.")]
+            $field_vis const fn $field_name(self) -> bool {
+                let val = $crate::bytestruct!(@read_localized_prim self.0, Self::[<$field_name:upper _OFFSET>], $bits);
+                val != 0
+            }
+
             #[allow(dead_code)]
             #[doc = concat!("Inline mutation to set the `", stringify!($field_name), "` flag.")]
             $field_vis fn [<set_ $field_name>](&mut self, val: bool) {
-                $crate::bytestruct!(@write_localized_prim self.0, $shift, 1, val as u128);
+                $crate::bytestruct!(@write_localized_prim self.0, Self::[<$field_name:upper _OFFSET>], $bits, val as u128);
             }
 
             #[allow(dead_code)]
             #[doc = concat!("Returns a cloned copy of the bytestruct with the `", stringify!($field_name), "` flag specified.")]
             $field_vis const fn [<with_ $field_name>](mut self, val: bool) -> Self {
-                $crate::bytestruct!(@write_localized_prim self.0, $shift, 1, val as u128);
+                $crate::bytestruct!(@write_localized_prim self.0, Self::[<$field_name:upper _OFFSET>], $bits, val as u128);
                 self
             }
         }
@@ -717,36 +884,40 @@ macro_rules! bytestruct {
     (@impl_fields $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident u128 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_int $name, $prim, $shift, $field_vis $field_name u128 $bits $($rest)*); };
 
     (@impl_int $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident $field_type:tt $bits:tt $($rest:tt)*) => {
-        #[allow(dead_code)]
-        #[doc = concat!("Returns the `", stringify!($field_name), "` property as a `", stringify!($field_type), "`.")]
-        $field_vis const fn $field_name(self) -> $field_type {
-            let val = $crate::bytestruct!(@read_localized_prim self.0, $shift, $bits);
-            val as $field_type
-        }
-
         $crate::paste::paste! {
+            #[doc(hidden)]
+            const [<$field_name:upper _OFFSET>]: usize = $shift;
+
+            #[doc(hidden)]
+            const [<$field_name:upper _MASK>]: u128 = (!0u128) >> (128 - $bits);
+
+            #[allow(dead_code)]
+            #[inline]
+            #[doc = concat!("Returns the `", stringify!($field_name), "` property as a `", stringify!($field_type), "`.")]
+            $field_vis const fn $field_name(self) -> $field_type {
+                let val = $crate::bytestruct!(@read_localized_prim self.0, Self::[<$field_name:upper _OFFSET>], $bits);
+                val as $field_type
+            }
+
             #[allow(dead_code)]
             #[doc = concat!("Inline mutation to apply the `", stringify!($field_name), "` property. Masks inputs over ", stringify!($bits), " bits.")]
             $field_vis fn [<set_ $field_name>](&mut self, val: $field_type) {
-                let mask = (!0 as u128) >> (128 - $bits);
-                debug_assert!((val as u128) <= mask, "Value {} overflows allocated {} bits", val, $bits);
-                $crate::bytestruct!(@write_localized_prim self.0, $shift, $bits, val as u128);
+                debug_assert!((val as u128) <= Self::[<$field_name:upper _MASK>], "Value {} overflows allocated {} bits", val, $bits);
+                $crate::bytestruct!(@write_localized_prim self.0, Self::[<$field_name:upper _OFFSET>], $bits, val as u128);
             }
 
             #[allow(dead_code)]
             #[doc = concat!("Returns a cloned copy of the bytestruct with the `", stringify!($field_name), "` property mapped. Masks inputs over ", stringify!($bits), " bits.")]
             $field_vis const fn [<with_ $field_name>](mut self, val: $field_type) -> Self {
-                let mask = (!0 as u128) >> (128 - $bits);
-                debug_assert!((val as u128) <= mask, "Value overflows allocated bits");
-                $crate::bytestruct!(@write_localized_prim self.0, $shift, $bits, val as u128);
+                debug_assert!((val as u128) <= Self::[<$field_name:upper _MASK>], "Value overflows allocated bits");
+                $crate::bytestruct!(@write_localized_prim self.0, Self::[<$field_name:upper _OFFSET>], $bits, val as u128);
                 self
             }
 
             #[allow(dead_code)]
             #[doc = concat!("Strict inline mutation to apply the `", stringify!($field_name), "` property. Returns a `BitstructError` if the value overflows ", stringify!($bits), " bits.")]
             $field_vis fn [<try_set_ $field_name>](&mut self, val: $field_type) -> Result<(), $crate::BitstructError> {
-                let mask = (!0 as u128) >> (128 - $bits);
-                if (val as u128) > mask {
+                if (val as u128) > Self::[<$field_name:upper _MASK>] {
                     return Err($crate::BitstructError::Overflow { value: val as u128, allocated_bits: $bits });
                 }
                 self.[<set_ $field_name>](val);
@@ -756,8 +927,7 @@ macro_rules! bytestruct {
             #[allow(dead_code)]
             #[doc = concat!("Strict cloned evaluation to apply the `", stringify!($field_name), "` property. Returns a `BitstructError` if the value overflows ", stringify!($bits), " bits.")]
             $field_vis const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
-                let mask = (!0 as u128) >> (128 - $bits);
-                if (val as u128) > mask {
+                if (val as u128) > Self::[<$field_name:upper _MASK>] {
                     return Err($crate::BitstructError::Overflow { value: val as u128, allocated_bits: $bits });
                 }
                 Ok(self.[<with_ $field_name>](val))
@@ -769,36 +939,40 @@ macro_rules! bytestruct {
 
     // Enum arm
     (@impl_fields $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident $field_type:tt $bits:tt $($rest:tt)*) => {
-        #[allow(dead_code)]
-        #[doc = concat!("Returns the `", stringify!($field_name), "` variant strictly typed to the `", stringify!($field_type), "` enumeration.")]
-        $field_vis const fn $field_name(self) -> $field_type {
-            let val = $crate::bytestruct!(@read_localized_prim self.0, $shift, $bits);
-            $field_type::from_bits(val as _)
-        }
-
         $crate::paste::paste! {
+            #[doc(hidden)]
+            const [<$field_name:upper _OFFSET>]: usize = $shift;
+
+            #[doc(hidden)]
+            const [<$field_name:upper _MASK>]: u128 = (!0u128) >> (128 - $bits);
+
+            #[allow(dead_code)]
+            #[doc = concat!("Returns the `", stringify!($field_name), "` variant strictly typed to the `", stringify!($field_type), "` enumeration.")]
+            $field_vis const fn $field_name(self) -> $field_type {
+                let val = $crate::bytestruct!(@read_localized_prim self.0, Self::[<$field_name:upper _OFFSET>], $bits);
+                $field_type::from_bits(val as _)
+            }
+
             #[allow(dead_code)]
             #[doc = concat!("Inline mutation to apply the bounded `", stringify!($field_type), "` enumeration to the `", stringify!($field_name), "` property.")]
             $field_vis fn [<set_ $field_name>](&mut self, val: $field_type) {
                 let raw = val.to_bits() as u128;
-                debug_assert!(raw <= ((!0u128) >> (128 - $bits)), "Enum variant overflows allocated bits");
-                $crate::bytestruct!(@write_localized_prim self.0, $shift, $bits, raw);
+                debug_assert!(raw <= Self::[<$field_name:upper _MASK>], "Enum variant overflows allocated bits");
+                $crate::bytestruct!(@write_localized_prim self.0, Self::[<$field_name:upper _OFFSET>], $bits, raw);
             }
 
             #[allow(dead_code)]
             #[doc = concat!("Returns a cloned copy of the bytestruct bounded by the `", stringify!($field_type), "` enumeration supplied to `", stringify!($field_name), "`.")]
             $field_vis const fn [<with_ $field_name>](mut self, val: $field_type) -> Self {
-                let mask = (!0 as u128) >> (128 - $bits);
-                debug_assert!((val.to_bits() as u128) <= mask, "Enum variant overflows allocated bits");
-                $crate::bytestruct!(@write_localized_prim self.0, $shift, $bits, val.to_bits() as u128);
+                debug_assert!((val.to_bits() as u128) <= Self::[<$field_name:upper _MASK>], "Enum variant overflows allocated bits");
+                $crate::bytestruct!(@write_localized_prim self.0, Self::[<$field_name:upper _OFFSET>], $bits, val.to_bits() as u128);
                 self
             }
 
             #[allow(dead_code)]
             #[doc = concat!("Strict inline mutation to apply the bounded `", stringify!($field_type), "` enumeration to the `", stringify!($field_name), "` property. Returns a `BitstructError` if the value overflows ", stringify!($bits), " bits.")]
             $field_vis fn [<try_set_ $field_name>](&mut self, val: $field_type) -> Result<(), $crate::BitstructError> {
-                 let mask = (!0 as u128) >> (128 - $bits);
-                 if (val.to_bits() as u128) > mask {
+                 if (val.to_bits() as u128) > Self::[<$field_name:upper _MASK>] {
                      return Err($crate::BitstructError::Overflow { value: val.to_bits() as u128, allocated_bits: $bits });
                  }
                  self.[<set_ $field_name>](val);
@@ -808,8 +982,7 @@ macro_rules! bytestruct {
             #[allow(dead_code)]
             #[doc = concat!("Strict cloned evaluation to apply the bounded `", stringify!($field_type), "` enumeration to the `", stringify!($field_name), "` property. Returns a `BitstructError` if the value overflows ", stringify!($bits), " bits.")]
             $field_vis const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
-                 let mask = (!0 as u128) >> (128 - $bits);
-                 if (val.to_bits() as u128) > mask {
+                 if (val.to_bits() as u128) > Self::[<$field_name:upper _MASK>] {
                      return Err($crate::BitstructError::Overflow { value: val.to_bits() as u128, allocated_bits: $bits });
                  }
                  Ok(self.[<with_ $field_name>](val))
@@ -829,114 +1002,13 @@ macro_rules! bytestruct {
     //
     // We specialize in 64-bit registers (u64) for all spans <= 8 bytes to reduce register pressure.
 
-    (@read_localized_prim $arr:expr, $shift:expr, $bits:tt) => {{
-        let start = $shift / 8;
-        let len = (($shift + $bits + 7) / 8) - start;
-        if len <= 8 {
-            let mut v = 0u64;
-            if len > 0  { v |= ($arr[start] as u64); }
-            if len > 1  { v |= (($arr[start+1] as u64) << 8); }
-            if len > 2  { v |= (($arr[start+2] as u64) << 16); }
-            if len > 3  { v |= (($arr[start+3] as u64) << 24); }
-            if len > 4  { v |= (($arr[start+4] as u64) << 32); }
-            if len > 5  { v |= (($arr[start+5] as u64) << 40); }
-            if len > 6  { v |= (($arr[start+6] as u64) << 48); }
-            if len > 7  { v |= (($arr[start+7] as u64) << 56); }
+    (@read_localized_prim $arr:expr, $shift:expr, $bits:tt) => {
+        $crate::read_le_bits::<{$shift}, {$bits}, _>(&$arr)
+    };
 
-            let mask = if $bits == 64 { !0u64 } else { (!0u64 >> (64 - $bits)) };
-            ((v >> ($shift % 8)) & mask) as u128
-        } else {
-            let mut v = 0u128;
-            if len > 0  { v |= ($arr[start] as u128); }
-            if len > 1  { v |= (($arr[start+1] as u128) << 8); }
-            if len > 2  { v |= (($arr[start+2] as u128) << 16); }
-            if len > 3  { v |= (($arr[start+3] as u128) << 24); }
-            if len > 4  { v |= (($arr[start+4] as u128) << 32); }
-            if len > 5  { v |= (($arr[start+5] as u128) << 40); }
-            if len > 6  { v |= (($arr[start+6] as u128) << 48); }
-            if len > 7  { v |= (($arr[start+7] as u128) << 56); }
-            if len > 8  { v |= (($arr[start+8] as u128) << 64); }
-            if len > 9  { v |= (($arr[start+9] as u128) << 72); }
-            if len > 10 { v |= (($arr[start+10] as u128) << 80); }
-            if len > 11 { v |= (($arr[start+11] as u128) << 88); }
-            if len > 12 { v |= (($arr[start+12] as u128) << 96); }
-            if len > 13 { v |= (($arr[start+13] as u128) << 104); }
-            if len > 14 { v |= (($arr[start+14] as u128) << 112); }
-            if len > 15 { v |= (($arr[start+15] as u128) << 120); }
-
-            let mask = if $bits == 128 { !0u128 } else { (!0u128 >> (128 - $bits)) };
-            (v >> ($shift % 8)) & mask
-        }
-    }};
-
-    (@write_localized_prim $arr:expr, $shift:expr, $bits:tt, $val:expr) => {{
-        let start = $shift / 8;
-        let len = (($shift + $bits + 7) / 8) - start;
-        let off = $shift % 8;
-        if len <= 8 {
-            let mut v = 0u64;
-            if len > 0  { v |= ($arr[start] as u64); }
-            if len > 1  { v |= (($arr[start+1] as u64) << 8); }
-            if len > 2  { v |= (($arr[start+2] as u64) << 16); }
-            if len > 3  { v |= (($arr[start+3] as u64) << 24); }
-            if len > 4  { v |= (($arr[start+4] as u64) << 32); }
-            if len > 5  { v |= (($arr[start+5] as u64) << 40); }
-            if len > 6  { v |= (($arr[start+6] as u64) << 48); }
-            if len > 7  { v |= (($arr[start+7] as u64) << 56); }
-
-            let mask = if $bits == 64 { !0u64 } else { (!0u64 >> (64 - $bits)) };
-            let shifted_mask = mask << off;
-            v = (v & !shifted_mask) | (($val as u64) << off);
-
-            if len > 0  { $arr[start] = v as u8; }
-            if len > 1  { $arr[start+1] = (v >> 8) as u8; }
-            if len > 2  { $arr[start+2] = (v >> 16) as u8; }
-            if len > 3  { $arr[start+3] = (v >> 24) as u8; }
-            if len > 4  { $arr[start+4] = (v >> 32) as u8; }
-            if len > 5  { $arr[start+5] = (v >> 40) as u8; }
-            if len > 6  { $arr[start+6] = (v >> 48) as u8; }
-            if len > 7  { $arr[start+7] = (v >> 56) as u8; }
-        } else {
-            let mut v = 0u128;
-            if len > 0  { v |= ($arr[start] as u128); }
-            if len > 1  { v |= (($arr[start+1] as u128) << 8); }
-            if len > 2  { v |= (($arr[start+2] as u128) << 16); }
-            if len > 3  { v |= (($arr[start+3] as u128) << 24); }
-            if len > 4  { v |= (($arr[start+4] as u128) << 32); }
-            if len > 5  { v |= (($arr[start+5] as u128) << 40); }
-            if len > 6  { v |= (($arr[start+6] as u128) << 48); }
-            if len > 7  { v |= (($arr[start+7] as u128) << 56); }
-            if len > 8  { v |= (($arr[start+8] as u128) << 64); }
-            if len > 9  { v |= (($arr[start+9] as u128) << 72); }
-            if len > 10 { v |= (($arr[start+10] as u128) << 80); }
-            if len > 11 { v |= (($arr[start+11] as u128) << 88); }
-            if len > 12 { v |= (($arr[start+12] as u128) << 96); }
-            if len > 13 { v |= (($arr[start+13] as u128) << 104); }
-            if len > 14 { v |= (($arr[start+14] as u128) << 112); }
-            if len > 15 { v |= (($arr[start+15] as u128) << 120); }
-
-            let mask = if $bits == 128 { !0u128 } else { (!0u128 >> (128 - $bits)) };
-            let shifted_mask = mask << off;
-            v = (v & !shifted_mask) | (($val as u128) << off);
-
-            if len > 0  { $arr[start] = v as u8; }
-            if len > 1  { $arr[start+1] = (v >> 8) as u8; }
-            if len > 2  { $arr[start+2] = (v >> 16) as u8; }
-            if len > 3  { $arr[start+3] = (v >> 24) as u8; }
-            if len > 4  { $arr[start+4] = (v >> 32) as u8; }
-            if len > 5  { $arr[start+5] = (v >> 40) as u8; }
-            if len > 6  { $arr[start+6] = (v >> 48) as u8; }
-            if len > 7  { $arr[start+7] = (v >> 56) as u8; }
-            if len > 8  { $arr[start+8] = (v >> 64) as u8; }
-            if len > 9  { $arr[start+9] = (v >> 72) as u8; }
-            if len > 10 { $arr[start+10] = (v >> 80) as u8; }
-            if len > 11 { $arr[start+11] = (v >> 88) as u8; }
-            if len > 12 { $arr[start+12] = (v >> 96) as u8; }
-            if len > 13 { $arr[start+13] = (v >> 104) as u8; }
-            if len > 14 { $arr[start+14] = (v >> 112) as u8; }
-            if len > 15 { $arr[start+15] = (v >> 120) as u8; }
-        }
-    }};
+    (@write_localized_prim $arr:expr, $shift:expr, $bits:tt, $val:expr) => {
+        $crate::write_le_bits::<{$shift}, {$bits}, _>(&mut $arr, $val)
+    };
 }
 
 /// A unique shorthand macro for creating "NewType" byte-array wrappers with a primary value field.
@@ -1057,6 +1129,18 @@ macro_rules! bitenum {
                 pub const $variant: Self = Self($val);
             )*
 
+            /// The number of bits allocated for this enumeration in memory.
+            pub const BITS: usize = $bits;
+
+            /// The maximum value allowed for this enumeration variant based on the allocated $bits bits.
+            /// 
+            /// Useful for manually validating raw input before conversion.
+            pub const MASK: <$crate::Bits<$bits> as $crate::BitenumType>::Prim = {
+                type Prim = <$crate::Bits<$bits> as $crate::BitenumType>::Prim;
+                let total_bits = <Prim as $crate::BitLength>::BITS;
+                (!0 as Prim) >> (total_bits - $bits)
+            };
+
             /// Returns true if the raw value corresponds to a defined enumeration variant.
             ///
             /// This is a zero-cost check that compiles to a simple comparison or a small jump table.
@@ -1080,8 +1164,7 @@ macro_rules! bitenum {
             #[inline(always)]
             #[allow(dead_code)]
             pub const fn from_bits(val: <$crate::Bits<$bits> as $crate::BitenumType>::Prim) -> Self {
-                let mask = (!0 as <$crate::Bits<$bits> as $crate::BitenumType>::Prim) >> ((std::mem::size_of::<<$crate::Bits<$bits> as $crate::BitenumType>::Prim>() * 8) - $bits);
-                debug_assert!(val <= mask, "Value overflows allocated bit width for this enumeration");
+                debug_assert!(val <= Self::MASK, "Value overflows allocated bit width for this enumeration");
                 Self(val)
             }
 
@@ -1107,10 +1190,9 @@ macro_rules! bitenum {
 
         const _: () = {
             type Prim = <$crate::Bits<$bits> as $crate::BitenumType>::Prim;
-            let mask = (!0 as Prim) >> ((std::mem::size_of::<Prim>() * 8) - $bits);
             $(
                 assert!(
-                    ($val as Prim) <= mask,
+                    ($val as Prim) <= ((!0 as Prim) >> (<Prim as $crate::BitLength>::BITS - $bits)),
                     "Enum variant exceeds the maximum value for the allocated bit width"
                 );
             )*

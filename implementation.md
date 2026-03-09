@@ -65,7 +65,7 @@ In network programming or high-speed data processing, you can "overlay" a bitstr
 
 ```rust
 // Pseudo-code
-let buffer: &[u8] = socket.recv(); 
+let buffer: &[u8] = socket.recv();
 // Zero-cost cast: No memory is moved, no allocation occurs.
 let header: &PacketHeader = bytemuck::cast_ref(&buffer[0..4]);
 
@@ -80,29 +80,16 @@ This effectively turns your structs into **Schema-on-Read** overlays, making the
 
 ## ⚙️ 4. The "Literal Guard" Pattern
 
-A major performance bottleneck in bitfield libraries is using dynamic loops or `memcpy` to handle fields that span multiple bytes. `bitstruct` avoids this using **Recursive Macro Expansion** to generate unrolled, branchless code.
+A major performance bottleneck in bitfield libraries is using dynamic loops or `memcpy` to handle fields that span multiple bytes. `bitstruct` avoids this using **Const-Generic Helper Functions** (`read_le_bits` and `write_le_bits`) that implement the **Literal Guard** pattern.
 
-### Pseudo-Code Logic
-When you define a field in `bytestruct!`, the macro doesn't loop through bytes. Instead, it generates a "flattened" expression.
+### The "Acting Primitive" Pattern
+When you define a field in `bytestruct!`, the macro doesn't generate a raw loop. Instead, it routes the operation to a specialized `const fn` that uses the widest available registers.
 
-**Macro Input:**
-`field: u16 = 16` at `shift: 4` in a `[u8; 4]` array.
+**1. Byte-Aligned Fast Paths**:
+If a field is byte-aligned (e.g., a `u16` starting at byte 2), the engine bypasses bit-shifting entirely and uses direct hardware instructions (like `MOV` or `LDR`) via `u16::from_le_bytes`.
 
-**Generated Pseudo-Code:**
-```rust
-// logical extraction
-fn get_field(raw: [u8; 4]) -> u16 {
-    // 1. Promote to "Acting Primitive" (u32)
-    let val = u32::from_le_bytes(raw); 
-    
-    // 2. Shift and Mask
-    let mask = (1 << 16) - 1;
-    ((val >> 4) & mask) as u16
-}
-```
-
-### Why it's fast:
-By generating literal shifts and masks at compile-time, **LLVM constant-folds the entire operation**. On x86_64, this often compiles to a single `MOV` and `SHR` instruction—the absolute theoretical maximum speed.
+**2. Bit-Level Literal Guards**:
+For unaligned fields, the helper functions use a sequence of constant-folded index checks (e.g., `if len <= 8 { ... }`). Because the field widths and positions are passed as **Const Generics**, the Rust compiler (LLVM) deletes all branches, leaving only a flat, branchless sequence of bitwise shifts and ORs—the absolute theoretical maximum speed.
 
 ---
 
@@ -111,8 +98,8 @@ By generating literal shifts and masks at compile-time, **LLVM constant-folds th
 `bitstruct` provides two distinct safety layers for modifying data, allowing developers to balance performance and validation.
 
 ### `set_*` (Optimistic/High-Performance)
-Standard setters are designed for "Hot Paths" where you trust the data source (or have already validated it). 
-- **Behavior**: Uses `debug_assert!` to check for bit overflows. 
+Standard setters are designed for "Hot Paths" where you trust the data source (or have already validated it).
+- **Behavior**: Uses `debug_assert!` to check for bit overflows.
 - **Production**: In `--release` mode, the check is removed, and values are simply masked. This ensures **zero branch overhead** in tight loops.
 
 ### `try_set_*` (Validated/Schema-Entry)
@@ -147,16 +134,16 @@ We use **Marker Traits with Associated Constants** to trigger compile-time error
 
 #### `IsUnsignedInt`: Restricting Base Storage
 ```rust
-pub trait IsUnsignedInt { const ASSERT: (); }
-impl IsUnsignedInt for u8 { const ASSERT: () = (); }
+pub trait IsUnsignedInt { const ASSERT_UNSIGNED: () = (); }
+impl IsUnsignedInt for u8 { const ASSERT_UNSIGNED: () = (); }
 // ... implemented only for u8-u128
 ```
 
 #### `ValidField`: Restricting Field Types
 ```rust
-pub trait ValidField { const ASSERT: (); }
-impl ValidField for bool { const ASSERT: () = (); }
-impl ValidField for u8 { const ASSERT: () = (); }
+pub trait ValidField { const ASSERT_VALID: (); }
+impl ValidField for bool { const ASSERT_VALID: () = (); }
+impl ValidField for u8 { const ASSERT_VALID: () = (); }
 // ... implemented for u8-u128 and bitenum! generated types
 ```
 
@@ -165,10 +152,10 @@ The macro inserts a check into a `const _: () = { ... };` block:
 ```rust
 const _: () = {
     // This will FAIL TO COMPILE if $base_type is i32
-    let _ = <$base_type as $crate::IsUnsignedInt>::ASSERT;
-    
+    let _ = <$base_type as $crate::IsUnsignedInt>::ASSERT_UNSIGNED;
+
     // This will FAIL TO COMPILE if $field_type is i32
-    let _ = <$field_type as $crate::ValidField>::ASSERT;
+    let _ = <$field_type as $crate::ValidField>::ASSERT_VALID;
 };
 ```
 
@@ -376,4 +363,4 @@ We use a **Two-Tier Verification** strategy:
 - [ ] **Signed Field Interpretation**: Support for `i8`, `i16`, etc., via automatic Sign Extension on the N-bit fields.
 - [ ] **C-Header Generation**: Integration with `cbindgen` to automatically generate FFI-compatible C headers for C/C++ firmware.
 - [ ] **`serde` Integration**: Optional feature to derive `Serialize` and `Deserialize` for all packed types.
-- [ ] **Property-Based Testing**: Use `proptest` to fuzz the bit-packing logic for millions of random inputs.
+- [x] **Property-Based Testing**: Use `proptest` to fuzz the bit-packing logic for millions of random inputs.
