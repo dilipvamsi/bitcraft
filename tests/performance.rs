@@ -67,8 +67,12 @@ const ITERATIONS: u64 = 1_000_000; // 1M for fast debug checks
 const ITERATIONS: u64 = 1_000_000_000; // 1B for release benchmarks
 
 #[test]
+#[allow(clippy::manual_is_multiple_of)]
 fn test_comprehensive_performance() {
-    println!("\n=== Running Comprehensive Performance Comparison ({} iterations) ===", ITERATIONS);
+    println!(
+        "\n=== Running Comprehensive Performance Comparison ({} iterations) ===",
+        ITERATIONS
+    );
 
     // ----------------------------------------------------------------------
     // PART A: Complex Descriptor Comparisons
@@ -132,8 +136,14 @@ fn test_comprehensive_performance() {
     let dur_array = start_array.elapsed();
     println!("bytestruct! ([u8; 2]) Time:    {:?}", dur_array);
 
-    println!("  -> bitstruct! Overhead:  {:.2}x", dur_packed.as_nanos() as f64 / dur_std.as_nanos() as f64);
-    println!("  -> bytestruct! Overhead: {:.2}x", dur_array.as_nanos() as f64 / dur_std.as_nanos() as f64);
+    println!(
+        "  -> bitstruct! Overhead:  {:.2}x",
+        dur_packed.as_nanos() as f64 / dur_std.as_nanos() as f64
+    );
+    println!(
+        "  -> bytestruct! Overhead: {:.2}x",
+        dur_array.as_nanos() as f64 / dur_std.as_nanos() as f64
+    );
 
     // ----------------------------------------------------------------------
     // PART B: Odd-Width Type Comparisons (24-bit wrappers)
@@ -164,7 +174,10 @@ fn test_comprehensive_performance() {
     let dur_byteval_id = start_byteval_id.elapsed();
     println!("byteval! Time:                 {:?}", dur_byteval_id);
 
-    println!("  -> byteval! Overhead:    {:.2}x", dur_byteval_id.as_nanos() as f64 / dur_std_id.as_nanos() as f64);
+    println!(
+        "  -> byteval! Overhead:    {:.2}x",
+        dur_byteval_id.as_nanos() as f64 / dur_std_id.as_nanos() as f64
+    );
 
     // ----------------------------------------------------------------------
     // PART C: Enum Comparisons (bitenum vs std enum)
@@ -173,14 +186,29 @@ fn test_comprehensive_performance() {
 
     #[derive(Copy, Clone, PartialEq, Eq)]
     #[repr(u8)]
-    enum StdEnum { A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7 }
+    enum StdEnum {
+        A = 0,
+        B = 1,
+        C = 2,
+        D = 3,
+        E = 4,
+        F = 5,
+        G = 6,
+        H = 7,
+    }
 
     impl From<u8> for StdEnum {
         #[inline(always)]
         fn from(v: u8) -> Self {
             match v % 8 {
-                0 => StdEnum::A, 1 => StdEnum::B, 2 => StdEnum::C, 3 => StdEnum::D,
-                4 => StdEnum::E, 5 => StdEnum::F, 6 => StdEnum::G, _ => StdEnum::H,
+                0 => StdEnum::A,
+                1 => StdEnum::B,
+                2 => StdEnum::C,
+                3 => StdEnum::D,
+                4 => StdEnum::E,
+                5 => StdEnum::F,
+                6 => StdEnum::G,
+                _ => StdEnum::H,
             }
         }
     }
@@ -195,8 +223,14 @@ fn test_comprehensive_performance() {
         let val = (i % 8) as u8;
         let e = StdEnum::from(val);
         let back = match e {
-            StdEnum::A => 0, StdEnum::B => 1, StdEnum::C => 2, StdEnum::D => 3,
-            StdEnum::E => 4, StdEnum::F => 5, StdEnum::G => 6, StdEnum::H => 7,
+            StdEnum::A => 0,
+            StdEnum::B => 1,
+            StdEnum::C => 2,
+            StdEnum::D => 3,
+            StdEnum::E => 4,
+            StdEnum::F => 5,
+            StdEnum::G => 6,
+            StdEnum::H => 7,
         };
         black_box(e);
         black_box(back);
@@ -210,8 +244,14 @@ fn test_comprehensive_performance() {
         let val = (i % 8) as u8;
         let e = BitEnum::from_bits(val);
         let back = match e.to_bits() {
-            0 => 0, 1 => 1, 2 => 2, 3 => 3,
-            4 => 4, 5 => 5, 6 => 6, 7 => 7,
+            0 => 0,
+            1 => 1,
+            2 => 2,
+            3 => 3,
+            4 => 4,
+            5 => 5,
+            6 => 6,
+            7 => 7,
             _ => 0,
         };
         black_box(e);
@@ -220,5 +260,8 @@ fn test_comprehensive_performance() {
     let dur_bit_enum = start_bit_enum.elapsed();
     println!("bitenum! Time:                 {:?}", dur_bit_enum);
 
-    println!("  -> bitenum! Overhead:    {:.2}x", dur_bit_enum.as_nanos() as f64 / dur_std_enum.as_nanos() as f64);
+    println!(
+        "  -> bitenum! Overhead:    {:.2}x",
+        dur_bit_enum.as_nanos() as f64 / dur_std_enum.as_nanos() as f64
+    );
 }

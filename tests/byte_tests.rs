@@ -1,12 +1,24 @@
-use bitstruct::{bitstruct, bytestruct, byteval, bitenum, BitstructError};
+use bitstruct::{BitstructError, bitenum, bitstruct, bytestruct, byteval};
 
 #[test]
 fn test_bitstruct_error_display() {
-    let err1 = BitstructError::Overflow { value: 10, allocated_bits: 3 };
-    assert_eq!(format!("{}", err1), "BitstructError: Value 10 overflows allocated 3 bits");
+    let err1 = BitstructError::Overflow {
+        value: 10,
+        allocated_bits: 3,
+    };
+    assert_eq!(
+        format!("{}", err1),
+        "BitstructError: Value 10 overflows allocated 3 bits"
+    );
 
-    let err2 = BitstructError::InvalidVariant { value: 5, enum_name: "TestEnum" };
-    assert_eq!(format!("{}", err2), "BitstructError: Value 5 is not a valid variant for enum TestEnum");
+    let err2 = BitstructError::InvalidVariant {
+        value: 5,
+        enum_name: "TestEnum",
+    };
+    assert_eq!(
+        format!("{}", err2),
+        "BitstructError: Value 5 is not a valid variant for enum TestEnum"
+    );
 
     // Test that it implements std::error::Error
     use std::error::Error;
@@ -182,7 +194,7 @@ fn test_bitstruct_bool_try() {
     }
     let mut s = BoolTry::default();
     assert_eq!(s.try_set_b(true), Ok(()));
-    assert_eq!(s.try_with_b(false).unwrap().b(), false);
+    assert!(!s.try_with_b(false).unwrap().b());
 }
 
 #[test]
@@ -212,14 +224,38 @@ fn test_byteval_variations_coverage() {
     assert_eq!(V6::from_u64(0xFFFFFFFFFFFF).value(), 0xFFFFFFFFFFFF);
     assert_eq!(V7::from_u64(0xFFFFFFFFFFFFFF).value(), 0xFFFFFFFFFFFFFF);
     assert_eq!(V8::from_u64(0xFFFFFFFFFFFFFFFF).value(), 0xFFFFFFFFFFFFFFFF);
-    assert_eq!(V9::from_u128(0xFFFFFFFFFFFFFFFFFF).value(), 0xFFFFFFFFFFFFFFFFFF);
-    assert_eq!(V10::from_u128(0xFFFFFFFFFFFFFFFFFFFF).value(), 0xFFFFFFFFFFFFFFFFFFFF);
-    assert_eq!(V11::from_u128(0xFFFFFFFFFFFFFFFFFFFFFF).value(), 0xFFFFFFFFFFFFFFFFFFFFFF);
-    assert_eq!(V12::from_u128(0xFFFFFFFFFFFFFFFFFFFFFFFF).value(), 0xFFFFFFFFFFFFFFFFFFFFFFFF);
-    assert_eq!(V13::from_u128(0xFFFFFFFFFFFFFFFFFFFFFFFFFF).value(), 0xFFFFFFFFFFFFFFFFFFFFFFFFFF);
-    assert_eq!(V14::from_u128(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF).value(), 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF);
-    assert_eq!(V15::from_u128(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF).value(), 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);
-    assert_eq!(V16::from_u128(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF).value(), 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);
+    assert_eq!(
+        V9::from_u128(0xFFFFFFFFFFFFFFFFFF).value(),
+        0xFFFFFFFFFFFFFFFFFF
+    );
+    assert_eq!(
+        V10::from_u128(0xFFFFFFFFFFFFFFFFFFFF).value(),
+        0xFFFFFFFFFFFFFFFFFFFF
+    );
+    assert_eq!(
+        V11::from_u128(0xFFFFFFFFFFFFFFFFFFFFFF).value(),
+        0xFFFFFFFFFFFFFFFFFFFFFF
+    );
+    assert_eq!(
+        V12::from_u128(0xFFFFFFFFFFFFFFFFFFFFFFFF).value(),
+        0xFFFFFFFFFFFFFFFFFFFFFFFF
+    );
+    assert_eq!(
+        V13::from_u128(0xFFFFFFFFFFFFFFFFFFFFFFFFFF).value(),
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFF
+    );
+    assert_eq!(
+        V14::from_u128(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF).value(),
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    );
+    assert_eq!(
+        V15::from_u128(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF).value(),
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    );
+    assert_eq!(
+        V16::from_u128(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF).value(),
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    );
 }
 
 #[test]

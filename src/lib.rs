@@ -117,9 +117,9 @@
 //! ```
 
 #[doc(hidden)]
-pub use paste;
-#[doc(hidden)]
 pub use bytemuck;
+#[doc(hidden)]
+pub use paste;
 
 /// Error types returned by strict data structures when encountering invalid operations.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -148,11 +148,22 @@ pub enum BitstructError {
 impl core::fmt::Display for BitstructError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            Self::Overflow { value, allocated_bits } => {
-                write!(f, "BitstructError: Value {} overflows allocated {} bits", value, allocated_bits)
+            Self::Overflow {
+                value,
+                allocated_bits,
+            } => {
+                write!(
+                    f,
+                    "BitstructError: Value {} overflows allocated {} bits",
+                    value, allocated_bits
+                )
             }
             Self::InvalidVariant { value, enum_name } => {
-                write!(f, "BitstructError: Value {} is not a valid variant for enum {}", value, enum_name)
+                write!(
+                    f,
+                    "BitstructError: Value {} is not a valid variant for enum {}",
+                    value, enum_name
+                )
             }
         }
     }
@@ -167,11 +178,21 @@ pub trait IsUnsignedInt {
     const ASSERT_UNSIGNED: ();
 }
 
-impl IsUnsignedInt for u8 { const ASSERT_UNSIGNED: () = (); }
-impl IsUnsignedInt for u16 { const ASSERT_UNSIGNED: () = (); }
-impl IsUnsignedInt for u32 { const ASSERT_UNSIGNED: () = (); }
-impl IsUnsignedInt for u64 { const ASSERT_UNSIGNED: () = (); }
-impl IsUnsignedInt for u128 { const ASSERT_UNSIGNED: () = (); }
+impl IsUnsignedInt for u8 {
+    const ASSERT_UNSIGNED: () = ();
+}
+impl IsUnsignedInt for u16 {
+    const ASSERT_UNSIGNED: () = ();
+}
+impl IsUnsignedInt for u32 {
+    const ASSERT_UNSIGNED: () = ();
+}
+impl IsUnsignedInt for u64 {
+    const ASSERT_UNSIGNED: () = ();
+}
+impl IsUnsignedInt for u128 {
+    const ASSERT_UNSIGNED: () = ();
+}
 
 /// **Internal Trait**: Used to retrieve the bit-width of a primitive type or array.
 #[doc(hidden)]
@@ -180,12 +201,24 @@ pub trait BitLength {
     const BITS: usize;
 }
 
-impl BitLength for u8 { const BITS: usize = 8; }
-impl BitLength for u16 { const BITS: usize = 16; }
-impl BitLength for u32 { const BITS: usize = 32; }
-impl BitLength for u64 { const BITS: usize = 64; }
-impl BitLength for u128 { const BITS: usize = 128; }
-impl<const N: usize> BitLength for [u8; N] { const BITS: usize = N << 3; }
+impl BitLength for u8 {
+    const BITS: usize = 8;
+}
+impl BitLength for u16 {
+    const BITS: usize = 16;
+}
+impl BitLength for u32 {
+    const BITS: usize = 32;
+}
+impl BitLength for u64 {
+    const BITS: usize = 64;
+}
+impl BitLength for u128 {
+    const BITS: usize = 128;
+}
+impl<const N: usize> BitLength for [u8; N] {
+    const BITS: usize = N << 3;
+}
 
 /// **Internal Trait**: Used to enforce that only valid types are used as fields.
 #[doc(hidden)]
@@ -193,12 +226,24 @@ pub trait ValidField {
     const ASSERT_VALID: ();
 }
 
-impl ValidField for bool { const ASSERT_VALID: () = (); }
-impl ValidField for u8 { const ASSERT_VALID: () = (); }
-impl ValidField for u16 { const ASSERT_VALID: () = (); }
-impl ValidField for u32 { const ASSERT_VALID: () = (); }
-impl ValidField for u64 { const ASSERT_VALID: () = (); }
-impl ValidField for u128 { const ASSERT_VALID: () = (); }
+impl ValidField for bool {
+    const ASSERT_VALID: () = ();
+}
+impl ValidField for u8 {
+    const ASSERT_VALID: () = ();
+}
+impl ValidField for u16 {
+    const ASSERT_VALID: () = ();
+}
+impl ValidField for u32 {
+    const ASSERT_VALID: () = ();
+}
+impl ValidField for u64 {
+    const ASSERT_VALID: () = ();
+}
+impl ValidField for u128 {
+    const ASSERT_VALID: () = ();
+}
 
 /// **Internal Function**: Reads bit-ranges from a byte array. Optimized via const-generics and alignment-aware fast paths.
 ///
@@ -211,32 +256,55 @@ impl ValidField for u128 { const ASSERT_VALID: () = (); }
 /// it bypasses bit-shifting loops entirely and uses direct LE-byte conversion.
 #[doc(hidden)]
 #[inline(always)]
-pub const fn read_le_bits<const SHIFT: usize, const BITS: usize, const N: usize>(arr: &[u8; N]) -> u128 {
+pub const fn read_le_bits<const SHIFT: usize, const BITS: usize, const N: usize>(
+    arr: &[u8; N],
+) -> u128 {
     let start = SHIFT >> 3;
     let off = SHIFT & 7;
     let len = ((SHIFT + BITS + 7) >> 3) - start;
 
     // Fast path: Byte-aligned reads that fit in primitives.
     if off == 0 {
-        if BITS == 8 { return arr[start] as u128; }
+        if BITS == 8 {
+            return arr[start] as u128;
+        }
         if BITS == 16 && start + 2 <= N {
-            return u16::from_le_bytes([arr[start], arr[start+1]]) as u128;
+            return u16::from_le_bytes([arr[start], arr[start + 1]]) as u128;
         }
         if BITS == 32 && start + 4 <= N {
-            return u32::from_le_bytes([arr[start], arr[start+1], arr[start+2], arr[start+3]]) as u128;
+            return u32::from_le_bytes([arr[start], arr[start + 1], arr[start + 2], arr[start + 3]])
+                as u128;
         }
         if BITS == 64 && start + 8 <= N {
             return u64::from_le_bytes([
-                arr[start], arr[start+1], arr[start+2], arr[start+3],
-                arr[start+4], arr[start+5], arr[start+6], arr[start+7]
+                arr[start],
+                arr[start + 1],
+                arr[start + 2],
+                arr[start + 3],
+                arr[start + 4],
+                arr[start + 5],
+                arr[start + 6],
+                arr[start + 7],
             ]) as u128;
         }
         if BITS == 128 && start + 16 <= N {
-           return u128::from_le_bytes([
-                arr[start], arr[start+1], arr[start+2], arr[start+3],
-                arr[start+4], arr[start+5], arr[start+6], arr[start+7],
-                arr[start+8], arr[start+9], arr[start+10], arr[start+11],
-                arr[start+12], arr[start+13], arr[start+14], arr[start+15],
+            return u128::from_le_bytes([
+                arr[start],
+                arr[start + 1],
+                arr[start + 2],
+                arr[start + 3],
+                arr[start + 4],
+                arr[start + 5],
+                arr[start + 6],
+                arr[start + 7],
+                arr[start + 8],
+                arr[start + 9],
+                arr[start + 10],
+                arr[start + 11],
+                arr[start + 12],
+                arr[start + 13],
+                arr[start + 14],
+                arr[start + 15],
             ]);
         }
     }
@@ -248,7 +316,11 @@ pub const fn read_le_bits<const SHIFT: usize, const BITS: usize, const N: usize>
             v |= (arr[start + i] as u64) << (i << 3);
             i += 1;
         }
-        let mask = if BITS == 64 { !0u64 } else { !0u64 >> (64 - BITS) };
+        let mask = if BITS == 64 {
+            !0u64
+        } else {
+            !0u64 >> (64 - BITS)
+        };
         ((v >> off) & mask) as u128
     } else {
         let mut v = 0u128;
@@ -257,7 +329,11 @@ pub const fn read_le_bits<const SHIFT: usize, const BITS: usize, const N: usize>
             v |= (arr[start + i] as u128) << (i << 3);
             i += 1;
         }
-        let mask = if BITS == 128 { !0u128 } else { !0u128 >> (128 - BITS) };
+        let mask = if BITS == 128 {
+            !0u128
+        } else {
+            !0u128 >> (128 - BITS)
+        };
         (v >> off) & mask
     }
 }
@@ -273,32 +349,50 @@ pub const fn read_le_bits<const SHIFT: usize, const BITS: usize, const N: usize>
 /// avoiding expensive multi-byte masks and shifts when possible.
 #[doc(hidden)]
 #[inline(always)]
-pub const fn write_le_bits<const SHIFT: usize, const BITS: usize, const N: usize>(arr: &mut [u8; N], val: u128) {
+pub const fn write_le_bits<const SHIFT: usize, const BITS: usize, const N: usize>(
+    arr: &mut [u8; N],
+    val: u128,
+) {
     let start = SHIFT >> 3;
     let off = SHIFT & 7;
     let len = ((SHIFT + BITS + 7) >> 3) - start;
 
     // Fast path: Byte-aligned writes that fit in primitives.
     if off == 0 {
-        if BITS == 8 { arr[start] = val as u8; return; }
+        if BITS == 8 {
+            arr[start] = val as u8;
+            return;
+        }
         if BITS == 16 && start + 2 <= N {
             let bytes = (val as u16).to_le_bytes();
-            arr[start] = bytes[0]; arr[start+1] = bytes[1];
+            arr[start] = bytes[0];
+            arr[start + 1] = bytes[1];
             return;
         }
         if BITS == 32 && start + 4 <= N {
             let bytes = (val as u32).to_le_bytes();
-            arr[start] = bytes[0]; arr[start+1] = bytes[1]; arr[start+2] = bytes[2]; arr[start+3] = bytes[3];
+            arr[start] = bytes[0];
+            arr[start + 1] = bytes[1];
+            arr[start + 2] = bytes[2];
+            arr[start + 3] = bytes[3];
             return;
         }
         if BITS == 64 && start + 8 <= N {
             let bytes = (val as u64).to_le_bytes();
-            let mut i = 0; while i < 8 { arr[start + i] = bytes[i]; i += 1; }
+            let mut i = 0;
+            while i < 8 {
+                arr[start + i] = bytes[i];
+                i += 1;
+            }
             return;
         }
         if BITS == 128 && start + 16 <= N {
-            let bytes = (val as u128).to_le_bytes();
-            let mut i = 0; while i < 16 { arr[start + i] = bytes[i]; i += 1; }
+            let bytes = val.to_le_bytes();
+            let mut i = 0;
+            while i < 16 {
+                arr[start + i] = bytes[i];
+                i += 1;
+            }
             return;
         }
     }
@@ -310,7 +404,11 @@ pub const fn write_le_bits<const SHIFT: usize, const BITS: usize, const N: usize
             v |= (arr[start + i] as u64) << (i << 3);
             i += 1;
         }
-        let mask = if BITS == 64 { !0u64 } else { !0u64 >> (64 - BITS) };
+        let mask = if BITS == 64 {
+            !0u64
+        } else {
+            !0u64 >> (64 - BITS)
+        };
         let shifted_mask = mask << off;
         v = (v & !shifted_mask) | ((val as u64) << off);
         let mut i = 0;
@@ -325,7 +423,11 @@ pub const fn write_le_bits<const SHIFT: usize, const BITS: usize, const N: usize
             v |= (arr[start + i] as u128) << (i << 3);
             i += 1;
         }
-        let mask = if BITS == 128 { !0u128 } else { !0u128 >> (128 - BITS) };
+        let mask = if BITS == 128 {
+            !0u128
+        } else {
+            !0u128 >> (128 - BITS)
+        };
         let shifted_mask = mask << off;
         v = (v & !shifted_mask) | (val << off);
         let mut i = 0;
@@ -615,11 +717,10 @@ macro_rules! bitstruct {
     };
 }
 
-
 /// A unique declarative macro for generating bitfields backed by fixed-size byte arrays.
 ///
 /// Unlike standard bitfield libraries that restrict storage to primitives (u8-u128),
-/// `bytestruct` allows arbitrary array-backed storage (`[u8; N]`) while maintaining 
+/// `bytestruct` allows arbitrary array-backed storage (`[u8; N]`) while maintaining
 /// register-wide optimization through "Acting Primitives".
 ///
 /// This macro generates a struct wrapping `[u8; N]`. It uses an internal "acting primitive"
@@ -1013,11 +1114,11 @@ macro_rules! bytestruct {
 
 /// A unique shorthand macro for creating "NewType" byte-array wrappers with a primary value field.
 ///
-/// This is a specialized feature of `bitstruct` designed for high-density cases like 
-/// 24-bit (3-byte) or 40-bit (5-byte) IDs where you want a typed wrapper over a 
+/// This is a specialized feature of `bitstruct` designed for high-density cases like
+/// 24-bit (3-byte) or 40-bit (5-byte) IDs where you want a typed wrapper over a
 /// byte array that behaves like a first-class integer.
 ///
-/// This solves the "Odd-Width Integer" problem without requiring external crates or 
+/// This solves the "Odd-Width Integer" problem without requiring external crates or
 /// manual 4-byte padding.
 ///
 /// # Example
@@ -1065,11 +1166,21 @@ macro_rules! impl_bits {
         )+
     };
 }
-impl_bits!(u8, 1,2,3,4,5,6,7,8);
-impl_bits!(u16, 9,10,11,12,13,14,15,16);
-impl_bits!(u32, 17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32);
-impl_bits!(u64, 33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64);
-impl_bits!(u128, 65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128);
+impl_bits!(u8, 1, 2, 3, 4, 5, 6, 7, 8);
+impl_bits!(u16, 9, 10, 11, 12, 13, 14, 15, 16);
+impl_bits!(
+    u32, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32
+);
+impl_bits!(
+    u64, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
+    55, 56, 57, 58, 59, 60, 61, 62, 63, 64
+);
+impl_bits!(
+    u128, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86,
+    87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107,
+    108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126,
+    127, 128
+);
 
 /// A declarative macro for generating zero-cost bitenums.
 ///
@@ -1129,11 +1240,12 @@ macro_rules! bitenum {
                 pub const $variant: Self = Self($val);
             )*
 
+            #[allow(dead_code)]
             /// The number of bits allocated for this enumeration in memory.
             pub const BITS: usize = $bits;
 
             /// The maximum value allowed for this enumeration variant based on the allocated $bits bits.
-            /// 
+            ///
             /// Useful for manually validating raw input before conversion.
             pub const MASK: <$crate::Bits<$bits> as $crate::BitenumType>::Prim = {
                 type Prim = <$crate::Bits<$bits> as $crate::BitenumType>::Prim;
@@ -1232,15 +1344,15 @@ mod tests {
     #[test]
     fn test_bitfield_bool_operations() {
         let mut v = VehicleState::default();
-        assert_eq!(v.is_running(), false);
+        assert!(!v.is_running());
 
         v.set_is_running(true);
-        assert_eq!(v.is_running(), true);
+        assert!(v.is_running());
         assert_eq!(v.to_bits(), 1);
 
         let v2 = v.with_is_running(false);
-        assert_eq!(v2.is_running(), false);
-        assert_eq!(v.is_running(), true); // Original unchanged
+        assert!(!v2.is_running());
+        assert!(v.is_running()); // Original unchanged
     }
 
     #[test]
@@ -1250,7 +1362,13 @@ mod tests {
         assert_eq!(v.gear(), 5);
 
         // Verify strict bounds validation (binary 1000 = 8, which is 4 bits)
-        assert_eq!(v.try_set_gear(8), Err(crate::BitstructError::Overflow { value: 8, allocated_bits: 3 }));
+        assert_eq!(
+            v.try_set_gear(8),
+            Err(crate::BitstructError::Overflow {
+                value: 8,
+                allocated_bits: 3
+            })
+        );
         assert_eq!(v.gear(), 5); // Value should remain unchanged
 
         // 7 is the max for 3 bits
@@ -1277,7 +1395,7 @@ mod tests {
         v.set_state(EngineState::ACTIVE);
         assert_eq!(v.state(), EngineState::ACTIVE);
 
-        let expected_val = (2 as u16) << 12; // Active = 2, shifted by 12 bits
+        let expected_val = 2_u16 << 12; // Active = 2, shifted by 12 bits
         assert_eq!(v.to_bits(), expected_val);
 
         let v2 = VehicleState::default().with_state(EngineState::IDLE);
@@ -1287,10 +1405,10 @@ mod tests {
     #[test]
     fn test_dense_packing() {
         let v = VehicleState::default()
-            .with_is_running(true)           // bit 0: 1
-            .with_gear(4)                    // bits 1-3: 100
-            .with_speed(120)                 // bits 4-11: 01111000
-            .with_state(EngineState::ACTIVE);// bits 12-15: 0010
+            .with_is_running(true) // bit 0: 1
+            .with_gear(4) // bits 1-3: 100
+            .with_speed(120) // bits 4-11: 01111000
+            .with_state(EngineState::ACTIVE); // bits 12-15: 0010
 
         // 0010_01111000_100_1 in binary = 10113
         assert_eq!(v.to_bits(), 10121);
@@ -1374,29 +1492,29 @@ mod tests {
 
         // Test a (bit 0)
         t.set_a(true);
-        assert_eq!(t.a(), true);
+        assert!(t.a());
         assert_eq!(t.to_bits(), 0x1);
 
         // Test b (bits 1-7) - should not affect a
         t.set_b(0x7F);
         assert_eq!(t.b(), 0x7F);
-        assert_eq!(t.a(), true);
+        assert!(t.a());
         assert_eq!(t.to_bits(), 0xFF);
 
         // Test c (bits 8-23) - should not affect a or b
         t.set_c(0xABCD);
         assert_eq!(t.c(), 0xABCD);
         assert_eq!(t.b(), 0x7F);
-        assert_eq!(t.a(), true);
-        assert_eq!(t.to_bits(), 0xABCD_FF);
+        assert!(t.a());
+        assert_eq!(t.to_bits(), 0x00AB_CDFF);
 
         // Test d (bits 24-31) - should not affect a, b, or c
         t.set_d(EngineState::ACTIVE);
         assert_eq!(t.d(), EngineState::ACTIVE);
         assert_eq!(t.c(), 0xABCD);
         assert_eq!(t.b(), 0x7F);
-        assert_eq!(t.a(), true);
-        assert_eq!(t.to_bits(), 0x02_ABCD_FF);
+        assert!(t.a());
+        assert_eq!(t.to_bits(), 0x02AB_CDFF);
 
         // Builder pattern (with_)
         let t2 = IsolationTest::default()
@@ -1404,7 +1522,7 @@ mod tests {
             .with_b(0x12)
             .with_c(0x5566)
             .with_d(EngineState::IDLE);
-        assert_eq!(t2.a(), true);
+        assert!(t2.a());
         assert_eq!(t2.b(), 0x12);
         assert_eq!(t2.c(), 0x5566);
         assert_eq!(t2.d(), EngineState::IDLE);
@@ -1475,31 +1593,58 @@ mod tests {
         assert_eq!(B7::from_u64(0x11223344556677).to_u64(), 0x11223344556677);
 
         bytestruct! { struct B8(8) { pub v: u64 = 64 } }
-        assert_eq!(B8::from_u64(0x1122334455667788).to_u64(), 0x1122334455667788);
+        assert_eq!(
+            B8::from_u64(0x1122334455667788).to_u64(),
+            0x1122334455667788
+        );
 
         bytestruct! { struct B9(9) { pub v: u128 = 72 } }
-        assert_eq!(B9::from_u128(0x112233445566778899).to_u128(), 0x112233445566778899);
+        assert_eq!(
+            B9::from_u128(0x112233445566778899).to_u128(),
+            0x112233445566778899
+        );
 
         bytestruct! { struct B10(10) { pub v: u128 = 80 } }
-        assert_eq!(B10::from_u128(0x11223344556677889900).to_u128(), 0x11223344556677889900);
+        assert_eq!(
+            B10::from_u128(0x11223344556677889900).to_u128(),
+            0x11223344556677889900
+        );
 
         bytestruct! { struct B11(11) { pub v: u128 = 88 } }
-        assert_eq!(B11::from_u128(0x11223344556677889900AA).to_u128(), 0x11223344556677889900AA);
+        assert_eq!(
+            B11::from_u128(0x11223344556677889900AA).to_u128(),
+            0x11223344556677889900AA
+        );
 
         bytestruct! { struct B12(12) { pub v: u128 = 96 } }
-        assert_eq!(B12::from_u128(0x11223344556677889900AABB).to_u128(), 0x11223344556677889900AABB);
+        assert_eq!(
+            B12::from_u128(0x11223344556677889900AABB).to_u128(),
+            0x11223344556677889900AABB
+        );
 
         bytestruct! { struct B13(13) { pub v: u128 = 104 } }
-        assert_eq!(B13::from_u128(0x11223344556677889900AABBCC).to_u128(), 0x11223344556677889900AABBCC);
+        assert_eq!(
+            B13::from_u128(0x11223344556677889900AABBCC).to_u128(),
+            0x11223344556677889900AABBCC
+        );
 
         bytestruct! { struct B14(14) { pub v: u128 = 112 } }
-        assert_eq!(B14::from_u128(0x11223344556677889900AABBCCDD).to_u128(), 0x11223344556677889900AABBCCDD);
+        assert_eq!(
+            B14::from_u128(0x11223344556677889900AABBCCDD).to_u128(),
+            0x11223344556677889900AABBCCDD
+        );
 
         bytestruct! { struct B15(15) { pub v: u128 = 120 } }
-        assert_eq!(B15::from_u128(0x11223344556677889900AABBCCDDEE).to_u128(), 0x11223344556677889900AABBCCDDEE);
+        assert_eq!(
+            B15::from_u128(0x11223344556677889900AABBCCDDEE).to_u128(),
+            0x11223344556677889900AABBCCDDEE
+        );
 
         bytestruct! { struct B16(16) { pub v: u128 = 128 } }
-        assert_eq!(B16::from_u128(0x11223344556677889900AABBCCDDEEFF).to_u128(), 0x11223344556677889900AABBCCDDEEFF);
+        assert_eq!(
+            B16::from_u128(0x11223344556677889900AABBCCDDEEFF).to_u128(),
+            0x11223344556677889900AABBCCDDEEFF
+        );
     }
 
     #[test]
@@ -1534,15 +1679,20 @@ mod tests {
         m.set_state(EngineState::ACTIVE);
         m.set_large(0xABCDEF);
 
-        assert_eq!(m.flag(), true);
+        assert!(m.flag());
         assert_eq!(m.small(), 0xAA);
         assert_eq!(m.medium(), 0x1234);
         assert_eq!(m.state(), EngineState::ACTIVE);
         assert_eq!(m.large(), 0xABCDEF);
 
         // with_ builders
-        let m2 = m.with_flag(false).with_small(0).with_medium(0).with_state(EngineState::OFF).with_large(0);
-        assert_eq!(m2.flag(), false);
+        let m2 = m
+            .with_flag(false)
+            .with_small(0)
+            .with_medium(0)
+            .with_state(EngineState::OFF)
+            .with_large(0);
+        assert!(!m2.flag());
         assert_eq!(m2.large(), 0);
 
         // set_ mutators
@@ -1552,12 +1702,17 @@ mod tests {
         m3.set_medium(2);
         m3.set_state(EngineState::IDLE);
         m3.set_large(3);
-        assert_eq!(m3.flag(), true);
+        assert!(m3.flag());
         assert_eq!(m3.large(), 3);
 
         // Functional updates (with_)
-        let m2 = m.with_flag(false).with_small(0xB).with_medium(0x4321).with_state(EngineState::OFF).with_large(0x112233);
-        assert_eq!(m2.flag(), false);
+        let m2 = m
+            .with_flag(false)
+            .with_small(0xB)
+            .with_medium(0x4321)
+            .with_state(EngineState::OFF)
+            .with_large(0x112233);
+        assert!(!m2.flag());
         assert_eq!(m2.small(), 0xB);
         assert_eq!(m2.medium(), 0x4321);
         assert_eq!(m2.state(), EngineState::OFF);
@@ -1610,7 +1765,7 @@ mod tests {
         w.set_u32_field(0xCAFEBABE);
         w.set_u64_field(0x22334455667788);
 
-        assert_eq!(w.flag_start(), true);
+        assert!(w.flag_start());
         assert_eq!(w.u8_field(), 0xDE);
         assert_eq!(w.u16_field(), 0xADBE);
         assert_eq!(w.enum_field(), EngineState::ACTIVE);
@@ -1618,7 +1773,7 @@ mod tests {
         assert_eq!(w.u64_field(), 0x22334455667788);
 
         let w2 = w.with_flag_start(false).with_u64_field(0);
-        assert_eq!(w2.flag_start(), false);
+        assert!(!w2.flag_start());
         assert_eq!(w2.u64_field(), 0);
         assert_eq!(w2.u32_field(), 0xCAFEBABE);
 
@@ -1669,13 +1824,22 @@ mod tests {
         assert_eq!(B7::from_u64(0x11223344556677).to_u64(), 0x11223344556677);
 
         bytestruct! { struct B8(8) { pub v: u64 = 64 } }
-        assert_eq!(B8::from_u64(0x1122334455667788).to_u64(), 0x1122334455667788);
+        assert_eq!(
+            B8::from_u64(0x1122334455667788).to_u64(),
+            0x1122334455667788
+        );
 
         bytestruct! { struct B12(12) { pub v: u128 = 96 } }
-        assert_eq!(B12::from_u128(0x11223344556677889900AABB).to_u128(), 0x11223344556677889900AABB);
+        assert_eq!(
+            B12::from_u128(0x11223344556677889900AABB).to_u128(),
+            0x11223344556677889900AABB
+        );
 
         bytestruct! { struct B16(16) { pub v: u128 = 128 } }
-        assert_eq!(B16::from_u128(0x11223344556677889900AABBCCDDEEFF).to_u128(), 0x11223344556677889900AABBCCDDEEFF);
+        assert_eq!(
+            B16::from_u128(0x11223344556677889900AABBCCDDEEFF).to_u128(),
+            0x11223344556677889900AABBCCDDEEFF
+        );
     }
 
     #[test]
@@ -1687,13 +1851,22 @@ mod tests {
         assert_eq!(V5::from_u64(0x123456789A).to_u64(), 0x123456789A);
 
         byteval! { struct V8(8); }
-        assert_eq!(V8::from_u64(0x1234567890ABCDEF).to_u64(), 0x1234567890ABCDEF);
+        assert_eq!(
+            V8::from_u64(0x1234567890ABCDEF).to_u64(),
+            0x1234567890ABCDEF
+        );
 
         byteval! { struct V12(12); }
-        assert_eq!(V12::from_u128(0x1234567890ABCDEF11223344).to_u128(), 0x1234567890ABCDEF11223344);
+        assert_eq!(
+            V12::from_u128(0x1234567890ABCDEF11223344).to_u128(),
+            0x1234567890ABCDEF11223344
+        );
 
         byteval! { struct V16(16); }
-        assert_eq!(V16::from_u128(0x1234567890ABCDEF1122334455667788).to_u128(), 0x1234567890ABCDEF1122334455667788);
+        assert_eq!(
+            V16::from_u128(0x1234567890ABCDEF1122334455667788).to_u128(),
+            0x1234567890ABCDEF1122334455667788
+        );
     }
 
     #[test]
@@ -1748,7 +1921,13 @@ mod tests {
         assert_eq!(x.val(), 7);
 
         // Invalid set
-        assert_eq!(x.try_set_val(8), Err(BitstructError::Overflow { value: 8, allocated_bits: 3 }));
+        assert_eq!(
+            x.try_set_val(8),
+            Err(BitstructError::Overflow {
+                value: 8,
+                allocated_bits: 3
+            })
+        );
         assert_eq!(x.val(), 7); // Ensure value was not modified
 
         // Valid with
@@ -1756,7 +1935,13 @@ mod tests {
         assert_eq!(y.val(), 4);
 
         // Invalid with
-        assert_eq!(x.try_with_val(8), Err(BitstructError::Overflow { value: 8, allocated_bits: 3 }));
+        assert_eq!(
+            x.try_with_val(8),
+            Err(BitstructError::Overflow {
+                value: 8,
+                allocated_bits: 3
+            })
+        );
     }
 
     #[test]
@@ -1774,7 +1959,13 @@ mod tests {
         assert_eq!(x.val(), 255);
 
         // Invalid set
-        assert_eq!(x.try_set_val(256), Err(BitstructError::Overflow { value: 256, allocated_bits: 8 }));
+        assert_eq!(
+            x.try_set_val(256),
+            Err(BitstructError::Overflow {
+                value: 256,
+                allocated_bits: 8
+            })
+        );
         assert_eq!(x.val(), 255); // Ensure value was not modified
 
         // Valid with
@@ -1782,7 +1973,13 @@ mod tests {
         assert_eq!(y.val(), 10);
 
         // Invalid with
-        assert_eq!(x.try_with_val(256), Err(BitstructError::Overflow { value: 256, allocated_bits: 8 }));
+        assert_eq!(
+            x.try_with_val(256),
+            Err(BitstructError::Overflow {
+                value: 256,
+                allocated_bits: 8
+            })
+        );
     }
 
     #[test]
@@ -1792,13 +1989,19 @@ mod tests {
 
         // Valid creation
         let a = TryOversized::try_from_bits(7);
-        assert_eq!(a.is_ok(), true);
+        assert!(a.is_ok());
         assert_eq!(a.unwrap().to_bits(), 7);
 
         // Invalid creation checking Result instead of Panic
         let b = TryOversized::try_from_bits(8);
-        assert_eq!(b.is_err(), true);
-        assert_eq!(b.unwrap_err(), BitstructError::InvalidVariant { value: 8, enum_name: "TryOversized" });
+        assert!(b.is_err());
+        assert_eq!(
+            b.unwrap_err(),
+            BitstructError::InvalidVariant {
+                value: 8,
+                enum_name: "TryOversized"
+            }
+        );
     }
 
     #[test]

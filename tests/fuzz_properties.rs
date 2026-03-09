@@ -1,4 +1,4 @@
-use bitstruct::{bitstruct, bytestruct, byteval, bitenum};
+use bitstruct::{bitenum, bitstruct, bytestruct, byteval};
 use proptest::prelude::*;
 
 bitenum! {
@@ -46,9 +46,9 @@ bytestruct! {
 }
 
 // Multiple byteval types for fuzzing
-byteval! { struct FuzzId24(3); }  // 24-bit
-byteval! { struct FuzzId40(5); }  // 40-bit
-byteval! { struct FuzzId56(7); }  // 56-bit
+byteval! { struct FuzzId24(3); } // 24-bit
+byteval! { struct FuzzId40(5); } // 40-bit
+byteval! { struct FuzzId56(7); } // 56-bit
 byteval! { struct FuzzId104(13); } // 104-bit
 
 proptest! {
@@ -91,6 +91,7 @@ proptest! {
     }
 
     #[test]
+    #[allow(clippy::needless_range_loop)]
     fn test_bytestruct13_roundtrip(
         flags in any::<u8>(),
         x in any::<u32>(),
@@ -186,6 +187,7 @@ proptest! {
     }
 
     #[test]
+    #[allow(clippy::needless_range_loop)]
     fn test_byteval_id40_fuzz(val in 0u64..(1u64 << 40)) {
         let id = FuzzId40::from_u64(val);
         prop_assert_eq!(id.value(), val);
@@ -197,6 +199,7 @@ proptest! {
     }
 
     #[test]
+    #[allow(clippy::needless_range_loop)]
     fn test_byteval_id56_fuzz(val in 0u64..(1u64 << 56)) {
         let id = FuzzId56::from_u64(val);
         prop_assert_eq!(id.value(), val);
@@ -208,6 +211,7 @@ proptest! {
     }
 
     #[test]
+    #[allow(clippy::needless_range_loop)]
     fn test_byteval_id104_fuzz(val in any::<u128>()) {
         let mask = (!0u128) >> (128 - 104);
         let masked = val & mask;

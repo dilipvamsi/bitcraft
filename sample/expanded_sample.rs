@@ -22,6 +22,7 @@ impl Status {
     #[allow(non_upper_case_globals, dead_code)]
     ///Enumeration variant for `FAULT` with raw value `2`.
     pub const FAULT: Self = Self(2);
+    #[allow(dead_code)]
     /// The number of bits allocated for this enumeration in memory.
     pub const BITS: usize = 2;
     /// The maximum value allowed for this enumeration variant based on the allocated $bits bits.

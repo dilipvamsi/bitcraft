@@ -53,11 +53,6 @@ help:
 	@echo "  make all         Run both normal and fuzz tests."
 	@echo "  make clean       Remove all build artifacts."
 
-# Show macro expansion
-expand:
-	@echo "==> Expanding VehicleState"
-	cargo expand tests::VehicleState
-
 # Convert sample/sample.rs to sample/expanded_sample.rs
 expand-sample:
 	@echo "==> Expanding bitstruct engine for inspection (Selective)"

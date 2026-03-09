@@ -5,6 +5,18 @@ edition = "2024"
 license = "MIT"
 description = "A zero-cost, hardware-aligned bitfield and enumeration generator."
 repository = "https://github.com/dilipvamsi/bitstruct"
+homepage = "https://github.com/dilipvamsi/bitstruct"
+documentation = "https://docs.rs/bitstruct"
+readme = "README.md"
+keywords = ["bitfield", "bitstruct", "no-std", "performance", "embedded"]
+categories = ["embedded", "data-structures", "no-std"]
+authors = ["Dilip Vamsi Moturi"]
+rust-version = "1.85"
+exclude = [
+    "sample/",
+    "Makefile",
+    "sample/**/*.py",
+]
 
 [dependencies]
 paste = "1.0.15"
@@ -13,7 +25,3 @@ bytemuck = { version = "1.25", features = ["derive"] }
 [dev-dependencies]
 proptest = "1.10"
 proptest-derive = "0.8"
-
-[[example]]
-name = "sample"
-path = "sample/sample.rs"
