@@ -87,7 +87,7 @@ Most bitfield libraries in the Rust ecosystem (`modular-bitfield`, `packed_struc
 *   **Restrict you to primitives** (`u8`–`u128`).
 *   **Rely on Procedural Macros** which drastically increase compile-time and complexity for small array-backed types.
 
-`bitcraft` is the **only library** to offer instant, declarative bitfields for arbitrary `[u8; N]` arrays. 
+`bitcraft` is the **only library** to offer instant, declarative bitfields for flexible `[u8; 1..16]` arrays.
 
 *   **Wait, why does this matter?** If you need a 3-byte integer (24-bit ID) that is packed 1,000,000 times in an array, standard Rust forces you to use a 4-byte `u32` (wasting 25% of your memory footprint) or write massive boilerplate. `byteval! { struct Id(3); }` solves this in one line with zero runtime cost.
 *   **Register Routing**: While other array-backed solutions use slow byte-by-byte loops, `bytestruct!` uses **Acting Primitives** (e.g., loading an 8-byte slice of a 13-byte array into a `u64` register). This is a level of specialized hardware optimization not found in broader general-purpose serializing libraries.

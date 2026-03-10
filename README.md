@@ -6,10 +6,13 @@
 
 > [!NOTE]
 > **Roadmap**: `bitcraft` base storage will remain unsigned for maximum register efficiency and deterministic bit-packing. Support for interpreting fields as **signed integers** (two's complement) within these unsigned containers is currently on the roadmap.
+
 > [!TIP]
 > **New to Bitfields?** See our [Ecosystem Comparison](comparisons.md) to understand how `bitcraft` differs from `modular-bitfield`, `packed_struct`, and standard Rust enums.
+
 > [!TIP]
 > **Technical Deep Dive**: Curious about how it works? See our [Internal Implementation Guide](implementation.md) for a breakdown of TT-munching, register specialization, and hardware alignment.
+
 > [!IMPORTANT]
 > **Type Safety**: `bitcraft` base storage is **always unsigned** (`u8` through `u128`) to ensure hardware alignment and register efficiency. Currently, fields are also restricted to unsigned types at compile-time. Support for interpreting bits as **signed values** (two's complement fields) within these unsigned structs is on the future roadmap.
 
@@ -22,7 +25,7 @@ In high-performance domains (vector engines, network stacks, or high-frequency t
 `bitcraft` solves this by giving you:
 
 - **Absolute Bit Control**: Define exactly which bits map to which logical fields.
-- **Unique `bytestruct!` Support**: Native support for **arbitrary-length byte arrays** (`[u8; N]`) that are treated as primitive-like registers. Most libraries restrict you to standard `u8-u128`.
+- **Unique `bytestruct!` Support**: Native support for **flexible 1-16 byte arrays** (`[u8; N]`) that are treated as primitive-like registers. Most libraries restrict you to standard `u8-u128`.
 - **Unique `byteval!` IDs**: Instant "Packed IDs" for 24-bit, 40-bit, or 56-bit values that behave like first-class integers.
 - **Zero-Cost Abstractions**: Generated code compiles down to the exact bitwise shifts and masks you would write by hand—verified by LLV-MIR inspection.
 - **Hardware Alignment**: LSB-first mapping ensures your software layout matches the physical little-endian storage in modern hardware.
@@ -168,7 +171,7 @@ The `bitcraft` crate provides four specialized tools. Choosing the right one det
 
 - **Use `bytestruct!`** `(Base: [u8; N])`
   - **When:** Your data structure logically exceeds 16 bytes (128 bits) but must still remain perfectly dense without padding, or when the data is intrinsically an array (like a generic payload buffer with flags at the end).
-  - **Why:** Allows arbitrary-length dense packing while still utilizing the widest available CPU registers (like `u64`) behind the scenes to modify localized chunks of the array efficiently.
+  - **Why:** Allows dense packing up to 128 bits (16 bytes) while still utilizing the widest available CPU registers (like `u64`) behind the scenes to modify localized chunks of the array efficiently.
 
 - **Use `byteval!`** `(Base: [u8; N])`
   - **When:** You need a single integer value that has an "awkward" byte width (e.g., a **24-bit** (`[u8; 3]`) audio sample, or a **40-bit** (`[u8; 5]`) network ID).

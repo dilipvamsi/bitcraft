@@ -11,7 +11,7 @@ In high-performance domains (vector engines, network stacks, or high-frequency t
 `bitcraft` solves this by giving you:
 
 - **Absolute Bit Control**: Define exactly which bits map to which logical fields.
-- **Unique `bytestruct!` Support**: native support for **arbitrary-length byte arrays** (`[u8; N]`) that are treated as primitive-like registers. Most libraries restrict you to standard `u8-u128`.
+- **Unique `bytestruct!` Support**: native support for **flexible 1-16 byte arrays** (`[u8; N]`) that are treated as primitive-like registers. Most libraries restrict you to standard `u8-u128`.
 - **Unique `byteval!` IDs**: Instant "Packed IDs" for 24-bit, 40-bit, or 56-bit values that behave like first-class integers—solving the "Odd-Width Integer" problem in one line.
 - **Zero-Cost Abstractions**: Generated code compiles down to the exact bitwise shifts and masks you would write by hand—verified by LLV-MIR inspection.
 - **Hardware Alignment**: LSB-first mapping ensures your software layout matches the physical little-endian storage in modern hardware.
