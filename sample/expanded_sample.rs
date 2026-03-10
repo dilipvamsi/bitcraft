@@ -30,8 +30,8 @@ impl Status {
     /// Useful for manually validating raw input before conversion.
     pub const MASK: <::bitcraft::Bits<2> as ::bitcraft::BitenumType>::Prim = {
         type Prim = <::bitcraft::Bits<2> as ::bitcraft::BitenumType>::Prim;
-        let total_bits = <Prim as ::bitcraft::BitLength>::BITS;
-        (!0 as Prim) >> (total_bits - 2)
+        const TOTAL_BITS: usize = <Prim as ::bitcraft::BitLength>::BITS;
+        (!0 as Prim) >> (TOTAL_BITS - 2)
     };
     /// Returns true if the raw value corresponds to a defined enumeration variant.
     ///
@@ -116,6 +116,7 @@ impl core::fmt::Debug for Config {
 
 impl Config {
     #[doc(hidden)]
+    #[allow(dead_code)]
     const ENABLED_OFFSET: usize = 0;
     #[doc(hidden)]
     const ENABLED_MASK: u16 = (!0 as u16) >> (<u16 as ::bitcraft::BitLength>::BITS - 1);
@@ -160,6 +161,7 @@ impl Config {
         Ok(self.with_enabled(val))
     }
     #[doc(hidden)]
+    #[allow(dead_code)]
     const MODE_OFFSET: usize = 0 + 1;
     #[doc(hidden)]
     const MODE_MASK: u16 = (!0 as u16) >> (<u16 as ::bitcraft::BitLength>::BITS - 3);
@@ -239,6 +241,7 @@ impl Config {
         )
     }
     #[doc(hidden)]
+    #[allow(dead_code)]
     const STATUS_OFFSET: usize = 0 + 1 + 3;
     #[doc(hidden)]
     const STATUS_MASK: u16 = (!0 as u16) >> (<u16 as ::bitcraft::BitLength>::BITS - 2);
@@ -319,6 +322,7 @@ impl Config {
         )
     }
     #[doc(hidden)]
+    #[allow(dead_code)]
     const DATA_OFFSET: usize = 0 + 1 + 3 + 2;
     #[doc(hidden)]
     const DATA_MASK: u16 = (!0 as u16) >> (<u16 as ::bitcraft::BitLength>::BITS - 10);
@@ -447,24 +451,20 @@ impl Coordinate {
     #[inline(always)]
     #[allow(dead_code)]
     pub const fn to_u64(self) -> u64 {
-        let mut val = 0 as u64;
-        let mut i = 0;
-        while i < 5 {
-            val |= (self.0[i] as u64) << (i << 3);
-            i += 1;
-        }
-        val
+        0 | (self.0[0] as u64) << (0 << 3) | (self.0[1] as u64) << (1 << 3)
+            | (self.0[2] as u64) << (2 << 3) | (self.0[3] as u64) << (3 << 3)
+            | (self.0[4] as u64) << (4 << 3)
     }
     #[inline(always)]
     #[allow(dead_code)]
     pub const fn from_u64(val: u64) -> Self {
-        let mut arr = [0u8; 5];
-        let mut i = 0;
-        while i < 5 {
-            arr[i] = (val >> (i << 3)) as u8;
-            i += 1;
-        }
-        Self(arr)
+        Self([
+            (val >> (0 << 3)) as u8,
+            (val >> (1 << 3)) as u8,
+            (val >> (2 << 3)) as u8,
+            (val >> (3 << 3)) as u8,
+            (val >> (4 << 3)) as u8,
+        ])
     }
     #[inline(always)]
     #[allow(dead_code)]
@@ -477,6 +477,7 @@ impl Coordinate {
         Self::from_u64(val)
     }
     #[doc(hidden)]
+    #[allow(dead_code)]
     const X_OFFSET: usize = 0;
     #[doc(hidden)]
     const X_MASK: u128 = (!0u128) >> (128 - 16);
@@ -484,7 +485,19 @@ impl Coordinate {
     #[inline]
     ///Returns the `x` property as a `u16`.
     pub const fn x(self) -> u16 {
-        let val = ::bitcraft::read_le_bits::<{ Self::X_OFFSET }, { 16 }, _>(&self.0);
+        let val = {
+            const BYTE_INDEX: usize = 0 >> 3;
+            const BIT_OFFSET: usize = 0 & 7;
+            const BYTE_COUNT: usize = ((0 + 16 + 7) >> 3) - BYTE_INDEX;
+            ::bitcraft::read_le_bits::<
+                { 0 },
+                { 16 },
+                _,
+                BYTE_INDEX,
+                BIT_OFFSET,
+                BYTE_COUNT,
+            >(&self.0)
+        };
         val as u16
     }
     #[allow(dead_code)]
@@ -499,11 +512,19 @@ impl Coordinate {
                 }
             }
         }
-        ::bitcraft::write_le_bits::<
-            { Self::X_OFFSET },
-            { 16 },
-            _,
-        >(&mut self.0, val as u128);
+        {
+            const BYTE_INDEX: usize = 0 >> 3;
+            const BIT_OFFSET: usize = 0 & 7;
+            const BYTE_COUNT: usize = ((0 + 16 + 7) >> 3) - BYTE_INDEX;
+            ::bitcraft::write_le_bits::<
+                { 0 },
+                { 16 },
+                _,
+                BYTE_INDEX,
+                BIT_OFFSET,
+                BYTE_COUNT,
+            >(&mut self.0, val as u128)
+        };
     }
     #[allow(dead_code)]
     ///Returns a cloned copy of the bytestruct with the `x` property mapped. Masks inputs over 16 bits.
@@ -517,11 +538,19 @@ impl Coordinate {
                 }
             }
         }
-        ::bitcraft::write_le_bits::<
-            { Self::X_OFFSET },
-            { 16 },
-            _,
-        >(&mut self.0, val as u128);
+        {
+            const BYTE_INDEX: usize = 0 >> 3;
+            const BIT_OFFSET: usize = 0 & 7;
+            const BYTE_COUNT: usize = ((0 + 16 + 7) >> 3) - BYTE_INDEX;
+            ::bitcraft::write_le_bits::<
+                { 0 },
+                { 16 },
+                _,
+                BYTE_INDEX,
+                BIT_OFFSET,
+                BYTE_COUNT,
+            >(&mut self.0, val as u128)
+        };
         self
     }
     #[allow(dead_code)]
@@ -548,6 +577,7 @@ impl Coordinate {
         Ok(self.with_x(val))
     }
     #[doc(hidden)]
+    #[allow(dead_code)]
     const Y_OFFSET: usize = 0 + 16;
     #[doc(hidden)]
     const Y_MASK: u128 = (!0u128) >> (128 - 16);
@@ -555,7 +585,19 @@ impl Coordinate {
     #[inline]
     ///Returns the `y` property as a `u16`.
     pub const fn y(self) -> u16 {
-        let val = ::bitcraft::read_le_bits::<{ Self::Y_OFFSET }, { 16 }, _>(&self.0);
+        let val = {
+            const BYTE_INDEX: usize = 0 + 16 >> 3;
+            const BIT_OFFSET: usize = 0 + 16 & 7;
+            const BYTE_COUNT: usize = ((0 + 16 + 16 + 7) >> 3) - BYTE_INDEX;
+            ::bitcraft::read_le_bits::<
+                { 0 + 16 },
+                { 16 },
+                _,
+                BYTE_INDEX,
+                BIT_OFFSET,
+                BYTE_COUNT,
+            >(&self.0)
+        };
         val as u16
     }
     #[allow(dead_code)]
@@ -570,11 +612,19 @@ impl Coordinate {
                 }
             }
         }
-        ::bitcraft::write_le_bits::<
-            { Self::Y_OFFSET },
-            { 16 },
-            _,
-        >(&mut self.0, val as u128);
+        {
+            const BYTE_INDEX: usize = 0 + 16 >> 3;
+            const BIT_OFFSET: usize = 0 + 16 & 7;
+            const BYTE_COUNT: usize = ((0 + 16 + 16 + 7) >> 3) - BYTE_INDEX;
+            ::bitcraft::write_le_bits::<
+                { 0 + 16 },
+                { 16 },
+                _,
+                BYTE_INDEX,
+                BIT_OFFSET,
+                BYTE_COUNT,
+            >(&mut self.0, val as u128)
+        };
     }
     #[allow(dead_code)]
     ///Returns a cloned copy of the bytestruct with the `y` property mapped. Masks inputs over 16 bits.
@@ -588,11 +638,19 @@ impl Coordinate {
                 }
             }
         }
-        ::bitcraft::write_le_bits::<
-            { Self::Y_OFFSET },
-            { 16 },
-            _,
-        >(&mut self.0, val as u128);
+        {
+            const BYTE_INDEX: usize = 0 + 16 >> 3;
+            const BIT_OFFSET: usize = 0 + 16 & 7;
+            const BYTE_COUNT: usize = ((0 + 16 + 16 + 7) >> 3) - BYTE_INDEX;
+            ::bitcraft::write_le_bits::<
+                { 0 + 16 },
+                { 16 },
+                _,
+                BYTE_INDEX,
+                BIT_OFFSET,
+                BYTE_COUNT,
+            >(&mut self.0, val as u128)
+        };
         self
     }
     #[allow(dead_code)]
@@ -619,6 +677,7 @@ impl Coordinate {
         Ok(self.with_y(val))
     }
     #[doc(hidden)]
+    #[allow(dead_code)]
     const FLAGS_OFFSET: usize = 0 + 16 + 16;
     #[doc(hidden)]
     const FLAGS_MASK: u128 = (!0u128) >> (128 - 8);
@@ -626,7 +685,19 @@ impl Coordinate {
     #[inline]
     ///Returns the `flags` property as a `u8`.
     pub const fn flags(self) -> u8 {
-        let val = ::bitcraft::read_le_bits::<{ Self::FLAGS_OFFSET }, { 8 }, _>(&self.0);
+        let val = {
+            const BYTE_INDEX: usize = 0 + 16 + 16 >> 3;
+            const BIT_OFFSET: usize = 0 + 16 + 16 & 7;
+            const BYTE_COUNT: usize = ((0 + 16 + 16 + 8 + 7) >> 3) - BYTE_INDEX;
+            ::bitcraft::read_le_bits::<
+                { 0 + 16 + 16 },
+                { 8 },
+                _,
+                BYTE_INDEX,
+                BIT_OFFSET,
+                BYTE_COUNT,
+            >(&self.0)
+        };
         val as u8
     }
     #[allow(dead_code)]
@@ -641,11 +712,19 @@ impl Coordinate {
                 }
             }
         }
-        ::bitcraft::write_le_bits::<
-            { Self::FLAGS_OFFSET },
-            { 8 },
-            _,
-        >(&mut self.0, val as u128);
+        {
+            const BYTE_INDEX: usize = 0 + 16 + 16 >> 3;
+            const BIT_OFFSET: usize = 0 + 16 + 16 & 7;
+            const BYTE_COUNT: usize = ((0 + 16 + 16 + 8 + 7) >> 3) - BYTE_INDEX;
+            ::bitcraft::write_le_bits::<
+                { 0 + 16 + 16 },
+                { 8 },
+                _,
+                BYTE_INDEX,
+                BIT_OFFSET,
+                BYTE_COUNT,
+            >(&mut self.0, val as u128)
+        };
     }
     #[allow(dead_code)]
     ///Returns a cloned copy of the bytestruct with the `flags` property mapped. Masks inputs over 8 bits.
@@ -659,11 +738,19 @@ impl Coordinate {
                 }
             }
         }
-        ::bitcraft::write_le_bits::<
-            { Self::FLAGS_OFFSET },
-            { 8 },
-            _,
-        >(&mut self.0, val as u128);
+        {
+            const BYTE_INDEX: usize = 0 + 16 + 16 >> 3;
+            const BIT_OFFSET: usize = 0 + 16 + 16 & 7;
+            const BYTE_COUNT: usize = ((0 + 16 + 16 + 8 + 7) >> 3) - BYTE_INDEX;
+            ::bitcraft::write_le_bits::<
+                { 0 + 16 + 16 },
+                { 8 },
+                _,
+                BYTE_INDEX,
+                BIT_OFFSET,
+                BYTE_COUNT,
+            >(&mut self.0, val as u128)
+        };
         self
     }
     #[allow(dead_code)]
@@ -721,24 +808,13 @@ impl PackedId {
     #[inline(always)]
     #[allow(dead_code)]
     pub const fn to_u32(self) -> u32 {
-        let mut val = 0 as u32;
-        let mut i = 0;
-        while i < 3 {
-            val |= (self.0[i] as u32) << (i << 3);
-            i += 1;
-        }
-        val
+        0 | (self.0[0] as u32) << (0 << 3) | (self.0[1] as u32) << (1 << 3)
+            | (self.0[2] as u32) << (2 << 3)
     }
     #[inline(always)]
     #[allow(dead_code)]
     pub const fn from_u32(val: u32) -> Self {
-        let mut arr = [0u8; 3];
-        let mut i = 0;
-        while i < 3 {
-            arr[i] = (val >> (i << 3)) as u8;
-            i += 1;
-        }
-        Self(arr)
+        Self([(val >> (0 << 3)) as u8, (val >> (1 << 3)) as u8, (val >> (2 << 3)) as u8])
     }
     #[inline(always)]
     #[allow(dead_code)]
@@ -751,6 +827,7 @@ impl PackedId {
         Self::from_u32(val)
     }
     #[doc(hidden)]
+    #[allow(dead_code)]
     const VALUE_OFFSET: usize = 0;
     #[doc(hidden)]
     const VALUE_MASK: u128 = (!0u128) >> (128 - 24);
@@ -758,7 +835,19 @@ impl PackedId {
     #[inline]
     ///Returns the `value` property as a `u32`.
     pub const fn value(self) -> u32 {
-        let val = ::bitcraft::read_le_bits::<{ Self::VALUE_OFFSET }, { 24 }, _>(&self.0);
+        let val = {
+            const BYTE_INDEX: usize = 0 >> 3;
+            const BIT_OFFSET: usize = 0 & 7;
+            const BYTE_COUNT: usize = ((0 + 24 + 7) >> 3) - BYTE_INDEX;
+            ::bitcraft::read_le_bits::<
+                { 0 },
+                { 24 },
+                _,
+                BYTE_INDEX,
+                BIT_OFFSET,
+                BYTE_COUNT,
+            >(&self.0)
+        };
         val as u32
     }
     #[allow(dead_code)]
@@ -773,11 +862,19 @@ impl PackedId {
                 }
             }
         }
-        ::bitcraft::write_le_bits::<
-            { Self::VALUE_OFFSET },
-            { 24 },
-            _,
-        >(&mut self.0, val as u128);
+        {
+            const BYTE_INDEX: usize = 0 >> 3;
+            const BIT_OFFSET: usize = 0 & 7;
+            const BYTE_COUNT: usize = ((0 + 24 + 7) >> 3) - BYTE_INDEX;
+            ::bitcraft::write_le_bits::<
+                { 0 },
+                { 24 },
+                _,
+                BYTE_INDEX,
+                BIT_OFFSET,
+                BYTE_COUNT,
+            >(&mut self.0, val as u128)
+        };
     }
     #[allow(dead_code)]
     ///Returns a cloned copy of the bytestruct with the `value` property mapped. Masks inputs over 24 bits.
@@ -791,11 +888,19 @@ impl PackedId {
                 }
             }
         }
-        ::bitcraft::write_le_bits::<
-            { Self::VALUE_OFFSET },
-            { 24 },
-            _,
-        >(&mut self.0, val as u128);
+        {
+            const BYTE_INDEX: usize = 0 >> 3;
+            const BIT_OFFSET: usize = 0 & 7;
+            const BYTE_COUNT: usize = ((0 + 24 + 7) >> 3) - BYTE_INDEX;
+            ::bitcraft::write_le_bits::<
+                { 0 },
+                { 24 },
+                _,
+                BYTE_INDEX,
+                BIT_OFFSET,
+                BYTE_COUNT,
+            >(&mut self.0, val as u128)
+        };
         self
     }
     #[allow(dead_code)]

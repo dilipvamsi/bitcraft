@@ -27,10 +27,10 @@ We evaluated 1,000,000,000 (1B) operations of complex read/write logic on an opt
 
 | Metric | Macro Type | Overhead vs. `std` | Physical Density |
 | :--- | :--- | :--- | :--- |
-| **Execution Latency** | `bitenum!` | **0.98x (Faster!)** | **1.00x** (Safe) |
-| **Execution Latency** | `byteval!` | **1.00x (Parity)** | **2.67x Higher** |
-| **Execution Latency** | `bitstruct!` | **0.95x (Faster!)** | **2.00x Higher** |
-| **Execution Latency** | `bytestruct!` | **2.43x** | **3.20x Higher** |
+| **Execution Latency** | `bitenum!` | **0.95x (Faster!)** | **1.00x** (Safe) |
+| **Execution Latency** | `byteval!` | **0.91x (Faster!)** | **2.67x Higher** |
+| **Execution Latency** | `bitstruct!` | **0.96x (Faster!)** | **2.00x Higher** |
+| **Execution Latency** | **bytestruct!** | **2.45x** | **3.20x Higher** |
 
 > **Why are we faster than manual code?** Our macros generate perfectly unrolled bitwise expressions. Modern compilers (LLVM) recognize these patterns and perform **Instruction Fusion**, effectively turning multiple shifts/masks into a single **Unaligned Load** instruction. Standard loops or procedural-macro-generated getters often fail to reach this level of hardware optimization.
 
@@ -42,6 +42,7 @@ We evaluated 1,000,000,000 (1B) operations of complex read/write logic on an opt
 ## 🔬 In-Depth Assessment
 
 ### 1. `bitcraft` vs. `modular-bitfield`
+
 `modular-bitfield` is the current ecosystem standard for procedural-macro-based bitfields.
 
 *   **Philosophical Difference**: `modular-bitfield` focuses on providing a "Rust-like" struct feel with `#[bitfield]` attributes. `bitcraft` focuses on **Mechanical Sympathy**—optimizing specifically for how hardware interacts with memory registers.
@@ -49,18 +50,21 @@ We evaluated 1,000,000,000 (1B) operations of complex read/write logic on an opt
 *   **Performance Routing**: While `modular-bitfield` handles bit-ranges well, `bitstruct!` specializes in **Acting Primitives**. It ensures that even if you are manipulating 5 bytes of data, the CPU uses a 64-bit register for atomic-like updates rather than byte-by-byte loads. In our benchmarks, this register-routing approach keeps overhead significantly lower than procedural field-accessors.
 
 ### 2. `bitcraft` vs. `packed_struct`
+
 `packed_struct` is a powerful tool for complex, nested serialization.
 
 *   **Complexity vs. Speed**: `packed_struct` is feature-rich (endianness, custom bit-numbering) but can be "particular" about type signatures and has a steeper learning curve. `bitcraft` favors a **Flat & Fast** approach.
 *   **Instruction Fusion**: `bitcraft` implements specialized const-generic helpers that ensure **Instruction Fusion**. Instead of multiple fragmented loads, we generate code that LLVM can fuse into a single load-and-shift operation. In high-frequency loops, this directly translates to higher IPC (Instructions Per Cycle) compared to the more abstract `packed_struct` implementation.
 
 ### 3. `bitcraft` vs. Standard Rust `enum`
+
 Standard Rust enums are **Algebraic Data Types**, which is dangerous when parsing untrusted data (like network packets).
 
 *   **The UB Gap**: Reading an invalid bit pattern into a standard `repr(u8)` enum is **Undefined Behavior (UB)**. You must manually validate the byte before transmute.
 *   **Total Types**: `bitcraft`'s `bitenum!` treats variants as "Active states" of a total underlying type. Using `try_from_bits()` ensures you never encounter UB, even if the raw input is corrupted or malicious.
 
 ### 4. `bitcraft` vs. C-Style Bitfields (FFI)
+
 If you are interfacing with C firmware or legacy network protocols, layout predictability is mandatory.
 
 *   **ABI Stability**: Every `bitstruct!`, `bytestruct!`, and `bitenum!` is marked `#[repr(transparent)]`. This means they have the **exact same memory representation** as their underlying Rust primitive (u8-u128) or byte-array.
@@ -77,13 +81,16 @@ Most libraries use runtime checks or generic loops to handle variable-width fiel
 **Result**: Your code performs exactly like hand-optimized assembly.
 
 ### 🏎️ `bytestruct!` & `byteval!`: The Competitive Edge
+
 Most bitfield libraries in the Rust ecosystem (`modular-bitfield`, `packed_struct`) either:
-1.  **Restrict you to primitives** (`u8`–`u128`).
-2.  **Rely on Procedural Macros** which drastically increase compile-time and complexity for small array-backed types.
+
+*   **Restrict you to primitives** (`u8`–`u128`).
+*   **Rely on Procedural Macros** which drastically increase compile-time and complexity for small array-backed types.
 
 `bitcraft` is the **only library** to offer instant, declarative bitfields for arbitrary `[u8; N]` arrays. 
-- **Wait, why does this matter?** If you need a 3-byte integer (24-bit ID) that is packed 1,000,000 times in an array, standard Rust forces you to use a 4-byte `u32` (wasting 25% of your memory footprint) or write massive boilerplate. `byteval! { struct Id(3); }` solves this in one line with zero runtime cost.
-- **Register Routing**: While other array-backed solutions use slow byte-by-byte loops, `bytestruct!` uses **Acting Primitives** (e.g., loading an 8-byte slice of a 13-byte array into a `u64` register). This is a level of specialized hardware optimization not found in broader general-purpose serializing libraries.
+
+*   **Wait, why does this matter?** If you need a 3-byte integer (24-bit ID) that is packed 1,000,000 times in an array, standard Rust forces you to use a 4-byte `u32` (wasting 25% of your memory footprint) or write massive boilerplate. `byteval! { struct Id(3); }` solves this in one line with zero runtime cost.
+*   **Register Routing**: While other array-backed solutions use slow byte-by-byte loops, `bytestruct!` uses **Acting Primitives** (e.g., loading an 8-byte slice of a 13-byte array into a `u64` register). This is a level of specialized hardware optimization not found in broader general-purpose serializing libraries.
 
 ### 🧩 LSB-First Consistency
 Many libraries struggle with bit-ordering consistency across different platforms. `bitcraft` enforces a strict **Little-Endian / LSB-First** convention. This ensures that the layout you see in your source code perfectly matches the physical bits on a little-endian CPU (x86_64, ARM64), eliminating cognitive load during debugging.

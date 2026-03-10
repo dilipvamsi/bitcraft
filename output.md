@@ -1,4 +1,4 @@
-# Bitstruct Macro Showcase & Expansion ⚙️
+# Bitcraft Macro Showcase & Expansion ⚙️
 
 This document explains the functionality of the `bitcraft` engine and provides the **struct equivalent** code that the Rust compiler actually expands during compilation, reflecting the latest performance optimizations.
 
@@ -9,6 +9,7 @@ This document explains the functionality of the `bitcraft` engine and provides t
 Generates a zero-cost, memory-safe enumeration that resolves to the narrowest possible CPU primitive. It now includes pre-computed range constants.
 
 ### **Usage**
+
 ```rust
 bitenum! {
     pub enum ConnectionState(2) {
@@ -20,6 +21,7 @@ bitenum! {
 ```
 
 ### **Generated "Struct Equivalent"**
+
 ```rust
 #[derive(Copy, Clone, PartialEq, Eq, Default)]
 #[repr(transparent)]
@@ -68,6 +70,7 @@ impl ConnectionState {
 Packs multiple logical fields into a single standard CPU register (`u8`-`u128`). Now utilizes named constants for offsets and masks.
 
 ### **Usage**
+
 ```rust
 bitstruct! {
     pub struct Status(u8) {
@@ -78,6 +81,7 @@ bitstruct! {
 ```
 
 ### **Generated "Struct Equivalent"**
+
 ```rust
 #[derive(Copy, Clone, PartialEq, Eq, Default)]
 #[repr(transparent)]
@@ -124,6 +128,7 @@ impl Status {
 Native support for arbitrary-length dense buffers (`[u8; N]`) using **Const-Generic Helper Functions** and alignment-aware fast paths.
 
 ### **Usage**
+
 ```rust
 bytestruct! {
     pub struct Node(2) {
@@ -134,7 +139,9 @@ bytestruct! {
 ```
 
 ### **Generated "Struct Equivalent"**
+
 The macro generates a **"Literal Guard"** pattern inside optimized helper functions:
+
 ```rust
 #[repr(transparent)]
 pub struct Node(pub [u8; 2]);
@@ -145,16 +152,26 @@ impl Node {
 
     #[inline]
     pub const fn b(self) -> u16 {
-        // Optimized helper: for this case, it performs a 16-bit LE-load 
+        // Optimized helper: for this case, it performs a 16-bit load
         // since the span is byte-aligned (after internal resolution).
-        let val = ::bitcraft::read_le_bits::<{ Self::B_OFFSET }, 12, _>(&self.0);
+        const BYTE_INDEX: usize = Self::B_OFFSET >> 3;
+        const BIT_OFFSET: usize = Self::B_OFFSET & 7;
+        const BYTE_COUNT: usize = ((Self::B_OFFSET + 12 + 7) >> 3) - BYTE_INDEX;
+
+        // Internal bit-loop optimized via while loop (in read_le_bits):
+        // while i < BYTE_COUNT { acc |= (arr[BYTE_INDEX + i] as u64) << (i << 3); i += 1; }
+
+        let val = ::bitcraft::read_le_bits::<{ Self::B_OFFSET }, 12, _, BYTE_INDEX, BIT_OFFSET, BYTE_COUNT>(&self.0);
         val as u16
     }
 
     #[inline]
     pub fn set_b(&mut self, val: u16) {
         debug_assert!((val as u128) <= Self::B_MASK);
-        ::bitcraft::write_le_bits::<{ Self::B_OFFSET }, 12, _>(&mut self.0, val as u128);
+        const BYTE_INDEX: usize = Self::B_OFFSET >> 3;
+        const BIT_OFFSET: usize = Self::B_OFFSET & 7;
+        const BYTE_COUNT: usize = ((Self::B_OFFSET + 12 + 7) >> 3) - BYTE_INDEX;
+        ::bitcraft::write_le_bits::<{ Self::B_OFFSET }, 12, _, BYTE_INDEX, BIT_OFFSET, BYTE_COUNT>(&mut self.0, val as u128);
     }
 }
 ```
@@ -166,11 +183,13 @@ impl Node {
 Shorthand for "Odd-Width" integers like 24-bit or 40-bit IDs. Utilizes the same optimized helpers as `bytestruct!`.
 
 ### **Usage**
+
 ```rust
 byteval! { pub struct Id24(3); }
 ```
 
 ### **Generated "Struct Equivalent"**
+
 ```rust
 #[repr(transparent)]
 pub struct Id24(pub [u8; 3]);
@@ -179,12 +198,21 @@ impl Id24 {
     /// Native conversion to the widest capable primitive.
     #[inline(always)]
     pub const fn to_u32(self) -> u32 {
-        // Unrolled bitwise ORs: (arr[0]) | (arr[1] << 8) | (arr[2] << 16)
-        // Highly optimized by LLVM into a single 24-bit aligned load.
-        let mut val = 0u32;
-        let mut i = 0;
-        while i < 3 { val |= (self.0[i] as u32) << (i << 3); i += 1; }
-        val
+        // Specialized conversion: uses a recursive single-expression OR chain.
+        // Highly optimized by LLVM into a single 24-bit aligned load where possible.
+        0 | (self.0[0] as u32) << (0 << 3)
+          | (self.0[1] as u32) << (1 << 3)
+          | (self.0[2] as u32) << (2 << 3)
+    }
+
+    #[inline(always)]
+    pub const fn from_u32(val: u32) -> Self {
+        // Specialized writeback: uses a single array constructor with shifts.
+        Self([
+            (val >> 0) as u8,
+            (val >> 8) as u8,
+            (val >> 16) as u8,
+        ])
     }
 
     #[inline(always)]
@@ -195,7 +223,11 @@ impl Id24 {
 
     #[inline]
     pub const fn value(self) -> u32 {
-        let val = ::bitcraft::read_le_bits::<{ Self::VALUE_OFFSET }, 24, _>(&self.0);
+        const BYTE_INDEX: usize = Self::VALUE_OFFSET >> 3;
+        const BIT_OFFSET: usize = Self::VALUE_OFFSET & 7;
+        const BYTE_COUNT: usize = ((Self::VALUE_OFFSET + 24 + 7) >> 3) - BYTE_INDEX;
+        // Field access: utilizes read_le_bits which uses a while loop for accumulation.
+        let val = ::bitcraft::read_le_bits::<{ Self::VALUE_OFFSET }, 24, _, BYTE_INDEX, BIT_OFFSET, BYTE_COUNT>(&self.0);
         val as u32
     }
 }

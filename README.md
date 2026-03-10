@@ -6,13 +6,10 @@
 
 > [!NOTE]
 > **Roadmap**: `bitcraft` base storage will remain unsigned for maximum register efficiency and deterministic bit-packing. Support for interpreting fields as **signed integers** (two's complement) within these unsigned containers is currently on the roadmap.
-
 > [!TIP]
 > **New to Bitfields?** See our [Ecosystem Comparison](comparisons.md) to understand how `bitcraft` differs from `modular-bitfield`, `packed_struct`, and standard Rust enums.
-
 > [!TIP]
 > **Technical Deep Dive**: Curious about how it works? See our [Internal Implementation Guide](implementation.md) for a breakdown of TT-munching, register specialization, and hardware alignment.
-
 > [!IMPORTANT]
 > **Type Safety**: `bitcraft` base storage is **always unsigned** (`u8` through `u128`) to ensure hardware alignment and register efficiency. Currently, fields are also restricted to unsigned types at compile-time. Support for interpreting bits as **signed values** (two's complement fields) within these unsigned structs is on the future roadmap.
 
@@ -290,10 +287,10 @@ We evaluated 1,000,000,000 (1B) iterations of complex read/write operations on a
 
 | Metric | Macro Type | Base Storage | Overhead vs. `std` | Physical Density |
 | :--- | :--- | :--- | :--- | :--- |
-| **Execution Latency** | `bitenum!` | `u8` (3 bits) | **0.98x (Faster!)** | **1.00x** (Safe) |
-| **Execution Latency** | `byteval!` | `[u8; 3]` | **1.00x** (Parity) | **2.67x Higher** |
-| **Execution Latency** | `bitstruct!` | `u16` | **0.95x (Faster!)** | **2.00x Higher** |
-| **Execution Latency** | `bytestruct!` | `[u8; 2]` | **2.43x** (Optimized) | **3.20x Higher** |
+| **Execution Latency** | `bitenum!` | `u8` (3 bits) | **0.95x (Faster!)** | **1.00x** (Safe) |
+| **Execution Latency** | `byteval!` | `[u8; 3]` | **0.91x (Faster!)** | **2.67x Higher** |
+| **Execution Latency** | `bitstruct!` | `u16` | **0.96x (Faster!)** | **2.00x Higher** |
+| **Execution Latency** | `bytestruct!` | `[u8; 2]` | **2.45x** | **3.20x Higher** |
 
 ### Zero-Copy Casting (`bytemuck`)
 
@@ -483,4 +480,4 @@ Macros execute compile-time assertions to ensure the sum of all field widths exa
 
 ## ⚖️ License
 
-Licensed under the **MIT License**. Distributed as a part of the LITSQ ecosystem but optimized for universal systems engineering. See [LICENSE](LICENSE) for details.
+Licensed under the **MIT License**.
