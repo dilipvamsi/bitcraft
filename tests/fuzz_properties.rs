@@ -51,6 +51,37 @@ byteval! { struct FuzzId40(5); } // 40-bit
 byteval! { struct FuzzId56(7); } // 56-bit
 byteval! { struct FuzzId104(13); } // 104-bit
 
+// Variety types for expanded coverage
+byteval! { struct FuzzId48u16(3, u16); } // 48-bit with u16 storage
+byteval! { struct FuzzId96u32(3, u32); } // 96-bit with u32 storage
+
+bitstruct! {
+    struct DenseFuzz(u32) {
+        b00: bool = 1, b01: bool = 1, b02: bool = 1, b03: bool = 1,
+        b04: bool = 1, b05: bool = 1, b06: bool = 1, b07: bool = 1,
+        b08: bool = 1, b09: bool = 1, b10: bool = 1, b11: bool = 1,
+        b12: bool = 1, b13: bool = 1, b14: bool = 1, b15: bool = 1,
+        b16: bool = 1, b17: bool = 1, b18: bool = 1, b19: bool = 1,
+        b20: bool = 1, b21: bool = 1, b22: bool = 1, b23: bool = 1,
+        b24: bool = 1, b25: bool = 1, b26: bool = 1, b27: bool = 1,
+        b28: bool = 1, b29: bool = 1, b30: bool = 1, b31: bool = 1,
+    }
+}
+
+bytestruct! {
+    #[repr(align(8))]
+    struct AlignedFuzzer(8) {
+        val: u64 = 64,
+    }
+}
+
+bytestruct! {
+    struct MixedStorageFuzzer([u64; 2]) {
+        a: u128 = 80,
+        b: u64 = 48, // 80 + 48 = 128 bits
+    }
+}
+
 proptest! {
     #[test]
     fn test_bitstruct_roundtrip(
@@ -121,8 +152,8 @@ proptest! {
         // Verify raw array LE mapping
         let arr = s.to_array();
         let mut recon = 0u128;
-        for i in 0..13 {
-            recon |= (arr[i] as u128) << (i * 8);
+        for (i, &byte) in arr.iter().enumerate() {
+            recon |= (byte as u128) << (i * 8);
         }
 
         let mut expected = 0u128;
@@ -193,8 +224,8 @@ proptest! {
         prop_assert_eq!(id.value(), val);
         prop_assert_eq!(id.to_u64(), val);
         let arr = id.to_array();
-        for i in 0..5 {
-            prop_assert_eq!(arr[i], ((val >> (i * 8)) & 0xFF) as u8);
+        for (i, &byte) in arr.iter().enumerate() {
+            prop_assert_eq!(byte, ((val >> (i * 8)) & 0xFF) as u8);
         }
     }
 
@@ -205,8 +236,8 @@ proptest! {
         prop_assert_eq!(id.value(), val);
         prop_assert_eq!(id.to_u64(), val);
         let arr = id.to_array();
-        for i in 0..7 {
-            prop_assert_eq!(arr[i], ((val >> (i * 8)) & 0xFF) as u8);
+        for (i, &byte) in arr.iter().enumerate() {
+            prop_assert_eq!(byte, ((val >> (i * 8)) & 0xFF) as u8);
         }
     }
 
@@ -219,8 +250,8 @@ proptest! {
         prop_assert_eq!(id.value(), masked);
         prop_assert_eq!(id.to_u128(), masked);
         let arr = id.to_array();
-        for i in 0..13 {
-            prop_assert_eq!(arr[i], ((masked >> (i * 8)) & 0xFF) as u8);
+        for (i, &byte) in arr.iter().enumerate() {
+            prop_assert_eq!(byte, ((masked >> (i * 8)) & 0xFF) as u8);
         }
     }
 
@@ -236,5 +267,279 @@ proptest! {
         prop_assert_eq!(s2.d(), s.d());
         prop_assert_eq!(s2.e(), s.e());
         prop_assert_eq!(s2.c(), new_val & 0xFFFFFF);
+    }
+
+    #[test]
+    fn test_u16_storage_fuzz(
+        v1 in 0u32..(1u32 << 24),
+        v2 in 0u32..(1u32 << 24)
+    ) {
+        bytestruct! {
+            struct U16Fuzzer([u16; 3]) {
+                f1: u32 = 24,
+                f2: u32 = 24,
+            }
+        }
+        let s = U16Fuzzer::default().with_f1(v1).with_f2(v2);
+        prop_assert_eq!(s.f1(), v1);
+        prop_assert_eq!(s.f2(), v2);
+
+        // Manual verification of u16 array packing
+        let arr = s.to_array();
+        let mut recon = 0u64;
+        recon |= arr[0] as u64;
+        recon |= (arr[1] as u64) << 16;
+        recon |= (arr[2] as u64) << 32;
+
+        let expected = (v1 as u64) | ((v2 as u64) << 24);
+        prop_assert_eq!(recon, expected);
+    }
+
+    #[test]
+    fn test_u32_storage_fuzz(
+        v1 in any::<u32>(),
+        v2 in any::<u32>()
+    ) {
+        bytestruct! {
+            struct U32Fuzzer([u32; 2]) {
+                f1: u32 = 32,
+                f2: u32 = 32,
+            }
+        }
+        let s = U32Fuzzer::default().with_f1(v1).with_f2(v2);
+        prop_assert_eq!(s.f1(), v1);
+        prop_assert_eq!(s.f2(), v2);
+        prop_assert_eq!(s.to_array(), [v1, v2]);
+    }
+
+    #[test]
+    fn test_from_bits_fresh_path_fuzz(val in any::<u64>()) {
+        // Exercise the 8-element unroll path (64 bits total)
+        bytestruct! {
+            struct LargeFuzzer(8) {
+                val: u64 = 64,
+            }
+        }
+        let masked = val;
+        let s = LargeFuzzer::from_bits(masked);
+        prop_assert_eq!(s.to_bits(), masked);
+
+        // Ensure initialized array matches manual construction
+        let arr = s.to_array();
+        for (i, &byte) in arr.iter().enumerate() {
+            prop_assert_eq!(byte, ((masked >> (i * 8)) & 0xFF) as u8);
+        }
+    }
+    #[test]
+    fn test_u64_storage_fuzz(
+        v1 in any::<u64>(),
+        v2 in any::<u64>()
+    ) {
+        bytestruct! {
+            struct U64Fuzzer([u64; 2]) {
+                f1: u64 = 64,
+                f2: u64 = 64,
+            }
+        }
+        let s = U64Fuzzer::default().with_f1(v1).with_f2(v2);
+        prop_assert_eq!(s.f1(), v1);
+        prop_assert_eq!(s.f2(), v2);
+        prop_assert_eq!(s.to_array(), [v1, v2]);
+        prop_assert_eq!(s.to_bits(), (v1 as u128) | ((v2 as u128) << 64));
+    }
+
+    #[test]
+    fn test_u128_storage_fuzz(val in any::<u128>()) {
+        bytestruct! {
+            struct U128Fuzzer([u128; 1]) {
+                f1: u128 = 128,
+            }
+        }
+        let s = U128Fuzzer::default().with_f1(val);
+        prop_assert_eq!(s.f1(), val);
+        prop_assert_eq!(s.to_array(), [val]);
+        prop_assert_eq!(s.to_bits(), val);
+    }
+
+    #[test]
+    fn test_u16_storage_128_fuzz(
+        v1 in any::<u64>(),
+        v2 in any::<u64>()
+    ) {
+        bytestruct! {
+            struct U16WideFuzzer([u16; 8]) {
+                f1: u64 = 64,
+                f2: u64 = 64,
+            }
+        }
+        let s = U16WideFuzzer::default().with_f1(v1).with_f2(v2);
+        prop_assert_eq!(s.f1(), v1);
+        prop_assert_eq!(s.f2(), v2);
+        let arr = s.to_array();
+        let mut recon = 0u128;
+        for (i, &word) in arr.iter().enumerate() {
+            recon |= (word as u128) << (i * 16);
+        }
+        prop_assert_eq!(recon, (v1 as u128) | ((v2 as u128) << 64));
+    }
+
+    #[test]
+    fn test_u32_storage_128_fuzz(
+        v1 in any::<u64>(),
+        v2 in any::<u64>()
+    ) {
+        bytestruct! {
+            struct U32WideFuzzer([u32; 4]) {
+                f1: u64 = 64,
+                f2: u64 = 64,
+            }
+        }
+        let s = U32WideFuzzer::default().with_f1(v1).with_f2(v2);
+        prop_assert_eq!(s.f1(), v1);
+        prop_assert_eq!(s.f2(), v2);
+        let arr = s.to_array();
+        let mut recon = 0u128;
+        for (i, &word) in arr.iter().enumerate() {
+            recon |= (word as u128) << (i * 32);
+        }
+        prop_assert_eq!(recon, (v1 as u128) | ((v2 as u128) << 64));
+    }
+
+    #[test]
+    fn test_u16_storage_odd_fuzz(
+        v1 in 0u64..(1u64 << 48)
+    ) {
+        bytestruct! {
+            struct U16OddFuzzer([u16; 3]) {
+                f1: u64 = 48,
+            }
+        }
+        let s = U16OddFuzzer::default().with_f1(v1);
+        prop_assert_eq!(s.f1(), v1);
+        let arr = s.to_array();
+        let mut recon = 0u64;
+        for (i, &word) in arr.iter().enumerate() {
+            recon |= (word as u64) << (i * 16);
+        }
+        prop_assert_eq!(recon, v1);
+    }
+
+    #[test]
+    fn test_u32_storage_odd_fuzz(
+        v1 in any::<u128>()
+    ) {
+        bytestruct! {
+            struct U32OddFuzzer([u32; 3]) {
+                f1: u128 = 96,
+            }
+        }
+        let mask = (!0u128) >> (128 - 96);
+        let masked = v1 & mask;
+        let s = U32OddFuzzer::default().with_f1(masked);
+        prop_assert_eq!(s.f1(), masked);
+        let arr = s.to_array();
+        let mut recon = 0u128;
+        for (i, &word) in arr.iter().enumerate() {
+            recon |= (word as u128) << (i * 32);
+        }
+        prop_assert_eq!(recon, masked);
+    }
+
+    #[test]
+    fn test_byteval_u16_odd_fuzz(val in 0u64..(1u64 << 48)) {
+        byteval! { struct OddId(3, u16); }
+        let id = OddId::from_u64(val);
+        prop_assert_eq!(id.value(), val);
+        prop_assert_eq!(id.to_u64(), val);
+        let arr = id.to_array();
+        for (i, &word) in arr.iter().enumerate() {
+            prop_assert_eq!(word, ((val >> (i * 16)) & 0xFFFF) as u16);
+        }
+    }
+
+    #[test]
+    fn test_dense_bool_fuzz(bits in any::<u32>()) {
+        let s = DenseFuzz::from_bits(bits);
+        prop_assert_eq!(s.to_bits(), bits);
+        prop_assert_eq!(s.b00(), (bits & 1) != 0);
+        prop_assert_eq!(s.b01(), (bits & 2) != 0);
+        prop_assert_eq!(s.b15(), (bits & (1 << 15)) != 0);
+        prop_assert_eq!(s.b31(), (bits & (1 << 31)) != 0);
+    }
+
+    #[test]
+    fn test_variety_byteval_fuzz(
+        v48 in 0u64..(1u64 << 48),
+        v96 in 0u128..(1u128 << 96)
+    ) {
+        let id48 = FuzzId48u16::from_u64(v48);
+        prop_assert_eq!(id48.value(), v48);
+        let arr48 = id48.to_array();
+        for (i, &word) in arr48.iter().enumerate() {
+            prop_assert_eq!(word, ((v48 >> (i * 16)) & 0xFFFF) as u16);
+        }
+
+        let id96 = FuzzId96u32::from_u128(v96);
+        prop_assert_eq!(id96.value(), v96);
+        let arr96 = id96.to_array();
+        for (i, &word) in arr96.iter().enumerate() {
+            prop_assert_eq!(word, ((v96 >> (i * 32)) & 0xFFFFFFFF) as u32);
+        }
+    }
+
+    #[test]
+    fn test_aligned_fuzzer_roundtrip(val in any::<u64>()) {
+        let s = AlignedFuzzer::from_bits(val);
+        prop_assert_eq!(s.val(), val);
+        prop_assert_eq!(s.to_bits(), val);
+        // Verify address is aligned to 8
+        let addr = &s as *const _ as usize;
+        prop_assert_eq!(addr % 8, 0);
+    }
+
+    #[test]
+    fn test_safe_setters_overflow_fuzz(
+        val in 0u32..(1u32 << 24),
+        overflow_bit in 24u32..32u32
+    ) {
+        let mut id = FuzzId24::from_u32(val);
+        let overflow_val = val | (1 << overflow_bit);
+
+        // try_set should fail
+        let res = id.try_set_value(overflow_val);
+        prop_assert!(res.is_err());
+        // Value should remain unchanged
+        prop_assert_eq!(id.value(), val);
+
+        // try_with should fail
+        let res_with = id.try_with_value(overflow_val);
+        prop_assert!(res_with.is_err());
+    }
+
+    #[test]
+    fn test_mixed_storage_fuzzer_roundtrip(
+        a in any::<u128>(),
+        b in any::<u64>(),
+    ) {
+        let mask_a = (!0u128) >> (128 - 80);
+        let mask_b = (!0u64) >> (64 - 48);
+        let masked_a = a & mask_a;
+        let masked_b = b & mask_b;
+
+        let s = MixedStorageFuzzer::default()
+            .with_a(masked_a)
+            .with_b(masked_b);
+
+        prop_assert_eq!(s.a(), masked_a);
+        prop_assert_eq!(s.b(), masked_b);
+
+        // Verify array-level packing
+        let arr = s.to_array();
+        let mut recon = 0u128;
+        recon |= arr[0] as u128; // first 64 bits
+        recon |= (arr[1] as u128) << 64; // next 64 bits
+
+        let expected = (masked_a) | ((masked_b as u128) << 80);
+        prop_assert_eq!(recon, expected);
     }
 }

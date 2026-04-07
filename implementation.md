@@ -11,9 +11,9 @@ In high-performance domains (vector engines, network stacks, or high-frequency t
 `bitcraft` solves this by giving you:
 
 - **Absolute Bit Control**: Define exactly which bits map to which logical fields.
-- **Unique `bytestruct!` Support**: native support for **flexible 1-16 byte arrays** (`[u8; N]`) that are treated as primitive-like registers. Most libraries restrict you to standard `u8-u128`.
+- **Unique `bytestruct!` Support**: Native support for **flexible 1-16 byte spans** via any unsigned array (`[u8; N]`, `[u16; N]`, `[u32; N]`, `[u64; N]`, `[u128; N]`).
 - **Unique `byteval!` IDs**: Instant "Packed IDs" for 24-bit, 40-bit, or 56-bit values that behave like first-class integers—solving the "Odd-Width Integer" problem in one line.
-- **Zero-Cost Abstractions**: Generated code compiles down to the exact bitwise shifts and masks you would write by hand—verified by LLV-MIR inspection.
+- **Zero-Multiplication Engine**: High-performance bitwise operations using pre-calculated constants (`BitLength::BITS_N`) to eliminate manual multiplications in macro expansion.
 - **Hardware Alignment**: LSB-first mapping ensures your software layout matches the physical little-endian storage in modern hardware.
 - **Boilerplate-Free Ergonomics**: Automatic `Default` (zero-init) and a fluid `with_*` builder pattern come standard.
 
@@ -86,17 +86,19 @@ This effectively turns your structs into **Schema-on-Read** overlays, making the
 
 ## ⚙️ 4. The "Literal Guard" Pattern
 
-A major performance bottleneck in bitfield libraries is using dynamic loops or `memcpy` to handle fields that span multiple bytes. `bitcraft` avoids this using **Const-Generic Helper Functions** (`read_le_bits` and `write_le_bits`) that implement the **Literal Guard** pattern.
+A major performance bottleneck in bitfield libraries is using dynamic loops or `memcpy` to handle fields that span multiple bytes. `bitcraft` avoids this using a **Recursive Unrolling Engine**.
 
-### The "Acting Primitive" Pattern
+### The "Unrolled Expression" Pattern
 
-When you define a field in `bytestruct!`, the macro doesn't generate a raw loop. Instead, it routes the operation to a specialized `const fn` that uses the widest available registers.
+When you define a field in `bytestruct!`, the macro doesn't generate a raw loop. Instead, it generates a literal bitwise expression (a "Shift-and-OR" chain) matched to the exact number of array elements spanned by the field.
 
-**1. Byte-Aligned Fast Paths**:
-If a field is byte-aligned (e.g., a `u16` starting at byte 2), the engine bypasses bit-shifting entirely and uses direct hardware instructions (like `MOV` or `LDR`) via `u16::from_le_bytes`.
+**1. Literal Unrolling**:
+If a field spans 3 bytes, the macro generates:
+`arr[idx] | (arr[idx+1] << 8) | (arr[idx+2] << 16)`
+Because the element count is known at compile-time, LLVM perfectly optimizes this into native load instructions. Standard loops cannot achieve this level of fusion consistently.
 
-**2. Bit-Level Literal Guards**:
-For unaligned fields, the helper functions use a sequence of constant-folded index checks (e.g., `if len <= 8 { ... }`). Because the field widths and positions are passed as **Const Generics**, the Rust compiler (LLVM) deletes all branches, leaving only a flat, branchless sequence of bitwise shifts and ORs—the absolute theoretical maximum speed.
+**2. Dynamic Register Routing (Acting Primitives)**:
+The engine selects the narrowest possible primitive (`u32`, `u64`, or `u128`) capable of holding the field's total bit span. This ensures that a 2-byte field in a 13-byte array uses efficient 32-bit register operations instead of being forced into slower 128-bit logic.
 
 ---
 
@@ -111,12 +113,13 @@ Standard setters are designed for "Hot Paths" where you trust the data source (o
 - **Behavior**: Uses `debug_assert!` to check for bit overflows.
 - **Production**: In `--release` mode, the check is removed, and values are simply masked. This ensures **zero branch overhead** in tight loops.
 
-### `try_set_*` (Validated/Schema-Entry)
+### `try_set_*` & `try_with_*` (Validated/Schema-Entry)
 
-Try-setters are designed for boundaries where data is untrusted (e.g., input from a REST API or a file).
+Try-setters and their corresponding builder methods are designed for boundaries where data is untrusted (e.g., input from a REST API or a file).
 
-- **Behavior**: Always returns a `Result<(), BitstructError>`.
-- **Production**: Performs a runtime bounds check and returns an explicit `Overflow` error if the value exceeds the allocated bit-width, preventing data corruption.
+- **Behavior**: Always returns a `Result<(), BitstructError>` (for setters) or `Result<Self, BitstructError>` (for builders).
+- **Production**: Performs a runtime bounds check and returns an explicit `BitstructError::Overflow` if the value exceeds the allocated bit-width, preventing data corruption.
+- **`byteval!` Specifics**: For "Packed ID" types, these methods are named `try_set_value` and `try_with_value`, providing a safe boundary for odd-width integers.
 
 ---
 
@@ -182,23 +185,22 @@ const _: () = {
 
 `bytestruct!` supports arrays up to 16 bytes, but it doesn't always use 128-bit operations. It uses **Dynamic Register Routing** to choose the smallest register that can safely hold the field.
 
-| Array Size | Acting Primitive | CPU Requirement |
-| :--- | :--- | :--- |
-| 1-4 Bytes | `u32` | 32-bit registers |
-| 5-8 Bytes | `u64` | 64-bit registers |
-| 9-16 Bytes | `u128` | Software/Hardware 128-bit |
+| 1-4 Elements (`u8`) | `u32` | 32-bit registers |
+| 5-8 Elements (`u8`) | `u64` | 64-bit registers |
+| 9-16 Elements (`u8`) | `u128` | 128-bit register |
+| Arrays of `u16/u32/u64` | Specialized | Hardware-native |
 
 ### Implementation Logic (Pseudo-code)
 
 ```rust
-macro_rules! route_fields {
-    ($size <= 4) => { use u32_operations; }
-    ($size <= 8) => { use u64_operations; }
-    ($size <= 16) => { use u128_operations; }
+macro_rules! route_unroll {
+    (span: 1-4) => { unroll_as_u32; }
+    (span: 5-8) => { unroll_as_u64; }
+    (any) => { loop_fallback; }
 }
 ```
 
-This ensures that "Hot Path" metadata (usually < 8 bytes) never suffers the overhead of 128-bit register emulation on older hardware.
+This ensures that "Hot Path" metadata within larger arrays never suffers the overhead of 128-bit register emulation on older hardware.
 
 ---
 
@@ -400,9 +402,26 @@ We use a **Two-Tier Verification** strategy:
 
 ---
 
+### 5. Zero-Multiplication Expansion (`BitLength`)
+
+To ensure maximum compile-time efficiency and clean expansion, `bitcraft` avoids manual multiplications like `count * BITS` in macros. Instead, the `BitLength` trait provides pre-calculated constants:
+
+```rust
+pub trait BitLength {
+    const BITS: usize;
+    const BITS_2: usize; // BITS * 2
+    // ... up to BITS_16
+}
+```
+
+Macros now expand to `<$unit as BitLength>::BITS_N`, which the compiler resolves to a literal constant instantly. This ensures that the generated bitwise expressions are as lean as possible.
+
+---
+
 ## 🛠️ Roadmap & Future Implementation
 
 - [ ] **Signed Field Interpretation**: Support for `i8`, `i16`, etc., via automatic Sign Extension on the N-bit fields.
 - [ ] **C-Header Generation**: Integration with `cbindgen` to automatically generate FFI-compatible C headers for C/C++ firmware.
 - [ ] **`serde` Integration**: Optional feature to derive `Serialize` and `Deserialize` for all packed types.
-- [x] **Property-Based Testing**: Use `proptest` to fuzz the bit-packing logic for millions of random inputs.
+- [x] **Property-Based Testing**: Comprehensive fuzzing of bit-packing logic via `proptest`.
+- [x] **Safe Mutators**: `try_set` and `try_with` methods for guaranteed boundary safety.

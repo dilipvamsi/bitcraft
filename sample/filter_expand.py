@@ -1,10 +1,6 @@
 import sys
-import re
 
 def filter_expansion(content):
-    # Split into a list of top-level items (blocks)
-    # This is a bit hard with regex, maybe we can just use a simple state machine for { }
-
     lines = content.split('\n')
     output = []
 
@@ -22,34 +18,37 @@ def filter_expansion(content):
     for line in lines[start_idx:]:
         clean_line = line.strip()
 
-        # Start of a block or a single-line item
+        # Detect start of interesting items (structs, enums, impls, or their attributes)
         if brace_count == 0:
-            current_block = []
-            # We are interested in:
-            # - struct definitions
-            # - enum definitions
-            # - impl StructName blocks
-            # - impl ::bitcraft::... blocks
-
-            # Simple check for interesting start
-            if (clean_line.startswith('pub struct') or
-                clean_line.startswith('pub enum') or
-                (clean_line.startswith('impl') and not '::core::' in line and not '::bytemuck::' in line)):
-                in_interesting_block = True
+            if not in_interesting_block:
+                if (clean_line.startswith('pub struct') or
+                    clean_line.startswith('pub enum') or
+                    (clean_line.startswith('impl') and not '::bytemuck::' in clean_line) or
+                    clean_line.startswith('#[')):
+                    in_interesting_block = True
+                    current_block = [line]
+                else:
+                    pass
             else:
-                in_interesting_block = False
-
-        if in_interesting_block:
+                current_block.append(line)
+        else:
             current_block.append(line)
 
+        # Track braces to find block ends
         brace_count += line.count('{')
         brace_count -= line.count('}')
 
         if brace_count == 0 and in_interesting_block:
-            output.extend(current_block)
-            output.append("") # Add spacing between blocks
-            in_interesting_block = False
-            current_block = []
+            # Check if what we collected so far is just attributes or a full item
+            block_text = "\n".join(current_block)
+            if any(keyword in block_text for keyword in ['struct', 'enum', 'impl', 'fn']):
+                 output.append(block_text)
+                 output.append("")
+                 in_interesting_block = False
+                 current_block = []
+            else:
+                 # Still just collecting attributes or headers
+                 pass
 
     return "\n".join(output)
 

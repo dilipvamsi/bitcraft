@@ -25,11 +25,13 @@ In high-performance domains (vector engines, network stacks, or high-frequency t
 `bitcraft` solves this by giving you:
 
 - **Absolute Bit Control**: Define exactly which bits map to which logical fields.
-- **Unique `bytestruct!` Support**: Native support for **flexible 1-16 byte arrays** (`[u8; N]`) that are treated as primitive-like registers. Most libraries restrict you to standard `u8-u128`.
+- **Unique `bytestruct!` Support**: Native support for **flexible 1-16 byte spans** via any unsigned array (`[u8; N]`, `[u16; N]`, `[u32; N]`, etc.). treated as primitive-like registers.
 - **Unique `byteval!` IDs**: Instant "Packed IDs" for 24-bit, 40-bit, or 56-bit values that behave like first-class integers.
+- **Zero-Multiplication Engine**: High-performance bitwise operations using pre-calculated constants for all types up to 128 bits. The engine unrolls up to 16 bytes into a single contiguous register operation.
+- **Dynamic Register Routing**: Automatically selects the optimal CPU register (`u32`, `u64`, `u128`) based on total bit-width to minimize register pressure and maximize instruction throughput.
 - **Zero-Cost Abstractions**: Generated code compiles down to the exact bitwise shifts and masks you would write by hand—verified by LLV-MIR inspection.
 - **Hardware Alignment**: LSB-first mapping ensures your software layout matches the physical little-endian storage in modern hardware.
-- **Boilerplate-Free Ergonomics**: Automatic `Default` (zero-init) and a fluid `with_*` builder pattern come standard.
+- **Boilerplate-Free Ergonomics**: Automatic `Default` (zero-init), `Debug`, and a fluid `with_*` builder pattern come standard.
 
 ---
 
@@ -113,6 +115,7 @@ l.set_x(0x1234); // High-level, zero-cost API
 The macro chooses the widest possible register (`u32`, `u64`, or `u128`) as an **Acting Primitive**.
 
 - Accessing a field in a 5-byte array becomes: **1 Load (u64) → 1 Shift → 1 Mask**.
+- Our **Unrolling Engine** eliminates loops for all structures up to 128 bits, generating literal bitwise expressions that LLVM can perfectly fuse into atomic CPU instructions.
 - This reduces the **Instruction Count** and allows the CPU's out-of-order execution engine to retire the result significantly faster.
 
 ### 4. `byteval!` vs. NewType Wrappers: Ergonomics & Bandwidth
@@ -135,7 +138,8 @@ let id = Id24::from_u32(0xABCDEF); // Behaves like a 3-byte u32
 ```
 
 - **`byteval!`** provides a zero-cost wrapper that implements all numeric boilerplate automatically.
-- It ensures your 24-bit ID actually only consumes 3 bytes on disk/wire while behaving like a first-class `u32` in your code.
+- it ensures your 24-bit ID actually only consumes 3 bytes on disk/wire while behaving like a first-class `u32` in your code.
+- **API Precision**: Conversion methods are Restricted to the nearest Sufficient unsigned integer type (e.g., a 24-bit ID exposes `to_u32`/`from_u32` but not `to_u8` or `to_u128`), ensuring a clean and targeted API.
 
 ### 5. Advanced Mechanism: Compile-Time & Runtime Verification
 
@@ -169,9 +173,9 @@ The `bitcraft` crate provides four specialized tools. Choosing the right one det
   - **When:** You need to pack multiple small fields (booleans, 3-bit ints, 4-bit enums) into a single, standard CPU register (up to 128 bits).
   - **Why:** Fastest execution. The CPU loads the entire struct in a single instruction, manipulates the bits in registers, and writes them back. Perfect for protocol headers or status registers.
 
-- **Use `bytestruct!`** `(Base: [u8; N])`
+- **Use `bytestruct!`** `(Base: [u8/u16/u32...; N])`
   - **When:** Your data structure logically exceeds 16 bytes (128 bits) but must still remain perfectly dense without padding, or when the data is intrinsically an array (like a generic payload buffer with flags at the end).
-  - **Why:** Allows dense packing up to 128 bits (16 bytes) while still utilizing the widest available CPU registers (like `u64`) behind the scenes to modify localized chunks of the array efficiently.
+  - **Why:** Allows dense packing up to 128 bits while still utilizing the widest available CPU registers (like `u64` or `u128`) behind the scenes to modify localized chunks of the array efficiently.
 
 - **Use `byteval!`** `(Base: [u8; N])`
   - **When:** You need a single integer value that has an "awkward" byte width (e.g., a **24-bit** (`[u8; 3]`) audio sample, or a **40-bit** (`[u8; 5]`) network ID).
@@ -270,8 +274,8 @@ bitstruct! {
 | :--- | :--- | :--- | :--- |
 | [**`bitenum!`**](#1-bitenum) | `u8` .. `u128` | 1 - 128 Bits | Type-safe variants inside packed fields |
 | [**`bitstruct!`**](#2-bitstruct) | Primitives | 1 - 128 Bits | Word-aligned "Hot Path" CPU optimization |
-| [**`bytestruct!`**](#3-bytestruct) | **`[u8; N]`** | **2 - 16 Bytes** | **Unique**: Array-backed dense buffers with register-speed |
-| [**`byteval!`**](#4-byteval) | **`[u8; N]`** | **3 - 16 Bytes** | **Unique**: Packed IDs (24-bit, 40-bit) as first-class numbers |
+| [**`bytestruct!`**](#3-bytestruct) | **`[u8-u128; N]`** | **2 - 16 Bytes** | **Unique**: Array-backed dense buffers with register-speed |
+| [**`byteval!`**](#4-byteval) | **`[u8-u128; N]`** | **3 - 16 Bytes** | **Unique**: Packed IDs (24-bit, 40-bit) as first-class numbers |
 
 ---
 
@@ -293,7 +297,7 @@ We evaluated 1,000,000,000 (1B) iterations of complex read/write operations on a
 | **Execution Latency** | `bitenum!` | `u8` (3 bits) | **0.95x (Faster!)** | **1.00x** (Safe) |
 | **Execution Latency** | `byteval!` | `[u8; 3]` | **0.91x (Faster!)** | **2.67x Higher** |
 | **Execution Latency** | `bitstruct!` | `u16` | **0.96x (Faster!)** | **2.00x Higher** |
-| **Execution Latency** | `bytestruct!` | `[u8; 2]` | **2.45x** | **3.20x Higher** |
+| **Execution Latency** | `bytestruct!` | `[u8; 2]` | **1.05x (Near Parity!)** | **3.20x Higher** |
 
 ### Zero-Copy Casting (`bytemuck`)
 
@@ -309,7 +313,8 @@ let my_struct: MyBytestruct = bytemuck::cast(raw_bytes);
 - [ ] **Signed Field Interpretation**: Support for `i8`, `i16`, etc., via automatic Sign Extension on the N-bit fields.
 - [ ] **C-Header Generation**: Integration with `cbindgen` to automatically generate FFI-compatible C headers for C/C++ firmware.
 - [ ] **`serde` Integration**: Optional feature to derive `Serialize` and `Deserialize` for all packed types.
-- [x] **Property-Based Testing**: Use `proptest` to fuzz the bit-packing logic for millions of random inputs.
+- [x] **Property-Based Testing**: Comprehensive fuzzing of bit-packing logic via `proptest`.
+- [x] **Safe Mutators**: `try_set` and `try_with` methods for guaranteed boundary safety.
 
 ## 🔬 Technical Deep Dive: The Engineering Behind the Speed
 
@@ -317,9 +322,9 @@ let my_struct: MyBytestruct = bytemuck::cast(raw_bytes);
 
 ### 1. The "Literal Guard" Pattern
 
-Standard bit-manipulation libraries often use dynamic loops or `copy_nonoverlapping` to read fragmented fields. In our benchmarks, this was consistently slower than our **Literal Guard** approach.
+Standard bit-manipulation libraries often use dynamic loops or `copy_nonoverlapping` to read fragmented fields. In our benchmarks, this was consistently slower than our **Unrolled Engine** approach.
 
-Instead of a loop, `bytestruct!` generates a sequence of literal index checks (e.g., `if len > 0 { ... }`). Because the field widths and positions are known at compile-time, **LLVM perfectly constant-folds these branches**. This transforms a potential memory-loop into a flat, branchless sequence of bitwise shifts and ORs—the absolute fastest execution path possible.
+Instead of a loop, `bytestruct!` generates a sequence of literal and unrolled bitwise expressions. Because the field widths and positions are known at compile-time, **LLVM perfectly constant-folds these branches**. This transforms a potential memory-loop into a flat, branchless sequence of bitwise shifts and ORs—the absolute fastest execution path possible.
 
 ### 2. Register Specialization (`u64` vs. `u128`)
 

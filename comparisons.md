@@ -30,7 +30,7 @@ We evaluated 1,000,000,000 (1B) operations of complex read/write logic on an opt
 | **Execution Latency** | `bitenum!` | **0.95x (Faster!)** | **1.00x** (Safe) |
 | **Execution Latency** | `byteval!` | **0.91x (Faster!)** | **2.67x Higher** |
 | **Execution Latency** | `bitstruct!` | **0.96x (Faster!)** | **2.00x Higher** |
-| **Execution Latency** | **bytestruct!** | **2.45x** | **3.20x Higher** |
+| **Execution Latency** | **bytestruct!** | **1.05x (Near Parity!)** | **3.20x Higher** |
 
 > **Why are we faster than manual code?** Our macros generate perfectly unrolled bitwise expressions. Modern compilers (LLVM) recognize these patterns and perform **Instruction Fusion**, effectively turning multiple shifts/masks into a single **Unaligned Load** instruction. Standard loops or procedural-macro-generated getters often fail to reach this level of hardware optimization.
 
@@ -76,8 +76,8 @@ If you are interfacing with C firmware or legacy network protocols, layout predi
 
 What makes `bitcraft` different is not just that it packs bits, but *how* it handles the instructions generated for those bits.
 
-### 🛡️ The Literal Guard Pattern
-Most libraries use runtime checks or generic loops to handle variable-width fields. `bitcraft` uses a recursive macro to generate **Literal Guards** (e.g., `if len > 4 { ... }`). Because the field widths are constants at compile-time, the optimizer deletes the branches entirely.
+### 🛡️ The Unrolled Engine Pattern
+Most libraries use runtime checks or generic loops to handle variable-width fields. `bitcraft` uses a recursive macro to generate **Literal Bitwise Expressions** matched to the exact byte-span of the field. Because the element count is a constant at compile-time, the optimizer treats the operation as an atomic register manipulation.
 **Result**: Your code performs exactly like hand-optimized assembly.
 
 ### 🏎️ `bytestruct!` & `byteval!`: The Competitive Edge
@@ -90,7 +90,7 @@ Most bitfield libraries in the Rust ecosystem (`modular-bitfield`, `packed_struc
 `bitcraft` is the **only library** to offer instant, declarative bitfields for flexible `[u8; 1..16]` arrays.
 
 *   **Wait, why does this matter?** If you need a 3-byte integer (24-bit ID) that is packed 1,000,000 times in an array, standard Rust forces you to use a 4-byte `u32` (wasting 25% of your memory footprint) or write massive boilerplate. `byteval! { struct Id(3); }` solves this in one line with zero runtime cost.
-*   **Register Routing**: While other array-backed solutions use slow byte-by-byte loops, `bytestruct!` uses **Acting Primitives** (e.g., loading an 8-byte slice of a 13-byte array into a `u64` register). This is a level of specialized hardware optimization not found in broader general-purpose serializing libraries.
+*   **Register Routing**: While other array-backed solutions use slow byte-by-byte loops, `bytestruct!` uses **Acting Primitives** (e.g., loading an 8-byte slice of a 13-byte array into a `u64` register). It supports any unsigned array type (`u8`, `u16`, `u32`, `u64`, `u128`) while maintaining a strict 128-bit architectural limit.
 
 ### 🧩 LSB-First Consistency
 Many libraries struggle with bit-ordering consistency across different platforms. `bitcraft` enforces a strict **Little-Endian / LSB-First** convention. This ensures that the layout you see in your source code perfectly matches the physical bits on a little-endian CPU (x86_64, ARM64), eliminating cognitive load during debugging.

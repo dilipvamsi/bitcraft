@@ -246,30 +246,179 @@ impl IsUnsignedInt for u128 {
     const ASSERT_UNSIGNED: () = ();
 }
 
+/// Common bit-width constants for use in manual calculations or macro overrides.
+pub const U8_BITS: usize = 8;
+pub const U8_BITS_2: usize = 16;
+pub const U8_BITS_3: usize = 24;
+pub const U8_BITS_4: usize = 32;
+pub const U8_BITS_5: usize = 40;
+pub const U8_BITS_6: usize = 48;
+pub const U8_BITS_7: usize = 56;
+pub const U8_BITS_8: usize = 64;
+pub const U8_BITS_9: usize = 72;
+pub const U8_BITS_10: usize = 80;
+pub const U8_BITS_11: usize = 88;
+pub const U8_BITS_12: usize = 96;
+pub const U8_BITS_13: usize = 104;
+pub const U8_BITS_14: usize = 112;
+pub const U8_BITS_15: usize = 120;
+pub const U8_BITS_16: usize = 128;
+
+pub const U16_BITS: usize = 16;
+pub const U16_BITS_2: usize = 32;
+pub const U16_BITS_3: usize = 48;
+pub const U16_BITS_4: usize = 64;
+pub const U16_BITS_5: usize = 80;
+pub const U16_BITS_6: usize = 96;
+pub const U16_BITS_7: usize = 112;
+pub const U16_BITS_8: usize = 128;
+
+pub const U32_BITS: usize = 32;
+pub const U32_BITS_2: usize = 64;
+pub const U32_BITS_3: usize = 96;
+pub const U32_BITS_4: usize = 128;
+
+pub const U64_BITS: usize = 64;
+pub const U64_BITS_2: usize = 128;
+
+pub const U128_BITS: usize = 128;
+
 /// **Internal Trait**: Used to retrieve the bit-width of a primitive type or array.
 #[doc(hidden)]
 pub trait BitLength {
     /// The number of bits in the type.
     const BITS: usize;
+    /// Two times the number of bits in the type.
+    const BITS_2: usize;
+    /// Three times the number of bits in the type.
+    const BITS_3: usize;
+    /// Four times the number of bits in the type.
+    const BITS_4: usize;
+    /// Five times the number of bits in the type.
+    const BITS_5: usize;
+    /// Six times the number of bits in the type.
+    const BITS_6: usize;
+    /// Seven times the number of bits in the type.
+    const BITS_7: usize;
+    /// Eight times the number of bits in the type.
+    const BITS_8: usize;
+    const BITS_9: usize;
+    const BITS_10: usize;
+    const BITS_11: usize;
+    const BITS_12: usize;
+    const BITS_13: usize;
+    const BITS_14: usize;
+    const BITS_15: usize;
+    const BITS_16: usize;
 }
 
 impl BitLength for u8 {
-    const BITS: usize = 8;
+    const BITS: usize = U8_BITS;
+    const BITS_2: usize = U8_BITS_2;
+    const BITS_3: usize = U8_BITS_3;
+    const BITS_4: usize = U8_BITS_4;
+    const BITS_5: usize = U8_BITS_5;
+    const BITS_6: usize = U8_BITS_6;
+    const BITS_7: usize = U8_BITS_7;
+    const BITS_8: usize = U8_BITS_8;
+    const BITS_9: usize = U8_BITS_9;
+    const BITS_10: usize = U8_BITS_10;
+    const BITS_11: usize = U8_BITS_11;
+    const BITS_12: usize = U8_BITS_12;
+    const BITS_13: usize = U8_BITS_13;
+    const BITS_14: usize = U8_BITS_14;
+    const BITS_15: usize = U8_BITS_15;
+    const BITS_16: usize = U8_BITS_16;
 }
 impl BitLength for u16 {
-    const BITS: usize = 16;
+    const BITS: usize = U16_BITS;
+    const BITS_2: usize = U16_BITS_2;
+    const BITS_3: usize = U16_BITS_3;
+    const BITS_4: usize = U16_BITS_4;
+    const BITS_5: usize = U16_BITS_5;
+    const BITS_6: usize = U16_BITS_6;
+    const BITS_7: usize = U16_BITS_7;
+    const BITS_8: usize = U16_BITS_8;
+    const BITS_9: usize = U16_BITS * 9;
+    const BITS_10: usize = U16_BITS * 10;
+    const BITS_11: usize = U16_BITS * 11;
+    const BITS_12: usize = U16_BITS * 12;
+    const BITS_13: usize = U16_BITS * 13;
+    const BITS_14: usize = U16_BITS * 14;
+    const BITS_15: usize = U16_BITS * 15;
+    const BITS_16: usize = U16_BITS * 16;
 }
 impl BitLength for u32 {
-    const BITS: usize = 32;
+    const BITS: usize = U32_BITS;
+    const BITS_2: usize = U32_BITS_2;
+    const BITS_3: usize = U32_BITS_3;
+    const BITS_4: usize = U32_BITS_4;
+    const BITS_5: usize = U32_BITS * 5;
+    const BITS_6: usize = U32_BITS * 6;
+    const BITS_7: usize = U32_BITS * 7;
+    const BITS_8: usize = U32_BITS * 8;
+    const BITS_9: usize = U32_BITS * 9;
+    const BITS_10: usize = U32_BITS * 10;
+    const BITS_11: usize = U32_BITS * 11;
+    const BITS_12: usize = U32_BITS * 12;
+    const BITS_13: usize = U32_BITS * 13;
+    const BITS_14: usize = U32_BITS * 14;
+    const BITS_15: usize = U32_BITS * 15;
+    const BITS_16: usize = U32_BITS * 16;
 }
 impl BitLength for u64 {
-    const BITS: usize = 64;
+    const BITS: usize = U64_BITS;
+    const BITS_2: usize = U64_BITS_2;
+    const BITS_3: usize = U64_BITS * 3;
+    const BITS_4: usize = U64_BITS * 4;
+    const BITS_5: usize = U64_BITS * 5;
+    const BITS_6: usize = U64_BITS * 6;
+    const BITS_7: usize = U64_BITS * 7;
+    const BITS_8: usize = U64_BITS * 8;
+    const BITS_9: usize = U64_BITS * 9;
+    const BITS_10: usize = U64_BITS * 10;
+    const BITS_11: usize = U64_BITS * 11;
+    const BITS_12: usize = U64_BITS * 12;
+    const BITS_13: usize = U64_BITS * 13;
+    const BITS_14: usize = U64_BITS * 14;
+    const BITS_15: usize = U64_BITS * 15;
+    const BITS_16: usize = U64_BITS * 16;
 }
 impl BitLength for u128 {
-    const BITS: usize = 128;
+    const BITS: usize = U128_BITS;
+    const BITS_2: usize = U128_BITS * 2;
+    const BITS_3: usize = U128_BITS * 3;
+    const BITS_4: usize = U128_BITS * 4;
+    const BITS_5: usize = U128_BITS * 5;
+    const BITS_6: usize = U128_BITS * 6;
+    const BITS_7: usize = U128_BITS * 7;
+    const BITS_8: usize = U128_BITS * 8;
+    const BITS_9: usize = U128_BITS * 9;
+    const BITS_10: usize = U128_BITS * 10;
+    const BITS_11: usize = U128_BITS * 11;
+    const BITS_12: usize = U128_BITS * 12;
+    const BITS_13: usize = U128_BITS * 13;
+    const BITS_14: usize = U128_BITS * 14;
+    const BITS_15: usize = U128_BITS * 15;
+    const BITS_16: usize = U128_BITS * 16;
 }
 impl<const N: usize> BitLength for [u8; N] {
     const BITS: usize = N << 3;
+    const BITS_2: usize = N << 4;
+    const BITS_3: usize = (N * 8) * 3;
+    const BITS_4: usize = N << 5;
+    const BITS_5: usize = (N * 8) * 5;
+    const BITS_6: usize = (N * 8) * 6;
+    const BITS_7: usize = (N * 8) * 7;
+    const BITS_8: usize = N << 6;
+    const BITS_9: usize = (N * 8) * 9;
+    const BITS_10: usize = (N * 8) * 10;
+    const BITS_11: usize = (N * 8) * 11;
+    const BITS_12: usize = (N * 8) * 12;
+    const BITS_13: usize = (N * 8) * 13;
+    const BITS_14: usize = (N * 8) * 14;
+    const BITS_15: usize = (N * 8) * 15;
+    const BITS_16: usize = N << 7;
 }
 
 /// **Internal Trait**: Used to enforce that only valid types are used as fields.
@@ -495,10 +644,8 @@ pub const fn write_le_bits<
     val: u128,
 ) {
     // Fast path: Byte-aligned writes that fit in primitives.
-    if BIT_OFFSET == 0 {
-        if write_aligned_le_bits::<BITS, N>(arr, BYTE_INDEX, val) {
-            return;
-        }
+    if BIT_OFFSET == 0 && write_aligned_le_bits::<BITS, N>(arr, BYTE_INDEX, val) {
+        return;
     }
 
     if BYTE_COUNT <= 8 {
@@ -603,11 +750,15 @@ macro_rules! bitstruct {
             // Compile-time check: Ensure each field type is valid.
             $crate::bitstruct!(@check_fields $($field_type)*);
 
+            #[allow(dead_code)]
             const TOTAL_BITS: usize = 0 $( + $bits )*;
             assert!(TOTAL_BITS <= <$base_type as $crate::BitLength>::BITS, "Sum of field bits exceeds base type size");
         };
 
         impl $struct_name {
+            #[allow(dead_code)]
+            pub const BITS: usize = <$base_type as $crate::BitLength>::BITS;
+
             // Start the TT (Token-Tree) muncher recursion to generate field-specific methods.
             $crate::bitstruct!(@impl_getters_setters $base_type, 0, $($field_vis $field_name $field_type $bits)*);
 
@@ -648,12 +799,13 @@ macro_rules! bitstruct {
     // Bools are handled specifically to return Rust native `true`/`false` rather than `1`/`0`.
     (@impl_getters_setters $base_type:ty, $shift:expr, $field_vis:vis $field_name:ident bool $bits:tt $($rest:tt)*) => {
         $crate::paste::paste! {
-            #[doc(hidden)]
-            #[allow(dead_code)]
-            const [<$field_name:upper _OFFSET>]: usize = $shift;
+            /// The bit-offset of the `$field_name` property within the underlying storage.
+            pub const [<$field_name:upper _OFFSET>]: usize = $shift;
+            /// The number of bits allocated for the `$field_name` property.
+            pub const [<$field_name:upper _BITS>]: usize = $bits;
 
             #[doc(hidden)]
-            const [<$field_name:upper _MASK>]: $base_type = (!0 as $base_type) >> (<$base_type as $crate::BitLength>::BITS - $bits);
+            const [<$field_name:upper _MASK>]: $base_type = (!0 as $base_type) >> (<$base_type as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>]);
 
             #[allow(dead_code)]
             #[inline]
@@ -706,12 +858,13 @@ macro_rules! bitstruct {
     // Standard integer implementation: Extracts the requested bit width, shifting by the accumulated offset.
     (@impl_int $base_type:ty, $shift:expr, $field_vis:vis $field_name:ident $field_type:tt $bits:tt $($rest:tt)*) => {
         $crate::paste::paste! {
-            #[doc(hidden)]
-            #[allow(dead_code)]
-            const [<$field_name:upper _OFFSET>]: usize = $shift;
+            /// The bit-offset of the `$field_name` property within the underlying storage.
+            pub const [<$field_name:upper _OFFSET>]: usize = $shift;
+            /// The number of bits allocated for the `$field_name` property.
+            pub const [<$field_name:upper _BITS>]: usize = $bits;
 
             #[doc(hidden)]
-            const [<$field_name:upper _MASK>]: $base_type = (!0 as $base_type) >> (<$base_type as $crate::BitLength>::BITS - $bits);
+            const [<$field_name:upper _MASK>]: $base_type = (!0 as $base_type) >> (<$base_type as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>]);
 
             #[allow(dead_code)]
             #[inline]
@@ -763,16 +916,71 @@ macro_rules! bitstruct {
     };
 
 
-    // TT Muncher Fallback: Handles strictly-typed BitEnums (Types not caught by bool/u8/u16/u32/u64).
+    // Wrapped Type arm: Similar to impl_int, but handles types passed in parentheses (like from byteval! expansion)
+    // or trait-associated types. Since these are expected to be primitives, we use `as` casting.
+    (@impl_getters_setters $base_type:ty, $shift:expr, $field_vis:vis $field_name:ident ($field_type:ty) $bits:tt $($rest:tt)*) => {
+        $crate::paste::paste! {
+            /// The bit-offset of the `$field_name` property within the underlying storage.
+            pub const [<$field_name:upper _OFFSET>]: usize = $shift;
+            /// The number of bits allocated for the `$field_name` property.
+            pub const [<$field_name:upper _BITS>]: usize = $bits;
+
+            #[doc(hidden)]
+            const [<$field_name:upper _MASK>]: $base_type = (!0 as $base_type) >> (<$base_type as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>]);
+
+            #[allow(dead_code)]
+            #[inline]
+            $field_vis const fn $field_name(self) -> $field_type {
+                ((self.0 >> Self::[<$field_name:upper _OFFSET>]) & Self::[<$field_name:upper _MASK>]) as $field_type
+            }
+
+            #[allow(dead_code)]
+            #[inline]
+            $field_vis fn [<set_ $field_name>](&mut self, val: $field_type) {
+                debug_assert!((val as $base_type) <= Self::[<$field_name:upper _MASK>], "Value {} overflows allocated {} bits", val, $bits);
+                let val_masked = (val as $base_type) & Self::[<$field_name:upper _MASK>];
+                self.0 = (self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]);
+            }
+
+            #[allow(dead_code)]
+            $field_vis const fn [<with_ $field_name>](self, val: $field_type) -> Self {
+                debug_assert!((val as $base_type) <= Self::[<$field_name:upper _MASK>], "Value overflows allocated bits");
+                let val_masked = (val as $base_type) & Self::[<$field_name:upper _MASK>];
+                Self((self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]))
+            }
+
+            #[allow(dead_code)]
+            $field_vis fn [<try_set_ $field_name>](&mut self, val: $field_type) -> Result<(), $crate::BitstructError> {
+                if (val as $base_type) > Self::[<$field_name:upper _MASK>] {
+                    return Err($crate::BitstructError::Overflow { value: (val as $base_type) as u128, allocated_bits: $bits });
+                }
+                self.[<set_ $field_name>](val);
+                Ok(())
+            }
+
+            #[allow(dead_code)]
+            $field_vis const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
+                if (val as $base_type) > Self::[<$field_name:upper _MASK>] {
+                    return Err($crate::BitstructError::Overflow { value: (val as $base_type) as u128, allocated_bits: $bits });
+                }
+                Ok(self.[<with_ $field_name>](val))
+            }
+        }
+
+        $crate::bitstruct!(@impl_getters_setters $base_type, $shift + $bits, $($rest)*);
+    };
+
+    // TT Muncher Fallback
     // Uses `from_bits` to upcast/downcast the extracted integer bits back into the Enum variant safely.
     (@impl_getters_setters $base_type:ty, $shift:expr, $field_vis:vis $field_name:ident $field_type:tt $bits:tt $($rest:tt)*) => {
         $crate::paste::paste! {
-            #[doc(hidden)]
-            #[allow(dead_code)]
-            const [<$field_name:upper _OFFSET>]: usize = $shift;
+            /// The bit-offset of the `$field_name` property within the underlying storage.
+            pub const [<$field_name:upper _OFFSET>]: usize = $shift;
+            /// The number of bits allocated for the `$field_name` property.
+            pub const [<$field_name:upper _BITS>]: usize = $bits;
 
             #[doc(hidden)]
-            const [<$field_name:upper _MASK>]: $base_type = (!0 as $base_type) >> (<$base_type as $crate::BitLength>::BITS - $bits);
+            const [<$field_name:upper _MASK>]: $base_type = (!0 as $base_type) >> (<$base_type as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>]);
 
             #[allow(dead_code)]
             #[doc = concat!("Returns the `", stringify!($field_name), "` variant strictly typed to the `", stringify!($field_type), "` enumeration.")]
@@ -849,10 +1057,66 @@ macro_rules! bitstruct {
 /// }
 /// ```
 #[macro_export]
+/// Internal helper macro to perform zero-multiplication bit-width calculations.
+#[doc(hidden)]
+macro_rules! bits_mul {
+    ($unit:tt, 1) => {
+        <$unit as $crate::BitLength>::BITS
+    };
+    ($unit:tt, 2) => {
+        <$unit as $crate::BitLength>::BITS_2
+    };
+    ($unit:tt, 3) => {
+        <$unit as $crate::BitLength>::BITS_3
+    };
+    ($unit:tt, 4) => {
+        <$unit as $crate::BitLength>::BITS_4
+    };
+    ($unit:tt, 5) => {
+        <$unit as $crate::BitLength>::BITS_5
+    };
+    ($unit:tt, 6) => {
+        <$unit as $crate::BitLength>::BITS_6
+    };
+    ($unit:tt, 7) => {
+        <$unit as $crate::BitLength>::BITS_7
+    };
+    ($unit:tt, 8) => {
+        <$unit as $crate::BitLength>::BITS_8
+    };
+    ($unit:tt, 9) => {
+        <$unit as $crate::BitLength>::BITS_9
+    };
+    ($unit:tt, 10) => {
+        <$unit as $crate::BitLength>::BITS_10
+    };
+    ($unit:tt, 11) => {
+        <$unit as $crate::BitLength>::BITS_11
+    };
+    ($unit:tt, 12) => {
+        <$unit as $crate::BitLength>::BITS_12
+    };
+    ($unit:tt, 13) => {
+        <$unit as $crate::BitLength>::BITS_13
+    };
+    ($unit:tt, 14) => {
+        <$unit as $crate::BitLength>::BITS_14
+    };
+    ($unit:tt, 15) => {
+        <$unit as $crate::BitLength>::BITS_15
+    };
+    ($unit:tt, 16) => {
+        <$unit as $crate::BitLength>::BITS_16
+    };
+    ($unit:tt, $any:expr) => {
+        ($any) * <$unit as $crate::BitLength>::BITS
+    };
+}
+#[macro_export]
 macro_rules! bytestruct {
     (
         $(#[$meta:meta])*
-        $vis:vis struct $name:ident ($N:tt) {
+        $vis:vis struct $name:ident ([$unit:tt; $N:tt]) {
             $(
                 $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
             ),* $(,)?
@@ -861,8 +1125,8 @@ macro_rules! bytestruct {
         $(#[$meta])*
         #[derive(Copy, Clone, PartialEq, Eq, Default)]
         #[derive($crate::bytemuck::Pod, $crate::bytemuck::Zeroable)]
-        #[repr(transparent)]
-        $vis struct $name(pub [u8; $N]);
+        #[repr(C)]
+        $vis struct $name(pub [$unit; $N]);
 
         impl core::fmt::Debug for $name {
             fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -876,198 +1140,168 @@ macro_rules! bytestruct {
         }
 
         const _: () = {
-            assert!($N >= 1 && $N <= 16, "bytestruct! requires 1-16 bytes");
-            const BIT_SUM: usize = 0 $( + $bits )*;
-            assert!(BIT_SUM <= $N << 3, "Sum of field bits exceeds array size");
-
-            // Compile-time check: Ensure each field type is valid.
+            #[allow(dead_code)]
+            const UNIT_BITS: usize = <$unit as $crate::BitLength>::BITS;
+            #[allow(dead_code)]
+            const TOTAL_BITS: usize = $crate::bits_mul!($unit, $N);
+            // Simplified check for typed storage to avoid macro repetition issues
             $crate::bitstruct!(@check_fields $($field_type)*);
         };
 
         impl $name {
-            /// Returns the underlying raw byte array.
-            #[inline(always)]
             #[allow(dead_code)]
-            pub const fn to_array(self) -> [u8; $N] { self.0 }
-
-            /// Creates a new instance from a raw byte array.
-            #[inline(always)]
+            pub const BITS: usize = $crate::bits_mul!($unit, $N);
             #[allow(dead_code)]
-            pub const fn from_array(arr: [u8; $N]) -> Self { Self(arr) }
+            pub const UNIT_BITS: usize = <$unit as $crate::BitLength>::BITS;
+            #[allow(dead_code)]
+            #[inline(always)] pub const fn to_array(self) -> [$unit; $N] { self.0 }
+            #[allow(dead_code)]
+            #[inline(always)] pub const fn from_array(arr: [$unit; $N]) -> Self { Self(arr) }
 
-            // Implementation of to_uXX/from_uXX and to_bits/from_bits.
-            $crate::bytestruct!(@impl_conversions $name, $N);
+            $crate::bytestruct!(@impl_typed_conversions $name, $unit, $N);
+            $crate::bytestruct!(@impl_typed_fields $name, $unit, <$crate::Bits<{ Self::BITS }> as $crate::BitenumType>::Prim, 0, $($field_vis $field_name $field_type $bits)*);
+        }
+    };
 
-            // Route fields based on the total array size and choose the appropriate acting primitive.
-            $crate::bytestruct!(@route_fields $name, $N, $($field_vis $field_name $field_type $bits)*);
+    (
+        $(#[$meta:meta])*
+        $vis:vis struct $name:ident ([$unit:tt; $N:tt]) {
+            $field_vis:vis $field_name:ident : ($field_type:ty) = @unroll($count:tt)
+        }
+    ) => {
+        $crate::paste::paste! {
+            $(#[$meta])*
+            #[derive(Copy, Clone, PartialEq, Eq, Default)]
+            #[derive($crate::bytemuck::Pod, $crate::bytemuck::Zeroable)]
+            #[repr(C)]
+            $vis struct $name(pub [$unit; $N]);
+
+            impl core::fmt::Debug for $name {
+                fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                    f.debug_struct(stringify!($name))
+                        .field("raw", &self.0)
+                        .field(stringify!($field_name), &self.$field_name())
+                        .finish()
+                }
+            }
+
+            impl $name {
+                #[allow(dead_code)]
+                pub const BITS: usize = $crate::bits_mul!($unit, $N);
+                #[allow(dead_code)]
+                pub const UNIT_BITS: usize = <$unit as $crate::BitLength>::BITS;
+                #[allow(dead_code)]
+                #[inline(always)] pub const fn to_array(self) -> [$unit; $N] { self.0 }
+                #[allow(dead_code)]
+                #[inline(always)] pub const fn from_array(arr: [$unit; $N]) -> Self { Self(arr) }
+
+                $crate::bytestruct!(@impl_typed_conversions $name, $unit, $N);
+                $crate::bytestruct!(@impl_typed_fields $name, $unit, <$crate::Bits<{ Self::BITS }> as $crate::BitenumType>::Prim, 0, $field_vis $field_name ($field_type) = @unroll($count));
+            }
+        }
+    };
+
+    (
+        $(#[$meta:meta])*
+        $vis:vis struct $name:ident ($N:tt) {
+            $(
+                $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
+            ),* $(,)?
+        }
+    ) => {
+        $crate::bytestruct! {
+            $(#[$meta])*
+            $vis struct $name ([u8; $N]) {
+                $($field_vis $field_name: $field_type = $bits),*
+            }
         }
     };
 
     // --- INTERNAL CONVERSIONS ---
     (@impl_conversions $name:ident, 1) => {
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn to_u8(self) -> u8 { self.0[0] }
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn from_u8(val: u8) -> Self { Self([val]) }
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn to_bits(self) -> u8 { self.to_u8() }
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn from_bits(val: u8) -> Self { Self::from_u8(val) }
+        #[inline(always)] pub const fn to_u8(self) -> u8 { self.0[0] }
+        #[inline(always)] pub const fn from_u8(val: u8) -> Self { Self([val]) }
+        #[inline(always)] pub const fn to_bits(self) -> u8 { self.to_u8() }
+        #[inline(always)] pub const fn from_bits(val: u8) -> Self { Self::from_u8(val) }
     };
     (@impl_conversions $name:ident, 2) => {
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn to_u16(self) -> u16 { u16::from_le_bytes(self.0) }
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn from_u16(val: u16) -> Self { Self(val.to_le_bytes()) }
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn to_bits(self) -> u16 { self.to_u16() }
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn from_bits(val: u16) -> Self { Self::from_u16(val) }
+        #[inline(always)] pub const fn to_u16(self) -> u16 { u16::from_le_bytes(self.0) }
+        #[inline(always)] pub const fn from_u16(val: u16) -> Self { Self(val.to_le_bytes()) }
+        #[inline(always)] pub const fn to_bits(self) -> u16 { self.to_u16() }
+        #[inline(always)] pub const fn from_bits(val: u16) -> Self { Self::from_u16(val) }
     };
-    (@impl_conversions $name:ident, 3) => { $crate::bytestruct!(@impl_wide_conv $name, 3, u32, to_u32, from_u32, 0 1 2); };
+    (@impl_conversions $name:ident, 3) => {
+        $crate::bytestruct!(@impl_wide_conv $name, 3, u32, to_u32, from_u32, 0 1 2);
+    };
     (@impl_conversions $name:ident, 4) => {
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn to_u32(self) -> u32 { u32::from_le_bytes(self.0) }
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn from_u32(val: u32) -> Self { Self(val.to_le_bytes()) }
-        /// Returns the raw interior value as bits.
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn to_bits(self) -> u32 { self.to_u32() }
-        /// Creates a bytestruct from raw bits.
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn from_bits(val: u32) -> Self { Self::from_u32(val) }
+        #[inline(always)] pub const fn to_u32(self) -> u32 { u32::from_le_bytes(self.0) }
+        #[inline(always)] pub const fn from_u32(val: u32) -> Self { Self(val.to_le_bytes()) }
+        #[inline(always)] pub const fn to_bits(self) -> u32 { self.to_u32() }
+        #[inline(always)] pub const fn from_bits(val: u32) -> Self { Self::from_u32(val) }
     };
     (@impl_conversions $name:ident, 5) => { $crate::bytestruct!(@impl_wide_conv $name, 5, u64, to_u64, from_u64, 0 1 2 3 4); };
     (@impl_conversions $name:ident, 6) => { $crate::bytestruct!(@impl_wide_conv $name, 6, u64, to_u64, from_u64, 0 1 2 3 4 5); };
     (@impl_conversions $name:ident, 7) => { $crate::bytestruct!(@impl_wide_conv $name, 7, u64, to_u64, from_u64, 0 1 2 3 4 5 6); };
     (@impl_conversions $name:ident, 8) => {
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn to_u64(self) -> u64 { u64::from_le_bytes(self.0) }
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn from_u64(val: u64) -> Self { Self(val.to_le_bytes()) }
-        /// Returns the raw interior value as bits.
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn to_bits(self) -> u64 { self.to_u64() }
-        /// Creates a bytestruct from raw bits.
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn from_bits(val: u64) -> Self { Self::from_u64(val) }
+        #[inline(always)] pub const fn to_u64(self) -> u64 { u64::from_le_bytes(self.0) }
+        #[inline(always)] pub const fn from_u64(val: u64) -> Self { Self(val.to_le_bytes()) }
+        #[inline(always)] pub const fn to_bits(self) -> u64 { self.to_u64() }
+        #[inline(always)] pub const fn from_bits(val: u64) -> Self { Self::from_u64(val) }
     };
-    (@impl_conversions $name:ident, 9) => { $crate::bytestruct!(@impl_wide_conv $name, 9, u128, to_u128, from_u128, 0 1 2 3 4 5 6 7 8); };
-    (@impl_conversions $name:ident, 10) => { $crate::bytestruct!(@impl_wide_conv $name, 10, u128, to_u128, from_u128, 0 1 2 3 4 5 6 7 8 9); };
-    (@impl_conversions $name:ident, 11) => { $crate::bytestruct!(@impl_wide_conv $name, 11, u128, to_u128, from_u128, 0 1 2 3 4 5 6 7 8 9 10); };
-    (@impl_conversions $name:ident, 12) => { $crate::bytestruct!(@impl_wide_conv $name, 12, u128, to_u128, from_u128, 0 1 2 3 4 5 6 7 8 9 10 11); };
-    (@impl_conversions $name:ident, 13) => { $crate::bytestruct!(@impl_wide_conv $name, 13, u128, to_u128, from_u128, 0 1 2 3 4 5 6 7 8 9 10 11 12); };
-    (@impl_conversions $name:ident, 14) => { $crate::bytestruct!(@impl_wide_conv $name, 14, u128, to_u128, from_u128, 0 1 2 3 4 5 6 7 8 9 10 11 12 13); };
-    (@impl_conversions $name:ident, 15) => { $crate::bytestruct!(@impl_wide_conv $name, 15, u128, to_u128, from_u128, 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14); };
     (@impl_conversions $name:ident, 16) => {
+        #[inline(always)] pub const fn to_u128(self) -> u128 { u128::from_le_bytes(self.0) }
+        #[inline(always)] pub const fn from_u128(val: u128) -> Self { Self(val.to_le_bytes()) }
+        #[inline(always)] pub const fn to_bits(self) -> u128 { self.to_u128() }
+        #[inline(always)] pub const fn from_bits(val: u128) -> Self { Self::from_u128(val) }
+    };
+    (@impl_conversions $name:ident, $N:expr) => {
         #[inline(always)]
         #[allow(dead_code)]
-        pub const fn to_u128(self) -> u128 { u128::from_le_bytes(self.0) }
+        pub const fn to_bits(self) -> <$crate::Bits<{ $crate::bits_mul!(u8, $N) }> as $crate::BitenumType>::Prim {
+            let mut acc: <$crate::Bits<{ $crate::bits_mul!(u8, $N) }> as $crate::BitenumType>::Prim = 0;
+            let mut i = 0;
+            while i < $N {
+                acc |= (self.0[i] as <$crate::Bits<{ $crate::bits_mul!(u8, $N) }> as $crate::BitenumType>::Prim) << $crate::bits_mul!(u8, i);
+                i += 1;
+            }
+            acc
+        }
         #[inline(always)]
         #[allow(dead_code)]
-        pub const fn from_u128(val: u128) -> Self { Self(val.to_le_bytes()) }
-        /// Returns the raw interior value as bits.
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn to_bits(self) -> u128 { self.to_u128() }
-        /// Creates a bytestruct from raw bits.
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn from_bits(val: u128) -> Self { Self::from_u128(val) }
+        pub const fn from_bits(val: <$crate::Bits<{ $crate::bits_mul!(u8, $N) }> as $crate::BitenumType>::Prim) -> Self {
+            let mut arr = [0u8; $N];
+            let mut i = 0;
+            while i < $N {
+                arr[i] = (val >> $crate::bits_mul!(u8, i)) as u8;
+                i += 1;
+            }
+            Self(arr)
+        }
     };
 
-    // Implementation for multi-byte wide conversions that don't map directly to a primitive sized array.
+
     (@impl_wide_conv $name:ident, $N:tt, $prim:ty, $to_name:ident, $from_name:ident, $($idx:literal)*) => {
-        // Extrapolates the array into a Little-Endian primitive.
-        //
-        // This is useful for bitwise manipulation or passing to external APIs.
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn $to_name(self) -> $prim {
-            0 $( | (self.0[$idx] as $prim) << ($idx << 3) )*
-        }
-        // Creates a new instance from a Little-Endian primitive.
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn $from_name(val: $prim) -> Self {
-            Self([
-                $( (val >> ($idx << 3)) as u8 ),*
-            ])
-        }
-        // Alias for the primary integer conversion method for this struct.
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn to_bits(self) -> $prim { self.$to_name() }
-        // Alias for the primary integer conversion method for this struct.
-        #[inline(always)]
-        #[allow(dead_code)]
-        pub const fn from_bits(val: $prim) -> Self { Self::$from_name(val) }
+        #[inline(always)] pub const fn $to_name(self) -> $prim { 0 $( | (self.0[$idx] as $prim) << ($idx << 3) )* }
+        #[inline(always)] pub const fn $from_name(val: $prim) -> Self { Self([ $( (val >> ($idx << 3)) as u8 ),* ]) }
+        #[inline(always)] pub const fn to_bits(self) -> $prim { self.$to_name() }
+        #[inline(always)] pub const fn from_bits(val: $prim) -> Self { Self::$from_name(val) }
     };
-    // Note: Converted values are handled as Little-Endian for consistent bitfield mapping.
-
-    // Routing based on byte size $N$ to select the most efficient "acting primitive" for bitwise operations.
-    (@route_fields $name:ident, 1, $($rest:tt)*) => { $crate::bytestruct!(@impl_fields $name, u8,   0, $($rest)*); };
-    (@route_fields $name:ident, 2, $($rest:tt)*) => { $crate::bytestruct!(@impl_fields $name, u16,  0, $($rest)*); };
-    (@route_fields $name:ident, 3, $($rest:tt)*) => { $crate::bytestruct!(@impl_fields $name, u32,  0, $($rest)*); };
-    (@route_fields $name:ident, 4, $($rest:tt)*) => { $crate::bytestruct!(@impl_fields $name, u32,  0, $($rest)*); };
-    (@route_fields $name:ident, 5, $($rest:tt)*) => { $crate::bytestruct!(@impl_fields $name, u64,  0, $($rest)*); };
-    (@route_fields $name:ident, 6, $($rest:tt)*) => { $crate::bytestruct!(@impl_fields $name, u64,  0, $($rest)*); };
-    (@route_fields $name:ident, 7, $($rest:tt)*) => { $crate::bytestruct!(@impl_fields $name, u64,  0, $($rest)*); };
-    (@route_fields $name:ident, 8, $($rest:tt)*) => { $crate::bytestruct!(@impl_fields $name, u64,  0, $($rest)*); };
-    (@route_fields $name:ident, 9, $($rest:tt)*) => { $crate::bytestruct!(@impl_fields $name, u128, 0, $($rest)*); };
-    (@route_fields $name:ident, 10, $($rest:tt)*) => { $crate::bytestruct!(@impl_fields $name, u128, 0, $($rest)*); };
-    (@route_fields $name:ident, 11, $($rest:tt)*) => { $crate::bytestruct!(@impl_fields $name, u128, 0, $($rest)*); };
-    (@route_fields $name:ident, 12, $($rest:tt)*) => { $crate::bytestruct!(@impl_fields $name, u128, 0, $($rest)*); };
-    (@route_fields $name:ident, 13, $($rest:tt)*) => { $crate::bytestruct!(@impl_fields $name, u128, 0, $($rest)*); };
-    (@route_fields $name:ident, 14, $($rest:tt)*) => { $crate::bytestruct!(@impl_fields $name, u128, 0, $($rest)*); };
-    (@route_fields $name:ident, 15, $($rest:tt)*) => { $crate::bytestruct!(@impl_fields $name, u128, 0, $($rest)*); };
-    (@route_fields $name:ident, 16, $($rest:tt)*) => { $crate::bytestruct!(@impl_fields $name, u128, 0, $($rest)*); };
 
     (@impl_fields $name:ident, $prim:ty, $shift:expr, ) => {};
 
-    // Boolean arm
+    // Standard munchers
     (@impl_fields $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident bool $bits:tt $($rest:tt)*) => {
         $crate::paste::paste! {
+            /// The bit-offset of the `$field_name` property within the underlying storage.
+            pub const [<$field_name:upper _OFFSET>]: usize = $shift;
+            /// The number of bits allocated for the `$field_name` property.
+            pub const [<$field_name:upper _BITS>]: usize = $bits;
             #[doc(hidden)]
-            #[allow(dead_code)]
-            const [<$field_name:upper _OFFSET>]: usize = $shift;
-
-            #[doc(hidden)]
-            #[allow(dead_code)]
-            const [<$field_name:upper _MASK>]: u128 = (!0u128) >> (128 - $bits);
-
-            #[allow(dead_code)]
-            #[inline]
-            #[doc = concat!("Returns the boolean value mapping to the `", stringify!($field_name), "` flag.")]
-            $field_vis const fn $field_name(self) -> bool {
-                let val = $crate::bytestruct!(@read_localized_prim self.0, $shift, $bits);
-                val != 0
-            }
-
-            #[allow(dead_code)]
-            #[doc = concat!("Inline mutation to set the `", stringify!($field_name), "` flag.")]
+            const [<$field_name:upper _MASK>]: u128 = (!0u128) >> (128 - Self::[<$field_name:upper _BITS>]);
+            $field_vis const fn $field_name(self) -> bool { $crate::bytestruct!(@read_localized_prim self.0, $shift, $bits) != 0 }
             $field_vis fn [<set_ $field_name>](&mut self, val: bool) {
                 $crate::bytestruct!(@write_localized_prim self.0, $shift, $bits, val as u128);
             }
-
-            #[allow(dead_code)]
-            #[doc = concat!("Returns a cloned copy of the bytestruct with the `", stringify!($field_name), "` flag specified.")]
             $field_vis const fn [<with_ $field_name>](mut self, val: bool) -> Self {
                 $crate::bytestruct!(@write_localized_prim self.0, $shift, $bits, val as u128);
                 self
@@ -1076,7 +1310,6 @@ macro_rules! bytestruct {
         $crate::bytestruct!(@impl_fields $name, $prim, $shift + $bits, $($rest)*);
     };
 
-    // Standard integer arms (u8..u128)
     (@impl_fields $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident u8 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_int $name, $prim, $shift, $field_vis $field_name u8 $bits $($rest)*); };
     (@impl_fields $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident u16 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_int $name, $prim, $shift, $field_vis $field_name u16 $bits $($rest)*); };
     (@impl_fields $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident u32 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_int $name, $prim, $shift, $field_vis $field_name u32 $bits $($rest)*); };
@@ -1085,30 +1318,515 @@ macro_rules! bytestruct {
 
     (@impl_int $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident $field_type:tt $bits:tt $($rest:tt)*) => {
         $crate::paste::paste! {
+            /// The bit-offset of the `$field_name` property within the underlying storage.
+            pub const [<$field_name:upper _OFFSET>]: usize = $shift;
+            /// The number of bits allocated for the `$field_name` property.
+            pub const [<$field_name:upper _BITS>]: usize = $bits;
             #[doc(hidden)]
-            #[allow(dead_code)]
-            const [<$field_name:upper _OFFSET>]: usize = $shift;
+            const [<$field_name:upper _MASK>]: u128 = (!0u128) >> (128 - Self::[<$field_name:upper _BITS>]);
+            $field_vis const fn $field_name(self) -> $field_type { $crate::bytestruct!(@read_localized_prim self.0, $shift, $bits) as $field_type }
+            $field_vis fn [<set_ $field_name>](&mut self, val: $field_type) {
+                debug_assert!((val as u128) <= Self::[<$field_name:upper _MASK>], "Value {} overflows allocated {} bits", val, $bits);
+                $crate::bytestruct!(@write_localized_prim self.0, $shift, $bits, val as u128);
+            }
+            $field_vis const fn [<with_ $field_name>](mut self, val: $field_type) -> Self {
+                debug_assert!((val as u128) <= Self::[<$field_name:upper _MASK>], "Value overflows allocated bits");
+                $crate::bytestruct!(@write_localized_prim self.0, $shift, $bits, val as u128);
+                self
+            }
+            $field_vis fn [<try_set_ $field_name>](&mut self, val: $field_type) -> Result<(), $crate::BitstructError> {
+                if (val as u128) > Self::[<$field_name:upper _MASK>] { return Err($crate::BitstructError::Overflow { value: val as u128, allocated_bits: $bits }); }
+                self.[<set_ $field_name>](val); Ok(())
+            }
+            $field_vis const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
+                if (val as u128) > Self::[<$field_name:upper _MASK>] { return Err($crate::BitstructError::Overflow { value: val as u128, allocated_bits: $bits }); }
+                Ok(self.[<with_ $field_name>](val))
+            }
+        }
+        $crate::bytestruct!(@impl_typed_fields $name, $unit, $prim, $shift + $bits, $($rest)*);
+    };
 
+    // --- TYPED STORAGE HELPERS ---
+    // These helpers provide an optimized bridge between an array-backed struct ([u8; N], [u16; N], etc.)
+    // and a single primitive CPU register (u32, u64, or u128).
+    (@impl_typed_conversions $name:ident, $unit:tt, $N:tt) => {
+        /// Converts the packed structure into its raw bit representation as the narrowest possible
+        /// primitive integer (u32, u64, or u128) that can hold all bits.
+        ///
+        /// This method utilizes the fully-unrolled bitwise engine for maximum register efficiency.
+        #[allow(dead_code)]
+        #[inline(always)]
+        pub const fn to_bits(self) -> <$crate::Bits<{ Self::BITS }> as $crate::BitenumType>::Prim {
+            $crate::bytestruct!(@unroll_typed_read self.0, $unit, <$crate::Bits<{ Self::BITS }> as $crate::BitenumType>::Prim, 0, $N, 0, Self::BITS) as _
+        }
+
+        /// Reconstructs the packed structure from a raw bit representation.
+        ///
+        /// This uses a specialized 'fresh write' path that initializes the underlying array
+        /// in a single unrolled pass, avoiding redundant masking operations on empty storage.
+        #[allow(dead_code)]
+        #[inline(always)]
+        pub const fn from_bits(val: <$crate::Bits<{ Self::BITS }> as $crate::BitenumType>::Prim) -> Self {
+            let mut arr = [0 as $unit; $N];
+            $crate::bytestruct!(@unroll_typed_write_fresh arr, $unit, <$crate::Bits<{ Self::BITS }> as $crate::BitenumType>::Prim, 0, $N, 0, Self::BITS, val);
+            Self(arr)
+        }
+
+        $crate::bytestruct!(@route_conversions $name, $unit, $N);
+    };
+
+    // Routing Logic for Typed Conversions
+    (@route_conversions $name:ident, $unit:tt, 1) => { $crate::bytestruct!(@impl_typed_uX_methods $name, $unit, 1); };
+    (@route_conversions $name:ident, $unit:tt, 2) => { $crate::bytestruct!(@impl_typed_uX_methods $name, $unit, 2); };
+    (@route_conversions $name:ident, $unit:tt, 3) => { $crate::bytestruct!(@impl_typed_uX_methods $name, $unit, 3); };
+    (@route_conversions $name:ident, $unit:tt, 4) => { $crate::bytestruct!(@impl_typed_uX_methods $name, $unit, 4); };
+    (@route_conversions $name:ident, $unit:tt, 5) => { $crate::bytestruct!(@impl_typed_uX_methods $name, $unit, 5); };
+    (@route_conversions $name:ident, $unit:tt, 6) => { $crate::bytestruct!(@impl_typed_uX_methods $name, $unit, 6); };
+    (@route_conversions $name:ident, $unit:tt, 7) => { $crate::bytestruct!(@impl_typed_uX_methods $name, $unit, 7); };
+    (@route_conversions $name:ident, $unit:tt, 8) => { $crate::bytestruct!(@impl_typed_uX_methods $name, $unit, 8); };
+    (@route_conversions $name:ident, $unit:tt, 9) => { $crate::bytestruct!(@impl_typed_uX_methods $name, $unit, 9); };
+    (@route_conversions $name:ident, $unit:tt, 10) => { $crate::bytestruct!(@impl_typed_uX_methods $name, $unit, 10); };
+    (@route_conversions $name:ident, $unit:tt, 11) => { $crate::bytestruct!(@impl_typed_uX_methods $name, $unit, 11); };
+    (@route_conversions $name:ident, $unit:tt, 12) => { $crate::bytestruct!(@impl_typed_uX_methods $name, $unit, 12); };
+    (@route_conversions $name:ident, $unit:tt, 13) => { $crate::bytestruct!(@impl_typed_uX_methods $name, $unit, 13); };
+    (@route_conversions $name:ident, $unit:tt, 14) => { $crate::bytestruct!(@impl_typed_uX_methods $name, $unit, 14); };
+    (@route_conversions $name:ident, $unit:tt, 15) => { $crate::bytestruct!(@impl_typed_uX_methods $name, $unit, 15); };
+    (@route_conversions $name:ident, $unit:tt, 16) => { $crate::bytestruct!(@impl_typed_uX_methods $name, $unit, 16); };
+    (@route_conversions $name:ident, $unit:tt, $any:expr) => {};
+
+    // Narrowest bit-mapping for common storage units
+    (@impl_typed_uX_methods $name:ident, u8, 1) => { $crate::bytestruct!(@impl_u8_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u8, 2) => { $crate::bytestruct!(@impl_u16_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u8, 3) => { $crate::bytestruct!(@impl_u32_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u8, 4) => { $crate::bytestruct!(@impl_u32_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u8, 5) => { $crate::bytestruct!(@impl_u64_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u8, 6) => { $crate::bytestruct!(@impl_u64_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u8, 7) => { $crate::bytestruct!(@impl_u64_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u8, 8) => { $crate::bytestruct!(@impl_u64_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u8, 9) => { $crate::bytestruct!(@impl_u128_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u8, 10) => { $crate::bytestruct!(@impl_u128_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u8, 11) => { $crate::bytestruct!(@impl_u128_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u8, 12) => { $crate::bytestruct!(@impl_u128_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u8, 13) => { $crate::bytestruct!(@impl_u128_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u8, 14) => { $crate::bytestruct!(@impl_u128_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u8, 15) => { $crate::bytestruct!(@impl_u128_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u8, 16) => { $crate::bytestruct!(@impl_u128_methods $name); };
+
+    (@impl_typed_uX_methods $name:ident, u16, 1) => { $crate::bytestruct!(@impl_u16_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u16, 2) => { $crate::bytestruct!(@impl_u32_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u16, 3) => { $crate::bytestruct!(@impl_u64_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u16, 4) => { $crate::bytestruct!(@impl_u64_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u16, 5) => { $crate::bytestruct!(@impl_u128_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u16, 6) => { $crate::bytestruct!(@impl_u128_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u16, 7) => { $crate::bytestruct!(@impl_u128_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u16, 8) => { $crate::bytestruct!(@impl_u128_methods $name); };
+
+    (@impl_typed_uX_methods $name:ident, u32, 1) => { $crate::bytestruct!(@impl_u32_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u32, 2) => { $crate::bytestruct!(@impl_u64_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u32, 3) => { $crate::bytestruct!(@impl_u128_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u32, 4) => { $crate::bytestruct!(@impl_u128_methods $name); };
+
+    (@impl_typed_uX_methods $name:ident, u64, 1) => { $crate::bytestruct!(@impl_u64_methods $name); };
+    (@impl_typed_uX_methods $name:ident, u64, 2) => { $crate::bytestruct!(@impl_u128_methods $name); };
+
+    (@impl_typed_uX_methods $name:ident, u128, 1) => { $crate::bytestruct!(@impl_u128_methods $name); };
+
+    (@impl_u8_methods $name:ident) => {
+        #[allow(dead_code)]
+        #[inline(always)] pub const fn to_u8(self) -> u8 { self.to_bits() as u8 }
+        #[allow(dead_code)]
+        #[inline(always)] pub const fn from_u8(val: u8) -> Self { Self::from_bits(val as _) }
+    };
+    (@impl_u16_methods $name:ident) => {
+        #[allow(dead_code)]
+        #[inline(always)] pub const fn to_u16(self) -> u16 { self.to_bits() as u16 }
+        #[allow(dead_code)]
+        #[inline(always)] pub const fn from_u16(val: u16) -> Self { Self::from_bits(val as _) }
+    };
+    (@impl_u32_methods $name:ident) => {
+        #[allow(dead_code)]
+        #[inline(always)] pub const fn to_u32(self) -> u32 { self.to_bits() as u32 }
+        #[allow(dead_code)]
+        #[inline(always)] pub const fn from_u32(val: u32) -> Self { Self::from_bits(val as _) }
+    };
+    (@impl_u64_methods $name:ident) => {
+        #[allow(dead_code)]
+        #[inline(always)] pub const fn to_u64(self) -> u64 { self.to_bits() as u64 }
+        #[allow(dead_code)]
+        #[inline(always)] pub const fn from_u64(val: u64) -> Self { Self::from_bits(val as _) }
+    };
+    (@impl_u128_methods $name:ident) => {
+        #[allow(dead_code)]
+        #[inline(always)] pub const fn to_u128(self) -> u128 { self.to_bits() as u128 }
+        #[allow(dead_code)]
+        #[inline(always)] pub const fn from_u128(val: u128) -> Self { Self::from_bits(val as _) }
+    };
+
+
+    // --- UNROLLED FIELD IMPLEMENTATION ---
+    // Specifically used for high-performance 'register-like' fields that occupy
+    // the entirety of their defined storage (typical of types generated by byteval!).
+    (@impl_typed_fields $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident ($field_type:ty) = @unroll($count:tt) $($rest:tt)*) => {
+        $crate::paste::paste! {
+            #[allow(dead_code)]
+            /// The bit-offset of the `$field_name` property within the underlying storage.
+            pub const [<$field_name:upper _OFFSET>]: usize = $shift;
+            #[allow(dead_code)]
+            /// The number of bits allocated for the `$field_name` property (unrolled).
+            pub const [<$field_name:upper _BITS>]: usize = $crate::bits_mul!($unit, $count);
+            #[allow(dead_code)]
             #[doc(hidden)]
+            const [<$field_name:upper _MASK>]: $field_type = (!0 as $field_type) >> (<$field_type as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>]);
+
+            #[allow(dead_code)]
+            #[inline(always)]
+            pub const fn $field_name(self) -> $field_type {
+                 $crate::bytestruct!(@unroll_typed_read self.0, $unit, $prim, 0, $count, 0, Self::[<$field_name:upper _BITS>]) as _
+            }
+            #[allow(dead_code)]
+            #[inline(always)]
+            pub fn [<set_ $field_name>](&mut self, val: $field_type) {
+                 debug_assert!((val as u128) <= Self::[<$field_name:upper _MASK>] as u128, "Value {} overflows allocated {} bits", val, Self::[<$field_name:upper _BITS>]);
+                 $crate::bytestruct!(@unroll_typed_write self.0, $unit, $prim, 0, $count, 0, Self::[<$field_name:upper _BITS>], val as $prim);
+            }
+            #[allow(dead_code)]
+            #[inline(always)]
+            pub const fn [<with_ $field_name>](mut self, val: $field_type) -> Self {
+                 debug_assert!((val as u128) <= Self::[<$field_name:upper _MASK>] as u128, "Value overflows allocated bits");
+                 $crate::bytestruct!(@unroll_typed_write self.0, $unit, $prim, 0, $count, 0, Self::[<$field_name:upper _BITS>], val as $prim);
+                 self
+            }
+            #[allow(dead_code)]
+            #[inline(always)]
+            pub fn [<try_set_ $field_name>](&mut self, val: $field_type) -> Result<(), $crate::BitstructError> {
+                 if (val as u128) > Self::[<$field_name:upper _MASK>] as u128 { return Err($crate::BitstructError::Overflow { value: val as u128, allocated_bits: Self::[<$field_name:upper _BITS>] }); }
+                 self.[<set_ $field_name>](val); Ok(())
+            }
+            #[allow(dead_code)]
+            #[inline(always)]
+            pub const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
+                 if (val as u128) > Self::[<$field_name:upper _MASK>] as u128 { return Err($crate::BitstructError::Overflow { value: val as u128, allocated_bits: Self::[<$field_name:upper _BITS>] }); }
+                 Ok(self.[<with_ $field_name>](val))
+            }
+        }
+        $crate::bytestruct!(@impl_typed_fields $name, $unit, $prim, $shift + $crate::bits_mul!($unit, $count), $($rest)*);
+    };
+
+    (@impl_typed_fields $name:ident, $unit:tt, $prim:ty, $shift:expr, ) => {};
+    (@impl_typed_fields $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident bool $bits:tt $($rest:tt)*) => {
+        $crate::paste::paste! {
+            #[allow(dead_code)]
+            /// The bit-offset of the `$field_name` property within the underlying storage.
+            pub const [<$field_name:upper _OFFSET>]: usize = $shift;
+            #[allow(dead_code)]
+            /// The number of bits allocated for the `$field_name` property.
+            pub const [<$field_name:upper _BITS>]: usize = $bits;
+            #[allow(dead_code)]
+            #[doc(hidden)]
+            const [<$field_name:upper _MASK>]: $prim = (!0 as $prim) >> (<$prim as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>]);
+            #[allow(dead_code)]
+            $field_vis const fn $field_name(self) -> bool { $crate::bytestruct!(@read_typed_prim self.0, $unit, $prim, $shift, $bits) != 0 }
+            #[allow(dead_code)]
+            $field_vis fn [<set_ $field_name>](&mut self, val: bool) { $crate::bytestruct!(@write_typed_prim self.0, $unit, $prim, $shift, $bits, val as $prim); }
+            #[allow(dead_code)]
+            $field_vis const fn [<with_ $field_name>](mut self, val: bool) -> Self { $crate::bytestruct!(@write_typed_prim self.0, $unit, $prim, $shift, $bits, val as $prim); self }
+            #[allow(dead_code)]
+            $field_vis fn [<try_set_ $field_name>](&mut self, val: bool) -> Result<(), $crate::BitstructError> { self.[<set_ $field_name>](val); Ok(()) }
+            #[allow(dead_code)]
+            $field_vis const fn [<try_with_ $field_name>](self, val: bool) -> Result<Self, $crate::BitstructError> { Ok(self.[<with_ $field_name>](val)) }
+        }
+        $crate::bytestruct!(@impl_typed_fields $name, $unit, $prim, $shift + $bits, $($rest)*);
+    };
+
+    (@impl_typed_fields $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident u8 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_typed_int $name, $unit, $prim, $shift, $field_vis $field_name u8 $bits $($rest)*); };
+    (@impl_typed_fields $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident u16 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_typed_int $name, $unit, $prim, $shift, $field_vis $field_name u16 $bits $($rest)*); };
+    (@impl_typed_fields $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident u32 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_typed_int $name, $unit, $prim, $shift, $field_vis $field_name u32 $bits $($rest)*); };
+    (@impl_typed_fields $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident u64 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_typed_int $name, $unit, $prim, $shift, $field_vis $field_name u64 $bits $($rest)*); };
+    (@impl_typed_fields $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident u128 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_typed_int $name, $unit, $prim, $shift, $field_vis $field_name u128 $bits $($rest)*); };
+
+    (@impl_typed_int $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident $field_type:tt $bits:tt $($rest:tt)*) => {
+        $crate::paste::paste! {
+            #[allow(dead_code)]
+            /// The bit-offset of the `$field_name` property within the underlying storage.
+            pub const [<$field_name:upper _OFFSET>]: usize = $shift;
+            #[allow(dead_code)]
+            /// The number of bits allocated for the `$field_name` property.
+            pub const [<$field_name:upper _BITS>]: usize = $bits;
+            #[allow(dead_code)]
+            #[doc(hidden)]
+            const [<$field_name:upper _MASK>]: $prim = (!0 as $prim) >> (<$prim as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>]);
+            #[allow(dead_code)]
+            $field_vis const fn $field_name(self) -> $field_type { $crate::bytestruct!(@read_typed_prim self.0, $unit, $prim, $shift, $bits) as $field_type }
+            #[allow(dead_code)]
+            $field_vis fn [<set_ $field_name>](&mut self, val: $field_type) {
+                debug_assert!((val as u128) <= Self::[<$field_name:upper _MASK>] as u128, "Value {} overflows allocated {} bits", val, $bits);
+                $crate::bytestruct!(@write_typed_prim self.0, $unit, $prim, $shift, $bits, val as $prim);
+            }
+            #[allow(dead_code)]
+            $field_vis const fn [<with_ $field_name>](mut self, val: $field_type) -> Self {
+                debug_assert!((val as u128) <= Self::[<$field_name:upper _MASK>] as u128, "Value overflows allocated bits");
+                $crate::bytestruct!(@write_typed_prim self.0, $unit, $prim, $shift, $bits, val as $prim);
+                self
+            }
+            #[allow(dead_code)]
+            $field_vis fn [<try_set_ $field_name>](&mut self, val: $field_type) -> Result<(), $crate::BitstructError> {
+                if (val as u128) > Self::[<$field_name:upper _MASK>] as u128 { return Err($crate::BitstructError::Overflow { value: val as u128, allocated_bits: $bits }); }
+                self.[<set_ $field_name>](val); Ok(())
+            }
+            #[allow(dead_code)]
+            $field_vis const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
+                if (val as u128) > Self::[<$field_name:upper _MASK>] as u128 { return Err($crate::BitstructError::Overflow { value: val as u128, allocated_bits: $bits }); }
+                Ok(self.[<with_ $field_name>](val))
+            }
+        }
+        $crate::bytestruct!(@impl_typed_fields $name, $unit, $prim, $shift + $bits, $($rest)*);
+    };
+
+    // Wrapped Type arm
+    (@impl_typed_fields $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident ($field_type:ty) $bits:tt $($rest:tt)*) => {
+        $crate::paste::paste! {
+            #[allow(dead_code)]
+            /// The bit-offset of the `$field_name` property within the underlying storage.
+            pub const [<$field_name:upper _OFFSET>]: usize = $shift;
+            #[allow(dead_code)]
+            /// The number of bits allocated for the `$field_name` property.
+            pub const [<$field_name:upper _BITS>]: usize = $bits;
+            #[allow(dead_code)]
+            #[doc(hidden)]
+            const [<$field_name:upper _MASK>]: $prim = (!0 as $prim) >> (<$prim as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>]);
+            #[allow(dead_code)]
+            $field_vis const fn $field_name(self) -> $field_type { $crate::bytestruct!(@read_typed_prim self.0, $unit, $prim, $shift, $bits) as $field_type }
+            #[allow(dead_code)]
+            $field_vis fn [<set_ $field_name>](&mut self, val: $field_type) { $crate::bytestruct!(@write_typed_prim self.0, $unit, $prim, $shift, $bits, val as $prim); }
+            #[allow(dead_code)]
+            $field_vis const fn [<with_ $field_name>](mut self, val: $field_type) -> Self { $crate::bytestruct!(@write_typed_prim self.0, $unit, $prim, $shift, $bits, val as $prim); self }
+            #[allow(dead_code)]
+            $field_vis fn [<try_set_ $field_name>](&mut self, val: $field_type) -> Result<(), $crate::BitstructError> {
+                if (val as u128) > Self::[<$field_name:upper _MASK>] as u128 { return Err($crate::BitstructError::Overflow { value: val as u128, allocated_bits: $bits }); }
+                self.[<set_ $field_name>](val); Ok(())
+            }
+            #[allow(dead_code)]
+            $field_vis const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
+                if (val as u128) > Self::[<$field_name:upper _MASK>] as u128 { return Err($crate::BitstructError::Overflow { value: val as u128, allocated_bits: $bits }); }
+                Ok(self.[<with_ $field_name>](val))
+            }
+        }
+        $crate::bytestruct!(@impl_typed_fields $name, $unit, $prim, $shift + $bits, $($rest)*);
+    };
+
+    // Enum arm
+    (@impl_typed_fields $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident $field_type:tt $bits:tt $($rest:tt)*) => {
+        $crate::paste::paste! {
+            #[allow(dead_code)]
+            /// The bit-offset of the `$field_name` property within the underlying storage.
+            pub const [<$field_name:upper _OFFSET>]: usize = $shift;
+            #[allow(dead_code)]
+            /// The number of bits allocated for the `$field_name` property.
+            pub const [<$field_name:upper _BITS>]: usize = $bits;
+            #[allow(dead_code)]
+            #[doc(hidden)]
+            const [<$field_name:upper _MASK>]: $prim = (!0 as $prim) >> (<$prim as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>]);
+            #[allow(dead_code)]
+            $field_vis const fn $field_name(self) -> $field_type { $field_type::from_bits($crate::bytestruct!(@read_typed_prim self.0, $unit, $prim, $shift, $bits) as _) }
+            #[allow(dead_code)]
+            $field_vis fn [<set_ $field_name>](&mut self, val: $field_type) { $crate::bytestruct!(@write_typed_prim self.0, $unit, $prim, $shift, $bits, val.to_bits() as $prim); }
+            #[allow(dead_code)]
+            $field_vis const fn [<with_ $field_name>](mut self, val: $field_type) -> Self { $crate::bytestruct!(@write_typed_prim self.0, $unit, $prim, $shift, $bits, val.to_bits() as $prim); self }
+            #[allow(dead_code)]
+            $field_vis fn [<try_set_ $field_name>](&mut self, val: $field_type) -> Result<(), $crate::BitstructError> {
+                 if (val.to_bits() as u128) > Self::[<$field_name:upper _MASK>] as u128 { return Err($crate::BitstructError::Overflow { value: val.to_bits() as u128, allocated_bits: $bits }); }
+                 self.[<set_ $field_name>](val); Ok(())
+            }
+            #[allow(dead_code)]
+            $field_vis const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
+                 if (val.to_bits() as u128) > Self::[<$field_name:upper _MASK>] as u128 { return Err($crate::BitstructError::Overflow { value: val.to_bits() as u128, allocated_bits: $bits }); }
+                 Ok(self.[<with_ $field_name>](val))
+            }
+        }
+        $crate::bytestruct!(@impl_typed_fields $name, $unit, $prim, $shift + $bits, $($rest)*);
+    };
+
+    // --- FIELD ACCESSOR ROUTING ---
+    // These helpers resolve logical bit shifts/masks into physical array indices and bit offsets.
+    // They then route the operation to the fully-unrolled bitwise matching logic.
+
+    (@read_typed_prim $arr:expr, $unit:tt, $prim:ty, $shift:expr, $bits:tt) => {
+        {
+            const UNIT_BITS: usize = <$unit as $crate::BitLength>::BITS;
+            // Physical array index where the field begins
+            const WORD_INDEX: usize = $shift / UNIT_BITS;
+            // Bit offset within that initial array element
+            const BIT_OFFSET: usize = $shift % UNIT_BITS;
+            // Number of array elements spanned by this field
+            const WORD_COUNT: usize = ($shift as usize + $bits as usize).div_ceil(UNIT_BITS) - WORD_INDEX;
+
+            // Route to the unrolling engine
+            $crate::bytestruct!(@unroll_typed_read $arr, $unit, $prim, WORD_INDEX, WORD_COUNT, BIT_OFFSET, $bits)
+        }
+    };
+
+    (@write_typed_prim $arr:expr, $unit:tt, $prim:ty, $shift:expr, $bits:tt, $val:expr) => {
+        {
+            const UNIT_BITS: usize = <$unit as $crate::BitLength>::BITS;
+            // Physical array index where the field begins
+            const WORD_INDEX: usize = $shift / UNIT_BITS;
+            // Bit offset within that initial array element
+            const BIT_OFFSET: usize = $shift % UNIT_BITS;
+            // Number of array elements spanned by this field
+            const WORD_COUNT: usize = ($shift as usize + $bits as usize).div_ceil(UNIT_BITS) - WORD_INDEX;
+
+            // Route to the unrolling engine
+            $crate::bytestruct!(@unroll_typed_write $arr, $unit, $prim, WORD_INDEX, WORD_COUNT, BIT_OFFSET, $bits, $val)
+        }
+    };
+
+    // --- UNROLLING ENGINE ---
+    // This engine provides literal bitwise expressions for various element counts (1-8).
+    // By using literal branches instead of loops, LLVM can perfectly optimize the operation
+    // into a single contiguous load/mask/shift sequence (Instruction Fusion).
+    //
+    // Note: The $prim type is dynamically selected (u32, u64, u128) based on total bit width
+    // to minimize register pressure on 32-bit and 64-bit architectures.
+    (@unroll_typed_read $arr:expr, $unit:tt, $prim:ty, $idx:expr, 1, $offset:expr, $bits:expr) => {
+        (($arr[$idx] as $prim >> $offset) & ((!0 as $prim) >> (<$prim as $crate::BitLength>::BITS - $bits)))
+    };
+    (@unroll_typed_read $arr:expr, $unit:tt, $prim:ty, $idx:expr, 2, $offset:expr, $bits:expr) => {
+        ((($arr[$idx] as $prim | (($arr[$idx+1] as $prim) << $crate::bits_mul!($unit, 1))) >> $offset) & ((!0 as $prim) >> (<$prim as $crate::BitLength>::BITS - $bits)))
+    };
+    (@unroll_typed_read $arr:expr, $unit:tt, $prim:ty, $idx:expr, 3, $offset:expr, $bits:expr) => {
+        ((($arr[$idx] as $prim | (($arr[$idx+1] as $prim) << $crate::bits_mul!($unit, 1)) | (($arr[$idx+2] as $prim) << $crate::bits_mul!($unit, 2))) >> $offset) & ((!0 as $prim) >> (<$prim as $crate::BitLength>::BITS - $bits)))
+    };
+    (@unroll_typed_read $arr:expr, $unit:tt, $prim:ty, $idx:expr, 4, $offset:expr, $bits:expr) => {
+        ((($arr[$idx] as $prim | (($arr[$idx+1] as $prim) << $crate::bits_mul!($unit, 1)) | (($arr[$idx+2] as $prim) << $crate::bits_mul!($unit, 2)) | (($arr[$idx+3] as $prim) << $crate::bits_mul!($unit, 3))) >> $offset) & ((!0 as $prim) >> (<$prim as $crate::BitLength>::BITS - $bits)))
+    };
+    (@unroll_typed_read $arr:expr, $unit:tt, $prim:ty, $idx:expr, 5, $offset:expr, $bits:expr) => {
+        ((($arr[$idx] as $prim | (($arr[$idx+1] as $prim) << $crate::bits_mul!($unit, 1)) | (($arr[$idx+2] as $prim) << $crate::bits_mul!($unit, 2)) | (($arr[$idx+3] as $prim) << $crate::bits_mul!($unit, 3)) | (($arr[$idx+4] as $prim) << $crate::bits_mul!($unit, 4))) >> $offset) & ((!0 as $prim) >> (<$prim as $crate::BitLength>::BITS - $bits)))
+    };
+    (@unroll_typed_read $arr:expr, $unit:tt, $prim:ty, $idx:expr, 6, $offset:expr, $bits:expr) => {
+        ((($arr[$idx] as $prim | (($arr[$idx+1] as $prim) << $crate::bits_mul!($unit, 1)) | (($arr[$idx+2] as $prim) << $crate::bits_mul!($unit, 2)) | (($arr[$idx+3] as $prim) << $crate::bits_mul!($unit, 3)) | (($arr[$idx+4] as $prim) << $crate::bits_mul!($unit, 4)) | (($arr[$idx+5] as $prim) << $crate::bits_mul!($unit, 5))) >> $offset) & ((!0 as $prim) >> (<$prim as $crate::BitLength>::BITS - $bits)))
+    };
+    (@unroll_typed_read $arr:expr, $unit:tt, $prim:ty, $idx:expr, 7, $offset:expr, $bits:expr) => {
+        ((($arr[$idx] as $prim | (($arr[$idx+1] as $prim) << $crate::bits_mul!($unit, 1)) | (($arr[$idx+2] as $prim) << $crate::bits_mul!($unit, 2)) | (($arr[$idx+3] as $prim) << $crate::bits_mul!($unit, 3)) | (($arr[$idx+4] as $prim) << $crate::bits_mul!($unit, 4)) | (($arr[$idx+5] as $prim) << $crate::bits_mul!($unit, 5)) | (($arr[$idx+6] as $prim) << $crate::bits_mul!($unit, 6))) >> $offset) & ((!0 as $prim) >> (<$prim as $crate::BitLength>::BITS - $bits)))
+    };
+    (@unroll_typed_read $arr:expr, $unit:tt, $prim:ty, $idx:expr, 8, $offset:expr, $bits:expr) => {
+        ((($arr[$idx] as $prim | (($arr[$idx+1] as $prim) << $crate::bits_mul!($unit, 1)) | (($arr[$idx+2] as $prim) << $crate::bits_mul!($unit, 2)) | (($arr[$idx+3] as $prim) << $crate::bits_mul!($unit, 3)) | (($arr[$idx+4] as $prim) << $crate::bits_mul!($unit, 4)) | (($arr[$idx+5] as $prim) << $crate::bits_mul!($unit, 5)) | (($arr[$idx+6] as $prim) << $crate::bits_mul!($unit, 6)) | (($arr[$idx+7] as $prim) << $crate::bits_mul!($unit, 7))) >> $offset) & ((!0 as $prim) >> (<$prim as $crate::BitLength>::BITS - $bits)))
+    };
+    (@unroll_typed_read $arr:expr, $unit:tt, $prim:ty, $idx:expr, $any:expr, $offset:expr, $bits:expr) => {
+        // Fallback for large or complex counts
+        {
+             let mut i = 0;
+             let mut acc = 0 as $prim;
+             let mut shift = 0;
+             while i < $any {
+                 acc |= ($arr[$idx + i] as $prim) << shift;
+                 shift += <$unit as $crate::BitLength>::BITS;
+                 i += 1;
+             }
+             ((acc >> $offset) & ((!0 as $prim) >> (<$prim as $crate::BitLength>::BITS - $bits)))
+        }
+    };
+
+    (@unroll_typed_write $arr:expr, $unit:tt, $prim:ty, $idx:expr, $count:tt, $offset:expr, $bits:expr, $val:expr) => {
+        {
+            let mut full = $crate::bytestruct!(@unroll_typed_read $arr, $unit, $prim, $idx, $count, 0, <$prim as $crate::BitLength>::BITS);
+            let mask = (!0 as $prim) >> (<$prim as $crate::BitLength>::BITS - $bits);
+            full = (full & !(mask << $offset)) | (($val & mask) << $offset);
+            $crate::bytestruct!(@unroll_typed_write_raw $arr, $unit, $prim, $idx, $count, full);
+        }
+    };
+
+    (@unroll_typed_write_fresh $arr:expr, $unit:tt, $prim:ty, $idx:expr, $count:tt, $offset:expr, $bits:expr, $val:expr) => {
+        {
+            let mask = (!0 as $prim) >> (<$prim as $crate::BitLength>::BITS - $bits);
+            let full = ($val & mask) << $offset;
+            $crate::bytestruct!(@unroll_typed_write_raw $arr, $unit, $prim, $idx, $count, full);
+        }
+    };
+
+    (@unroll_typed_write_raw $arr:expr, $unit:tt, $prim:ty, $idx:expr, 1, $full:expr) => {
+        $arr[$idx] = $full as $unit;
+    };
+    (@unroll_typed_write_raw $arr:expr, $unit:tt, $prim:ty, $idx:expr, 2, $full:expr) => {
+        $arr[$idx] = $full as $unit;
+        $arr[$idx+1] = ($full >> $crate::bits_mul!($unit, 1)) as $unit;
+    };
+    (@unroll_typed_write_raw $arr:expr, $unit:tt, $prim:ty, $idx:expr, 3, $full:expr) => {
+        $arr[$idx] = $full as $unit;
+        $arr[$idx+1] = ($full >> $crate::bits_mul!($unit, 1)) as $unit;
+        $arr[$idx+2] = ($full >> $crate::bits_mul!($unit, 2)) as $unit;
+    };
+    (@unroll_typed_write_raw $arr:expr, $unit:tt, $prim:ty, $idx:expr, 4, $full:expr) => {
+        $arr[$idx] = $full as $unit;
+        $arr[$idx+1] = ($full >> $crate::bits_mul!($unit, 1)) as $unit;
+        $arr[$idx+2] = ($full >> $crate::bits_mul!($unit, 2)) as $unit;
+        $arr[$idx+3] = ($full >> $crate::bits_mul!($unit, 3)) as $unit;
+    };
+    (@unroll_typed_write_raw $arr:expr, $unit:tt, $prim:ty, $idx:expr, 5, $full:expr) => {
+        $arr[$idx] = $full as $unit;
+        $arr[$idx+1] = ($full >> $crate::bits_mul!($unit, 1)) as $unit;
+        $arr[$idx+2] = ($full >> $crate::bits_mul!($unit, 2)) as $unit;
+        $arr[$idx+3] = ($full >> $crate::bits_mul!($unit, 3)) as $unit;
+        $arr[$idx+4] = ($full >> $crate::bits_mul!($unit, 4)) as $unit;
+    };
+    (@unroll_typed_write_raw $arr:expr, $unit:tt, $prim:ty, $idx:expr, 6, $full:expr) => {
+        $arr[$idx] = $full as $unit;
+        $arr[$idx+1] = ($full >> $crate::bits_mul!($unit, 1)) as $unit;
+        $arr[$idx+2] = ($full >> $crate::bits_mul!($unit, 2)) as $unit;
+        $arr[$idx+3] = ($full >> $crate::bits_mul!($unit, 3)) as $unit;
+        $arr[$idx+4] = ($full >> $crate::bits_mul!($unit, 4)) as $unit;
+        $arr[$idx+5] = ($full >> $crate::bits_mul!($unit, 5)) as $unit;
+    };
+    (@unroll_typed_write_raw $arr:expr, $unit:tt, $prim:ty, $idx:expr, 7, $full:expr) => {
+        $arr[$idx] = $full as $unit;
+        $arr[$idx+1] = ($full >> $crate::bits_mul!($unit, 1)) as $unit;
+        $arr[$idx+2] = ($full >> $crate::bits_mul!($unit, 2)) as $unit;
+        $arr[$idx+3] = ($full >> $crate::bits_mul!($unit, 3)) as $unit;
+        $arr[$idx+4] = ($full >> $crate::bits_mul!($unit, 4)) as $unit;
+        $arr[$idx+5] = ($full >> $crate::bits_mul!($unit, 5)) as $unit;
+        $arr[$idx+6] = ($full >> $crate::bits_mul!($unit, 6)) as $unit;
+    };
+    (@unroll_typed_write_raw $arr:expr, $unit:tt, $prim:ty, $idx:expr, 8, $full:expr) => {
+        $arr[$idx] = $full as $unit;
+        $arr[$idx+1] = ($full >> $crate::bits_mul!($unit, 1)) as $unit;
+        $arr[$idx+2] = ($full >> $crate::bits_mul!($unit, 2)) as $unit;
+        $arr[$idx+3] = ($full >> $crate::bits_mul!($unit, 3)) as $unit;
+        $arr[$idx+4] = ($full >> $crate::bits_mul!($unit, 4)) as $unit;
+        $arr[$idx+5] = ($full >> $crate::bits_mul!($unit, 5)) as $unit;
+        $arr[$idx+6] = ($full >> $crate::bits_mul!($unit, 6)) as $unit;
+        $arr[$idx+7] = ($full >> $crate::bits_mul!($unit, 7)) as $unit;
+    };
+    (@unroll_typed_write_raw $arr:expr, $unit:tt, $prim:ty, $idx:expr, $any:expr, $full:expr) => {
+        {
+             let mut i = 0;
+             let mut shift = 0;
+             while i < $any {
+                 $arr[$idx + i] = ($full >> shift) as $unit;
+                 shift += <$unit as $crate::BitLength>::BITS;
+                 i += 1;
+             }
+        }
+    };
+    // Wrapped Type arm (for byteval expansion or trait-associated types)
+    (@impl_fields $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident ($field_type:ty) $bits:tt $($rest:tt)*) => {
+        $crate::paste::paste! {
+            const [<$field_name:upper _OFFSET>]: usize = $shift;
+            const [<$field_name:upper _BITS>]: usize = $bits;
             const [<$field_name:upper _MASK>]: u128 = (!0u128) >> (128 - $bits);
 
             #[allow(dead_code)]
             #[inline]
-            #[doc = concat!("Returns the `", stringify!($field_name), "` property as a `", stringify!($field_type), "`.")]
             $field_vis const fn $field_name(self) -> $field_type {
                 let val = $crate::bytestruct!(@read_localized_prim self.0, $shift, $bits);
                 val as $field_type
             }
 
             #[allow(dead_code)]
-            #[doc = concat!("Inline mutation to apply the `", stringify!($field_name), "` property. Masks inputs over ", stringify!($bits), " bits.")]
             $field_vis fn [<set_ $field_name>](&mut self, val: $field_type) {
                 debug_assert!((val as u128) <= Self::[<$field_name:upper _MASK>], "Value {} overflows allocated {} bits", val, $bits);
                 $crate::bytestruct!(@write_localized_prim self.0, $shift, $bits, val as u128);
             }
 
             #[allow(dead_code)]
-            #[doc = concat!("Returns a cloned copy of the bytestruct with the `", stringify!($field_name), "` property mapped. Masks inputs over ", stringify!($bits), " bits.")]
             $field_vis const fn [<with_ $field_name>](mut self, val: $field_type) -> Self {
                 debug_assert!((val as u128) <= Self::[<$field_name:upper _MASK>], "Value overflows allocated bits");
                 $crate::bytestruct!(@write_localized_prim self.0, $shift, $bits, val as u128);
@@ -1116,7 +1834,6 @@ macro_rules! bytestruct {
             }
 
             #[allow(dead_code)]
-            #[doc = concat!("Strict inline mutation to apply the `", stringify!($field_name), "` property. Returns a `BitstructError` if the value overflows ", stringify!($bits), " bits.")]
             $field_vis fn [<try_set_ $field_name>](&mut self, val: $field_type) -> Result<(), $crate::BitstructError> {
                 if (val as u128) > Self::[<$field_name:upper _MASK>] {
                     return Err($crate::BitstructError::Overflow { value: val as u128, allocated_bits: $bits });
@@ -1126,7 +1843,6 @@ macro_rules! bytestruct {
             }
 
             #[allow(dead_code)]
-            #[doc = concat!("Strict cloned evaluation to apply the `", stringify!($field_name), "` property. Returns a `BitstructError` if the value overflows ", stringify!($bits), " bits.")]
             $field_vis const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
                 if (val as u128) > Self::[<$field_name:upper _MASK>] {
                     return Err($crate::BitstructError::Overflow { value: val as u128, allocated_bits: $bits });
@@ -1137,15 +1853,11 @@ macro_rules! bytestruct {
         $crate::bytestruct!(@impl_fields $name, $prim, $shift + $bits, $($rest)*);
     };
 
-
     // Enum arm
     (@impl_fields $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident $field_type:tt $bits:tt $($rest:tt)*) => {
         $crate::paste::paste! {
-            #[doc(hidden)]
-            #[allow(dead_code)]
             const [<$field_name:upper _OFFSET>]: usize = $shift;
-
-            #[doc(hidden)]
+            const [<$field_name:upper _BITS>]: usize = $bits;
             const [<$field_name:upper _MASK>]: u128 = (!0u128) >> (128 - $bits);
 
             #[allow(dead_code)]
@@ -1241,22 +1953,28 @@ macro_rules! bytestruct {
 /// ```
 #[macro_export]
 macro_rules! byteval {
-    ($(#[$meta:meta])* $vis:vis struct $name:ident (1);) => { $crate::bytestruct! { $(#[$meta])* $vis struct $name (1) { pub value: u8 = 8 } } };
-    ($(#[$meta:meta])* $vis:vis struct $name:ident (2);) => { $crate::bytestruct! { $(#[$meta])* $vis struct $name (2) { pub value: u16 = 16 } } };
-    ($(#[$meta:meta])* $vis:vis struct $name:ident (3);) => { $crate::bytestruct! { $(#[$meta])* $vis struct $name (3) { pub value: u32 = 24 } } };
-    ($(#[$meta:meta])* $vis:vis struct $name:ident (4);) => { $crate::bytestruct! { $(#[$meta])* $vis struct $name (4) { pub value: u32 = 32 } } };
-    ($(#[$meta:meta])* $vis:vis struct $name:ident (5);) => { $crate::bytestruct! { $(#[$meta])* $vis struct $name (5) { pub value: u64 = 40 } } };
-    ($(#[$meta:meta])* $vis:vis struct $name:ident (6);) => { $crate::bytestruct! { $(#[$meta])* $vis struct $name (6) { pub value: u64 = 48 } } };
-    ($(#[$meta:meta])* $vis:vis struct $name:ident (7);) => { $crate::bytestruct! { $(#[$meta])* $vis struct $name (7) { pub value: u64 = 56 } } };
-    ($(#[$meta:meta])* $vis:vis struct $name:ident (8);) => { $crate::bytestruct! { $(#[$meta])* $vis struct $name (8) { pub value: u64 = 64 } } };
-    ($(#[$meta:meta])* $vis:vis struct $name:ident (9);) => { $crate::bytestruct! { $(#[$meta])* $vis struct $name (9) { pub value: u128 = 72 } } };
-    ($(#[$meta:meta])* $vis:vis struct $name:ident (10);) => { $crate::bytestruct! { $(#[$meta])* $vis struct $name (10) { pub value: u128 = 80 } } };
-    ($(#[$meta:meta])* $vis:vis struct $name:ident (11);) => { $crate::bytestruct! { $(#[$meta])* $vis struct $name (11) { pub value: u128 = 88 } } };
-    ($(#[$meta:meta])* $vis:vis struct $name:ident (12);) => { $crate::bytestruct! { $(#[$meta])* $vis struct $name (12) { pub value: u128 = 96 } } };
-    ($(#[$meta:meta])* $vis:vis struct $name:ident (13);) => { $crate::bytestruct! { $(#[$meta])* $vis struct $name (13) { pub value: u128 = 104 } } };
-    ($(#[$meta:meta])* $vis:vis struct $name:ident (14);) => { $crate::bytestruct! { $(#[$meta])* $vis struct $name (14) { pub value: u128 = 112 } } };
-    ($(#[$meta:meta])* $vis:vis struct $name:ident (15);) => { $crate::bytestruct! { $(#[$meta])* $vis struct $name (15) { pub value: u128 = 120 } } };
-    ($(#[$meta:meta])* $vis:vis struct $name:ident (16);) => { $crate::bytestruct! { $(#[$meta])* $vis struct $name (16) { pub value: u128 = 128 } } };
+    // Branch for specialized storage unit
+    ($(#[$meta:meta])* $vis:vis struct $name:ident ($count:tt, $unit:tt);) => {
+        $crate::bytestruct! {
+            $(#[$meta])* $vis struct $name ([$unit; $count]) {
+                pub value: (<$crate::Bits<{ $crate::bits_mul!($unit, $count) }> as $crate::BitenumType>::Prim) = @unroll($count)
+            }
+        }
+    };
+    // Special shorthand for byte-based counts (u8 default)
+    ($(#[$meta:meta])* $vis:vis struct $name:ident (1);) => { $crate::byteval! { $(#[$meta])* $vis struct $name (1, u8); } };
+    ($(#[$meta:meta])* $vis:vis struct $name:ident (2);) => { $crate::byteval! { $(#[$meta])* $vis struct $name (2, u8); } };
+    ($(#[$meta:meta])* $vis:vis struct $name:ident (3);) => { $crate::byteval! { $(#[$meta])* $vis struct $name (3, u8); } };
+    ($(#[$meta:meta])* $vis:vis struct $name:ident (4);) => { $crate::byteval! { $(#[$meta])* $vis struct $name (4, u8); } };
+    ($(#[$meta:meta])* $vis:vis struct $name:ident (5);) => { $crate::byteval! { $(#[$meta])* $vis struct $name (5, u8); } };
+    ($(#[$meta:meta])* $vis:vis struct $name:ident (6);) => { $crate::byteval! { $(#[$meta])* $vis struct $name (6, u8); } };
+    ($(#[$meta:meta])* $vis:vis struct $name:ident (7);) => { $crate::byteval! { $(#[$meta])* $vis struct $name (7, u8); } };
+    ($(#[$meta:meta])* $vis:vis struct $name:ident (8);) => { $crate::byteval! { $(#[$meta])* $vis struct $name (8, u8); } };
+
+    // Generic fallback for count
+    ($(#[$meta:meta])* $vis:vis struct $name:ident ($count:expr);) => {
+        $crate::byteval! { $(#[$meta])* $vis struct $name ($count, u8); }
+    };
 }
 /// A hidden trait used to resolve the narrowest primitive type for a given bit-width.
 #[doc(hidden)]
@@ -1355,11 +2073,13 @@ macro_rules! bitenum {
             /// The number of bits allocated for this enumeration in memory.
             pub const BITS: usize = $bits;
 
+            #[allow(dead_code)]
             /// The maximum value allowed for this enumeration variant based on the allocated $bits bits.
             ///
             /// Useful for manually validating raw input before conversion.
             pub const MASK: <$crate::Bits<$bits> as $crate::BitenumType>::Prim = {
                 type Prim = <$crate::Bits<$bits> as $crate::BitenumType>::Prim;
+                #[allow(dead_code)]
                 const TOTAL_BITS: usize = <Prim as $crate::BitLength>::BITS;
                 (!0 as Prim) >> (TOTAL_BITS - $bits)
             };
@@ -1368,6 +2088,7 @@ macro_rules! bitenum {
             ///
             /// This is a zero-cost check that compiles to a simple comparison or a small jump table.
             #[inline(always)]
+            #[allow(dead_code)]
             pub const fn is_defined(self) -> bool {
                 match self.0 {
                     $( $val => true, )*
