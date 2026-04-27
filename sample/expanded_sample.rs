@@ -35,7 +35,7 @@ impl ::core::cmp::Eq for Status {
     #[inline]
     #[doc(hidden)]
     #[coverage(off)]
-    fn assert_fields_are_eq(&self) {
+    fn assert_receiver_is_total_eq(&self) -> () {
         let _: ::core::cmp::AssertParamIsEq<
             <::bitcraft::Bits<2> as ::bitcraft::BitenumType>::Prim,
         >;
@@ -188,7 +188,7 @@ impl ::core::cmp::Eq for Config {
     #[inline]
     #[doc(hidden)]
     #[coverage(off)]
-    fn assert_fields_are_eq(&self) {
+    fn assert_receiver_is_total_eq(&self) -> () {
         let _: ::core::cmp::AssertParamIsEq<u16>;
     }
 }
@@ -221,8 +221,8 @@ impl Config {
     /// The number of bits allocated for the `$field_name` property.
     pub const ENABLED_BITS: usize = 1;
     #[doc(hidden)]
-    const ENABLED_MASK: u16 = (!0 as u16)
-        >> (<u16 as ::bitcraft::BitLength>::BITS - Self::ENABLED_BITS);
+    const ENABLED_MASK: u16 = ((!0 as <u16 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u16 as ::bitcraft::BitLength>::BITS - Self::ENABLED_BITS)) as u16;
     #[allow(dead_code)]
     #[inline]
     ///Returns the boolean value mapping to the `enabled` flag.
@@ -268,8 +268,8 @@ impl Config {
     /// The number of bits allocated for the `$field_name` property.
     pub const MODE_BITS: usize = 3;
     #[doc(hidden)]
-    const MODE_MASK: u16 = (!0 as u16)
-        >> (<u16 as ::bitcraft::BitLength>::BITS - Self::MODE_BITS);
+    const MODE_MASK: u16 = ((!0 as <u16 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u16 as ::bitcraft::BitLength>::BITS - Self::MODE_BITS)) as u16;
     #[allow(dead_code)]
     #[inline]
     ///Returns the `mode` property as a `u8`.
@@ -350,8 +350,8 @@ impl Config {
     /// The number of bits allocated for the `$field_name` property.
     pub const STATUS_BITS: usize = 2;
     #[doc(hidden)]
-    const STATUS_MASK: u16 = (!0 as u16)
-        >> (<u16 as ::bitcraft::BitLength>::BITS - Self::STATUS_BITS);
+    const STATUS_MASK: u16 = ((!0 as <u16 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u16 as ::bitcraft::BitLength>::BITS - Self::STATUS_BITS)) as u16;
     #[allow(dead_code)]
     ///Returns the `status` variant strictly typed to the `Status` enumeration.
     pub const fn status(self) -> Status {
@@ -433,8 +433,8 @@ impl Config {
     /// The number of bits allocated for the `$field_name` property.
     pub const DATA_BITS: usize = 10;
     #[doc(hidden)]
-    const DATA_MASK: u16 = (!0 as u16)
-        >> (<u16 as ::bitcraft::BitLength>::BITS - Self::DATA_BITS);
+    const DATA_MASK: u16 = ((!0 as <u16 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u16 as ::bitcraft::BitLength>::BITS - Self::DATA_BITS)) as u16;
     #[allow(dead_code)]
     #[inline]
     ///Returns the `data` property as a `u16`.
@@ -531,6 +531,384 @@ impl Config {
     }
 }
 
+#[repr(transparent)]
+pub struct SignedConfig(pub i16);
+
+#[automatically_derived]
+impl ::core::marker::Copy for SignedConfig {}
+
+#[automatically_derived]
+#[doc(hidden)]
+unsafe impl ::core::clone::TrivialClone for SignedConfig {}
+
+#[automatically_derived]
+impl ::core::clone::Clone for SignedConfig {
+    #[inline]
+    fn clone(&self) -> SignedConfig {
+        let _: ::core::clone::AssertParamIsClone<i16>;
+        *self
+    }
+}
+
+#[automatically_derived]
+impl ::core::marker::StructuralPartialEq for SignedConfig {}
+
+#[automatically_derived]
+impl ::core::cmp::PartialEq for SignedConfig {
+    #[inline]
+    fn eq(&self, other: &SignedConfig) -> bool {
+        self.0 == other.0
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Eq for SignedConfig {
+    #[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    fn assert_receiver_is_total_eq(&self) -> () {
+        let _: ::core::cmp::AssertParamIsEq<i16>;
+    }
+}
+
+#[automatically_derived]
+impl ::core::default::Default for SignedConfig {
+    #[inline]
+    fn default() -> SignedConfig {
+        SignedConfig(::core::default::Default::default())
+    }
+}
+
+impl core::fmt::Debug for SignedConfig {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("SignedConfig")
+            .field("raw", &self.0)
+            .field("enabled", &self.enabled())
+            .field("mode", &self.mode())
+            .field("status", &self.status())
+            .field("data", &self.data())
+            .finish()
+    }
+}
+
+impl SignedConfig {
+    #[allow(dead_code)]
+    pub const BITS: usize = <i16 as ::bitcraft::BitLength>::BITS;
+    /// The bit-offset of the `$field_name` property within the underlying storage.
+    pub const ENABLED_OFFSET: usize = 0;
+    /// The number of bits allocated for the `$field_name` property.
+    pub const ENABLED_BITS: usize = 1;
+    #[doc(hidden)]
+    const ENABLED_MASK: i16 = ((!0 as <i16 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<i16 as ::bitcraft::BitLength>::BITS - Self::ENABLED_BITS)) as i16;
+    #[allow(dead_code)]
+    #[inline]
+    ///Returns the boolean value mapping to the `enabled` flag.
+    pub const fn enabled(self) -> bool {
+        ((self.0 >> Self::ENABLED_OFFSET) & Self::ENABLED_MASK) != 0
+    }
+    #[allow(dead_code)]
+    #[inline]
+    ///Inline mutation to set the `enabled` flag.
+    pub fn set_enabled(&mut self, val: bool) {
+        let val_masked = val as i16;
+        self.0 = (self.0 & !(Self::ENABLED_MASK << Self::ENABLED_OFFSET))
+            | (val_masked << Self::ENABLED_OFFSET);
+    }
+    #[allow(dead_code)]
+    ///Returns a cloned copy of the bitfield with the `enabled` flag specified.
+    pub const fn with_enabled(self, val: bool) -> Self {
+        let val_masked = val as i16;
+        Self(
+            (self.0 & !(Self::ENABLED_MASK << Self::ENABLED_OFFSET))
+                | (val_masked << Self::ENABLED_OFFSET),
+        )
+    }
+    #[allow(dead_code)]
+    ///Inline mutation to set the `enabled` flag. Returns `Ok(())` since booleans cannot overflow.
+    pub fn try_set_enabled(
+        &mut self,
+        val: bool,
+    ) -> Result<(), ::bitcraft::BitstructError> {
+        self.set_enabled(val);
+        Ok(())
+    }
+    #[allow(dead_code)]
+    ///Returns a cloned copy of the bitfield with the `enabled` flag specified. Returns `Ok(Self)` since booleans cannot overflow.
+    pub const fn try_with_enabled(
+        self,
+        val: bool,
+    ) -> Result<Self, ::bitcraft::BitstructError> {
+        Ok(self.with_enabled(val))
+    }
+    /// The bit-offset of the `$field_name` property within the underlying storage.
+    pub const MODE_OFFSET: usize = 0 + 1;
+    /// The number of bits allocated for the `$field_name` property.
+    pub const MODE_BITS: usize = 3;
+    #[doc(hidden)]
+    const MODE_MASK: i16 = ((!0 as <i16 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<i16 as ::bitcraft::BitLength>::BITS - Self::MODE_BITS)) as i16;
+    #[allow(dead_code)]
+    #[inline]
+    ///Returns the `mode` property as a `u8`.
+    pub const fn mode(self) -> u8 {
+        ((self.0 >> Self::MODE_OFFSET) & Self::MODE_MASK) as u8
+    }
+    #[allow(dead_code)]
+    #[inline]
+    ///Inline mutation to apply the `mode` property. Masks inputs over 3 bits.
+    pub fn set_mode(&mut self, val: u8) {
+        if true {
+            if !((val as i16) <= Self::MODE_MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value {0} overflows allocated {1} bits", val, 3),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as i16) & Self::MODE_MASK;
+        self.0 = (self.0 & !(Self::MODE_MASK << Self::MODE_OFFSET))
+            | (val_masked << Self::MODE_OFFSET);
+    }
+    #[allow(dead_code)]
+    ///Returns a cloned copy of the bitfield with the `mode` property mapped. Masks inputs over 3 bits.
+    pub const fn with_mode(self, val: u8) -> Self {
+        if true {
+            if !((val as i16) <= Self::MODE_MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value overflows allocated bits"),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as i16) & Self::MODE_MASK;
+        Self(
+            (self.0 & !(Self::MODE_MASK << Self::MODE_OFFSET))
+                | (val_masked << Self::MODE_OFFSET),
+        )
+    }
+    #[allow(dead_code)]
+    ///Strict inline mutation to apply the `mode` property. Returns a `BitstructError` if the value overflows 3 bits.
+    pub fn try_set_mode(&mut self, val: u8) -> Result<(), ::bitcraft::BitstructError> {
+        if (val as i16) > Self::MODE_MASK {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: (val as i16) as u128,
+                allocated_bits: 3,
+            });
+        }
+        let val_masked = (val as i16) & Self::MODE_MASK;
+        self.0 = (self.0 & !(Self::MODE_MASK << Self::MODE_OFFSET))
+            | (val_masked << Self::MODE_OFFSET);
+        Ok(())
+    }
+    #[allow(dead_code)]
+    ///Strict cloned evaluation to apply the `mode` property. Returns a `BitstructError` if the value overflows 3 bits.
+    pub const fn try_with_mode(
+        self,
+        val: u8,
+    ) -> Result<Self, ::bitcraft::BitstructError> {
+        if (val as i16) > Self::MODE_MASK {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: (val as i16) as u128,
+                allocated_bits: 3,
+            });
+        }
+        let val_masked = (val as i16) & Self::MODE_MASK;
+        Ok(
+            Self(
+                (self.0 & !(Self::MODE_MASK << Self::MODE_OFFSET))
+                    | (val_masked << Self::MODE_OFFSET),
+            ),
+        )
+    }
+    /// The bit-offset of the `$field_name` property within the underlying storage.
+    pub const STATUS_OFFSET: usize = 0 + 1 + 3;
+    /// The number of bits allocated for the `$field_name` property.
+    pub const STATUS_BITS: usize = 2;
+    #[doc(hidden)]
+    const STATUS_MASK: i16 = ((!0 as <i16 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<i16 as ::bitcraft::BitLength>::BITS - Self::STATUS_BITS)) as i16;
+    #[allow(dead_code)]
+    ///Returns the `status` variant strictly typed to the `Status` enumeration.
+    pub const fn status(self) -> Status {
+        Status::from_bits(((self.0 >> Self::STATUS_OFFSET) & Self::STATUS_MASK) as _)
+    }
+    #[allow(dead_code)]
+    ///Inline mutation to apply the bounded `Status` enumeration to the `status` property.
+    pub fn set_status(&mut self, val: Status) {
+        if true {
+            if !((val.to_bits() as i16) <= Self::STATUS_MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Enum variant overflows allocated {0} bits", 2),
+                    );
+                }
+            }
+        }
+        let val_masked = (val.to_bits() as i16) & Self::STATUS_MASK;
+        self.0 = (self.0 & !(Self::STATUS_MASK << Self::STATUS_OFFSET))
+            | (val_masked << Self::STATUS_OFFSET);
+    }
+    #[allow(dead_code)]
+    ///Returns a cloned copy of the bitfield bounded by the `Status` enumeration supplied to `status`.
+    pub const fn with_status(self, val: Status) -> Self {
+        if true {
+            if !((val.to_bits() as i16) <= Self::STATUS_MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Enum variant overflows allocated bits"),
+                    );
+                }
+            }
+        }
+        let val_masked = (val.to_bits() as i16) & Self::STATUS_MASK;
+        Self(
+            (self.0 & !(Self::STATUS_MASK << Self::STATUS_OFFSET))
+                | (val_masked << Self::STATUS_OFFSET),
+        )
+    }
+    #[allow(dead_code)]
+    ///Strict inline mutation to apply the bounded `Status` enumeration to the `status` property. Returns a `BitstructError` if the value overflows 2 bits.
+    pub fn try_set_status(
+        &mut self,
+        val: Status,
+    ) -> Result<(), ::bitcraft::BitstructError> {
+        if (val.to_bits() as i16) > Self::STATUS_MASK {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: val.to_bits() as u128,
+                allocated_bits: 2,
+            });
+        }
+        let val_masked = (val.to_bits() as i16) & Self::STATUS_MASK;
+        self.0 = (self.0 & !(Self::STATUS_MASK << Self::STATUS_OFFSET))
+            | (val_masked << Self::STATUS_OFFSET);
+        Ok(())
+    }
+    #[allow(dead_code)]
+    ///Strict cloned evaluation to apply the bounded `Status` enumeration to the `status` property. Returns a `BitstructError` if the value overflows 2 bits.
+    pub const fn try_with_status(
+        self,
+        val: Status,
+    ) -> Result<Self, ::bitcraft::BitstructError> {
+        if (val.to_bits() as i16) > Self::STATUS_MASK {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: val.to_bits() as u128,
+                allocated_bits: 2,
+            });
+        }
+        let val_masked = (val.to_bits() as i16) & Self::STATUS_MASK;
+        Ok(
+            Self(
+                (self.0 & !(Self::STATUS_MASK << Self::STATUS_OFFSET))
+                    | (val_masked << Self::STATUS_OFFSET),
+            ),
+        )
+    }
+    /// The bit-offset of the `$field_name` property within the underlying storage.
+    pub const DATA_OFFSET: usize = 0 + 1 + 3 + 2;
+    /// The number of bits allocated for the `$field_name` property.
+    pub const DATA_BITS: usize = 9;
+    #[doc(hidden)]
+    const DATA_MASK: i16 = ((!0 as <i16 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<i16 as ::bitcraft::BitLength>::BITS - Self::DATA_BITS)) as i16;
+    #[allow(dead_code)]
+    #[inline]
+    ///Returns the `data` property as a `u16`.
+    pub const fn data(self) -> u16 {
+        ((self.0 >> Self::DATA_OFFSET) & Self::DATA_MASK) as u16
+    }
+    #[allow(dead_code)]
+    #[inline]
+    ///Inline mutation to apply the `data` property. Masks inputs over 9 bits.
+    pub fn set_data(&mut self, val: u16) {
+        if true {
+            if !((val as i16) <= Self::DATA_MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value {0} overflows allocated {1} bits", val, 9),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as i16) & Self::DATA_MASK;
+        self.0 = (self.0 & !(Self::DATA_MASK << Self::DATA_OFFSET))
+            | (val_masked << Self::DATA_OFFSET);
+    }
+    #[allow(dead_code)]
+    ///Returns a cloned copy of the bitfield with the `data` property mapped. Masks inputs over 9 bits.
+    pub const fn with_data(self, val: u16) -> Self {
+        if true {
+            if !((val as i16) <= Self::DATA_MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value overflows allocated bits"),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as i16) & Self::DATA_MASK;
+        Self(
+            (self.0 & !(Self::DATA_MASK << Self::DATA_OFFSET))
+                | (val_masked << Self::DATA_OFFSET),
+        )
+    }
+    #[allow(dead_code)]
+    ///Strict inline mutation to apply the `data` property. Returns a `BitstructError` if the value overflows 9 bits.
+    pub fn try_set_data(&mut self, val: u16) -> Result<(), ::bitcraft::BitstructError> {
+        if (val as i16) > Self::DATA_MASK {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: (val as i16) as u128,
+                allocated_bits: 9,
+            });
+        }
+        let val_masked = (val as i16) & Self::DATA_MASK;
+        self.0 = (self.0 & !(Self::DATA_MASK << Self::DATA_OFFSET))
+            | (val_masked << Self::DATA_OFFSET);
+        Ok(())
+    }
+    #[allow(dead_code)]
+    ///Strict cloned evaluation to apply the `data` property. Returns a `BitstructError` if the value overflows 9 bits.
+    pub const fn try_with_data(
+        self,
+        val: u16,
+    ) -> Result<Self, ::bitcraft::BitstructError> {
+        if (val as i16) > Self::DATA_MASK {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: (val as i16) as u128,
+                allocated_bits: 9,
+            });
+        }
+        let val_masked = (val as i16) & Self::DATA_MASK;
+        Ok(
+            Self(
+                (self.0 & !(Self::DATA_MASK << Self::DATA_OFFSET))
+                    | (val_masked << Self::DATA_OFFSET),
+            ),
+        )
+    }
+    /// Returns the raw interior integer value.
+    ///
+    /// This is useful for serializing the struct or passing it to external APIs.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn to_bits(self) -> i16 {
+        self.0
+    }
+    /// Creates a new instance from a raw integer value.
+    ///
+    /// # Safety
+    /// While this method is safe, providing values with bits set outside
+    /// the defined field ranges may result in those bits being preserved
+    /// (padded) or ignored depending on the getters used.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn from_bits(val: i16) -> Self {
+        Self(val)
+    }
+}
+
 #[repr(C)]
 pub struct Coordinate(pub [u8; 5]);
 
@@ -566,7 +944,7 @@ impl ::core::cmp::Eq for Coordinate {
     #[inline]
     #[doc(hidden)]
     #[coverage(off)]
-    fn assert_fields_are_eq(&self) {
+    fn assert_receiver_is_total_eq(&self) -> () {
         let _: ::core::cmp::AssertParamIsEq<[u8; 5]>;
     }
 }
@@ -1355,7 +1733,7 @@ impl ::core::cmp::Eq for Telemetry {
     #[inline]
     #[doc(hidden)]
     #[coverage(off)]
-    fn assert_fields_are_eq(&self) {
+    fn assert_receiver_is_total_eq(&self) -> () {
         let _: ::core::cmp::AssertParamIsEq<[u8; 7]>;
     }
 }
@@ -2571,7 +2949,7 @@ impl ::core::cmp::Eq for U16Packet {
     #[inline]
     #[doc(hidden)]
     #[coverage(off)]
-    fn assert_fields_are_eq(&self) {
+    fn assert_receiver_is_total_eq(&self) -> () {
         let _: ::core::cmp::AssertParamIsEq<[u16; 3]>;
     }
 }
@@ -3148,7 +3526,7 @@ impl ::core::cmp::Eq for U32Packet {
     #[inline]
     #[doc(hidden)]
     #[coverage(off)]
-    fn assert_fields_are_eq(&self) {
+    fn assert_receiver_is_total_eq(&self) -> () {
         let _: ::core::cmp::AssertParamIsEq<[u32; 2]>;
     }
 }
@@ -3715,7 +4093,7 @@ impl ::core::cmp::Eq for SmallId {
     #[inline]
     #[doc(hidden)]
     #[coverage(off)]
-    fn assert_fields_are_eq(&self) {
+    fn assert_receiver_is_total_eq(&self) -> () {
         let _: ::core::cmp::AssertParamIsEq<[u8; 1]>;
     }
 }
@@ -4001,7 +4379,7 @@ impl ::core::cmp::Eq for Id16 {
     #[inline]
     #[doc(hidden)]
     #[coverage(off)]
-    fn assert_fields_are_eq(&self) {
+    fn assert_receiver_is_total_eq(&self) -> () {
         let _: ::core::cmp::AssertParamIsEq<[u8; 2]>;
     }
 }
@@ -4304,7 +4682,7 @@ impl ::core::cmp::Eq for PackedId {
     #[inline]
     #[doc(hidden)]
     #[coverage(off)]
-    fn assert_fields_are_eq(&self) {
+    fn assert_receiver_is_total_eq(&self) -> () {
         let _: ::core::cmp::AssertParamIsEq<[u8; 3]>;
     }
 }
@@ -4626,7 +5004,7 @@ impl ::core::cmp::Eq for Id40 {
     #[inline]
     #[doc(hidden)]
     #[coverage(off)]
-    fn assert_fields_are_eq(&self) {
+    fn assert_receiver_is_total_eq(&self) -> () {
         let _: ::core::cmp::AssertParamIsEq<[u8; 5]>;
     }
 }
@@ -4986,7 +5364,7 @@ impl ::core::cmp::Eq for Id48 {
     #[inline]
     #[doc(hidden)]
     #[coverage(off)]
-    fn assert_fields_are_eq(&self) {
+    fn assert_receiver_is_total_eq(&self) -> () {
         let _: ::core::cmp::AssertParamIsEq<[u16; 3]>;
     }
 }
@@ -5308,7 +5686,7 @@ impl ::core::cmp::Eq for Id64 {
     #[inline]
     #[doc(hidden)]
     #[coverage(off)]
-    fn assert_fields_are_eq(&self) {
+    fn assert_receiver_is_total_eq(&self) -> () {
         let _: ::core::cmp::AssertParamIsEq<[u8; 8]>;
     }
 }
@@ -5726,7 +6104,7 @@ impl ::core::cmp::Eq for AlignedId96 {
     #[inline]
     #[doc(hidden)]
     #[coverage(off)]
-    fn assert_fields_are_eq(&self) {
+    fn assert_receiver_is_total_eq(&self) -> () {
         let _: ::core::cmp::AssertParamIsEq<[u32; 3]>;
     }
 }
@@ -6048,7 +6426,7 @@ impl ::core::cmp::Eq for Id128 {
     #[inline]
     #[doc(hidden)]
     #[coverage(off)]
-    fn assert_fields_are_eq(&self) {
+    fn assert_receiver_is_total_eq(&self) -> () {
         let _: ::core::cmp::AssertParamIsEq<[u128; 1]>;
     }
 }
@@ -6334,7 +6712,7 @@ impl ::core::cmp::Eq for DualId128 {
     #[inline]
     #[doc(hidden)]
     #[coverage(off)]
-    fn assert_fields_are_eq(&self) {
+    fn assert_receiver_is_total_eq(&self) -> () {
         let _: ::core::cmp::AssertParamIsEq<[u64; 2]>;
     }
 }

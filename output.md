@@ -73,7 +73,7 @@ impl ConnectionState {
 
 ## 2. `bitstruct!` (Word-Aligned Packing)
 
-Packs multiple logical fields into a single standard CPU register (`u8`-`u128`). Now utilizes named constants for offsets and masks.
+Packs multiple logical fields into a single standard CPU register (`u8`-`u128`, `i8`-`i128`). Now utilizes named constants for offsets and masks, and strictly respects signed boundaries.
 
 ### **Usage**
 

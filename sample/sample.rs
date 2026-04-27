@@ -19,6 +19,16 @@ bitstruct! {
     }
 }
 
+bitstruct! {
+    /// A sample packed configuration using a signed integer base type.
+    pub struct SignedConfig(i16) {
+        pub enabled: bool = 1,
+        pub mode: u8 = 3,
+        pub status: Status = 2,
+        pub data: u16 = 9,
+    }
+}
+
 bytestruct! {
     /// A sample 5-byte dense coordinate.
     pub struct Coordinate(5) {

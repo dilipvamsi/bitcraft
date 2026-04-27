@@ -142,18 +142,28 @@ let config = Config::default()
 
 ## 🛡️ 7. Strict Type Safety Enforcement
 
-The library prevents signed integers from being used as storage or fields to avoid the "Two's Complement Ambiguity" during bit-packing.
+The library enforces careful bounds checking and primitive routing to avoid the "Two's Complement Ambiguity" during bit-packing when dealing with signed base storage types.
 
 ### Internal Traits
 
-We use **Marker Traits with Associated Constants** to trigger compile-time errors.
+We use **Marker Traits with Associated Constants** to trigger compile-time errors and route primitive behaviors.
 
-#### `IsUnsignedInt`: Restricting Base Storage
+#### `IsValidBaseInt`: Restricting and Bounding Base Storage
 
 ```rust
-pub trait IsUnsignedInt { const ASSERT_UNSIGNED: () = (); }
-impl IsUnsignedInt for u8 { const ASSERT_UNSIGNED: () = (); }
-// ... implemented only for u8-u128
+pub trait IsValidBaseInt {
+    type Unsigned: ValidField + BitLength;
+    const MAX_BITS: usize;
+}
+impl IsValidBaseInt for u32 {
+    type Unsigned = u32;
+    const MAX_BITS: usize = 32;
+}
+impl IsValidBaseInt for i32 {
+    type Unsigned = u32;
+    const MAX_BITS: usize = 31; // Reserves the sign bit!
+}
+// ... implemented for u8-u128 and i8-i128
 ```
 
 #### `ValidField`: Restricting Field Types
@@ -171,10 +181,11 @@ The macro inserts a check into a `const _: () = { ... };` block:
 
 ```rust
 const _: () = {
-    // This will FAIL TO COMPILE if $base_type is i32
-    let _ = <$base_type as $crate::IsUnsignedInt>::ASSERT_UNSIGNED;
+    // This will FAIL TO COMPILE if the sum of fields exceeds the MAX_BITS of the base type.
+    // e.g. for an i32 base, if the sum > 31 bits, this triggers an error.
+    let _ = [(); 0 - (!(TOTAL_SUM <= <$base_type as $crate::IsValidBaseInt>::MAX_BITS) as usize)];
 
-    // This will FAIL TO COMPILE if $field_type is i32
+    // This will FAIL TO COMPILE if $field_type is not a supported type.
     let _ = <$field_type as $crate::ValidField>::ASSERT_VALID;
 };
 ```

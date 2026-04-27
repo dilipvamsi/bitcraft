@@ -223,28 +223,45 @@ impl core::fmt::Display for BitstructError {
 
 impl core::error::Error for BitstructError {}
 
-/// **Internal Trait**: Used to enforce that only unsigned integers are used as base types.
+/// **Internal Trait**: Used to enforce that only valid integers are used as base types,
+/// and to route primitive bounds and masking behaviors.
+///
+/// This trait prevents "Two's Complement Ambiguity" when dealing with signed base types
+/// by enforcing a `MAX_BITS` limit (e.g. 15 bits for `i16`, isolating the sign bit)
+/// and by providing an `Unsigned` type to safely compute bitwise masks without sign-extension.
 #[doc(hidden)]
-pub trait IsUnsignedInt {
-    /// A constant that confirms this type is valid.
-    const ASSERT_UNSIGNED: ();
+pub trait IsValidBaseInt {
+    /// A constant that confirms this type is valid at compile-time.
+    const ASSERT_VALID: ();
+    /// The maximum number of bits this type is allowed to store in bitstruct fields.
+    /// For unsigned integers, this equals the type's total bits. For signed integers, this equals
+    /// the type's total bits minus 1, explicitly reserving and isolating the sign bit.
+    const MAX_BITS: usize;
+    /// The corresponding unsigned type (e.g., `u32` for `i32`), used to perform safe bitwise
+    /// shifts during mask generation to avoid arithmetic right shifts (sign-extension bugs).
+    type Unsigned: BitLength;
 }
 
-impl IsUnsignedInt for u8 {
-    const ASSERT_UNSIGNED: () = ();
+macro_rules! impl_is_valid_base {
+    ($type:ty, $unsigned:ty, $max_bits:expr) => {
+        impl IsValidBaseInt for $type {
+            const ASSERT_VALID: () = ();
+            const MAX_BITS: usize = $max_bits;
+            type Unsigned = $unsigned;
+        }
+    };
 }
-impl IsUnsignedInt for u16 {
-    const ASSERT_UNSIGNED: () = ();
-}
-impl IsUnsignedInt for u32 {
-    const ASSERT_UNSIGNED: () = ();
-}
-impl IsUnsignedInt for u64 {
-    const ASSERT_UNSIGNED: () = ();
-}
-impl IsUnsignedInt for u128 {
-    const ASSERT_UNSIGNED: () = ();
-}
+
+impl_is_valid_base!(u8, u8, 8);
+impl_is_valid_base!(u16, u16, 16);
+impl_is_valid_base!(u32, u32, 32);
+impl_is_valid_base!(u64, u64, 64);
+impl_is_valid_base!(u128, u128, 128);
+impl_is_valid_base!(i8, u8, 7);
+impl_is_valid_base!(i16, u16, 15);
+impl_is_valid_base!(i32, u32, 31);
+impl_is_valid_base!(i64, u64, 63);
+impl_is_valid_base!(i128, u128, 127);
 
 /// Common bit-width constants for use in manual calculations or macro overrides.
 pub const U8_BITS: usize = 8;
@@ -385,6 +402,96 @@ impl BitLength for u64 {
     const BITS_16: usize = U64_BITS * 16;
 }
 impl BitLength for u128 {
+    const BITS: usize = U128_BITS;
+    const BITS_2: usize = U128_BITS * 2;
+    const BITS_3: usize = U128_BITS * 3;
+    const BITS_4: usize = U128_BITS * 4;
+    const BITS_5: usize = U128_BITS * 5;
+    const BITS_6: usize = U128_BITS * 6;
+    const BITS_7: usize = U128_BITS * 7;
+    const BITS_8: usize = U128_BITS * 8;
+    const BITS_9: usize = U128_BITS * 9;
+    const BITS_10: usize = U128_BITS * 10;
+    const BITS_11: usize = U128_BITS * 11;
+    const BITS_12: usize = U128_BITS * 12;
+    const BITS_13: usize = U128_BITS * 13;
+    const BITS_14: usize = U128_BITS * 14;
+    const BITS_15: usize = U128_BITS * 15;
+    const BITS_16: usize = U128_BITS * 16;
+}
+impl BitLength for i8 {
+    const BITS: usize = U8_BITS;
+    const BITS_2: usize = U8_BITS_2;
+    const BITS_3: usize = U8_BITS_3;
+    const BITS_4: usize = U8_BITS_4;
+    const BITS_5: usize = U8_BITS_5;
+    const BITS_6: usize = U8_BITS_6;
+    const BITS_7: usize = U8_BITS_7;
+    const BITS_8: usize = U8_BITS_8;
+    const BITS_9: usize = U8_BITS_9;
+    const BITS_10: usize = U8_BITS_10;
+    const BITS_11: usize = U8_BITS_11;
+    const BITS_12: usize = U8_BITS_12;
+    const BITS_13: usize = U8_BITS_13;
+    const BITS_14: usize = U8_BITS_14;
+    const BITS_15: usize = U8_BITS_15;
+    const BITS_16: usize = U8_BITS_16;
+}
+impl BitLength for i16 {
+    const BITS: usize = U16_BITS;
+    const BITS_2: usize = U16_BITS_2;
+    const BITS_3: usize = U16_BITS_3;
+    const BITS_4: usize = U16_BITS_4;
+    const BITS_5: usize = U16_BITS_5;
+    const BITS_6: usize = U16_BITS_6;
+    const BITS_7: usize = U16_BITS_7;
+    const BITS_8: usize = U16_BITS_8;
+    const BITS_9: usize = U16_BITS * 9;
+    const BITS_10: usize = U16_BITS * 10;
+    const BITS_11: usize = U16_BITS * 11;
+    const BITS_12: usize = U16_BITS * 12;
+    const BITS_13: usize = U16_BITS * 13;
+    const BITS_14: usize = U16_BITS * 14;
+    const BITS_15: usize = U16_BITS * 15;
+    const BITS_16: usize = U16_BITS * 16;
+}
+impl BitLength for i32 {
+    const BITS: usize = U32_BITS;
+    const BITS_2: usize = U32_BITS_2;
+    const BITS_3: usize = U32_BITS_3;
+    const BITS_4: usize = U32_BITS_4;
+    const BITS_5: usize = U32_BITS * 5;
+    const BITS_6: usize = U32_BITS * 6;
+    const BITS_7: usize = U32_BITS * 7;
+    const BITS_8: usize = U32_BITS * 8;
+    const BITS_9: usize = U32_BITS * 9;
+    const BITS_10: usize = U32_BITS * 10;
+    const BITS_11: usize = U32_BITS * 11;
+    const BITS_12: usize = U32_BITS * 12;
+    const BITS_13: usize = U32_BITS * 13;
+    const BITS_14: usize = U32_BITS * 14;
+    const BITS_15: usize = U32_BITS * 15;
+    const BITS_16: usize = U32_BITS * 16;
+}
+impl BitLength for i64 {
+    const BITS: usize = U64_BITS;
+    const BITS_2: usize = U64_BITS_2;
+    const BITS_3: usize = U64_BITS * 3;
+    const BITS_4: usize = U64_BITS * 4;
+    const BITS_5: usize = U64_BITS * 5;
+    const BITS_6: usize = U64_BITS * 6;
+    const BITS_7: usize = U64_BITS * 7;
+    const BITS_8: usize = U64_BITS * 8;
+    const BITS_9: usize = U64_BITS * 9;
+    const BITS_10: usize = U64_BITS * 10;
+    const BITS_11: usize = U64_BITS * 11;
+    const BITS_12: usize = U64_BITS * 12;
+    const BITS_13: usize = U64_BITS * 13;
+    const BITS_14: usize = U64_BITS * 14;
+    const BITS_15: usize = U64_BITS * 15;
+    const BITS_16: usize = U64_BITS * 16;
+}
+impl BitLength for i128 {
     const BITS: usize = U128_BITS;
     const BITS_2: usize = U128_BITS * 2;
     const BITS_3: usize = U128_BITS * 3;
@@ -744,15 +851,15 @@ macro_rules! bitstruct {
         }
 
         const _: () = {
-            // Compile-time check: Ensure the base storage is an unsigned primitive.
-            let _ = <$base_type as $crate::IsUnsignedInt>::ASSERT_UNSIGNED;
+            // Compile-time check: Ensure the base storage is a valid primitive.
+            let _ = <$base_type as $crate::IsValidBaseInt>::ASSERT_VALID;
 
             // Compile-time check: Ensure each field type is valid.
             $crate::bitstruct!(@check_fields $($field_type)*);
 
             #[allow(dead_code)]
             const TOTAL_BITS: usize = 0 $( + $bits )*;
-            assert!(TOTAL_BITS <= <$base_type as $crate::BitLength>::BITS, "Sum of field bits exceeds base type size");
+            assert!(TOTAL_BITS <= <$base_type as $crate::IsValidBaseInt>::MAX_BITS, "Sum of field bits exceeds base type max bits");
         };
 
         impl $struct_name {
@@ -805,7 +912,7 @@ macro_rules! bitstruct {
             pub const [<$field_name:upper _BITS>]: usize = $bits;
 
             #[doc(hidden)]
-            const [<$field_name:upper _MASK>]: $base_type = (!0 as $base_type) >> (<$base_type as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>]);
+            const [<$field_name:upper _MASK>]: $base_type = ((!0 as <$base_type as $crate::IsValidBaseInt>::Unsigned) >> (<$base_type as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>])) as $base_type;
 
             #[allow(dead_code)]
             #[inline]
@@ -864,7 +971,7 @@ macro_rules! bitstruct {
             pub const [<$field_name:upper _BITS>]: usize = $bits;
 
             #[doc(hidden)]
-            const [<$field_name:upper _MASK>]: $base_type = (!0 as $base_type) >> (<$base_type as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>]);
+            const [<$field_name:upper _MASK>]: $base_type = ((!0 as <$base_type as $crate::IsValidBaseInt>::Unsigned) >> (<$base_type as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>])) as $base_type;
 
             #[allow(dead_code)]
             #[inline]
@@ -926,7 +1033,7 @@ macro_rules! bitstruct {
             pub const [<$field_name:upper _BITS>]: usize = $bits;
 
             #[doc(hidden)]
-            const [<$field_name:upper _MASK>]: $base_type = (!0 as $base_type) >> (<$base_type as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>]);
+            const [<$field_name:upper _MASK>]: $base_type = ((!0 as <$base_type as $crate::IsValidBaseInt>::Unsigned) >> (<$base_type as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>])) as $base_type;
 
             #[allow(dead_code)]
             #[inline]
@@ -980,7 +1087,7 @@ macro_rules! bitstruct {
             pub const [<$field_name:upper _BITS>]: usize = $bits;
 
             #[doc(hidden)]
-            const [<$field_name:upper _MASK>]: $base_type = (!0 as $base_type) >> (<$base_type as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>]);
+            const [<$field_name:upper _MASK>]: $base_type = ((!0 as <$base_type as $crate::IsValidBaseInt>::Unsigned) >> (<$base_type as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>])) as $base_type;
 
             #[allow(dead_code)]
             #[doc = concat!("Returns the `", stringify!($field_name), "` variant strictly typed to the `", stringify!($field_type), "` enumeration.")]

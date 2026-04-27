@@ -68,6 +68,22 @@ bitstruct! {
     }
 }
 
+bitstruct! {
+    struct SignedBaseFuzz(i32) {
+        a: bool = 1,
+        b: u8 = 7,
+        c: u16 = 15,
+        d: u8 = 8, // 1 + 7 + 15 + 8 = 31 bits
+    }
+}
+
+bitstruct! {
+    struct SignedBaseI16Fuzz(i16) {
+        x: u8 = 4,
+        y: u16 = 11, // 4 + 11 = 15 bits
+    }
+}
+
 bytestruct! {
     #[repr(align(8))]
     struct AlignedFuzzer(8) {
@@ -541,5 +557,51 @@ proptest! {
 
         let expected = (masked_a) | ((masked_b as u128) << 80);
         prop_assert_eq!(recon, expected);
+    }
+
+    #[test]
+    fn test_signed_base_fuzz(
+        a in any::<bool>(),
+        b in 0u8..128,
+        c in 0u16..32768,
+        d in any::<u8>(),
+    ) {
+        let s = SignedBaseFuzz::default()
+            .with_a(a)
+            .with_b(b)
+            .with_c(c)
+            .with_d(d);
+
+        prop_assert_eq!(s.a(), a);
+        prop_assert_eq!(s.b(), b);
+        prop_assert_eq!(s.c(), c);
+        prop_assert_eq!(s.d(), d);
+
+        let mut expected = 0u32;
+        expected |= a as u32;
+        expected |= (b as u32) << 1;
+        expected |= (c as u32) << (1 + 7);
+        expected |= (d as u32) << (1 + 7 + 15);
+
+        prop_assert_eq!(s.to_bits(), expected as i32);
+    }
+
+    #[test]
+    fn test_signed_base_i16_fuzz(
+        x in 0u8..16,
+        y in 0u16..2048,
+    ) {
+        let s = SignedBaseI16Fuzz::default()
+            .with_x(x)
+            .with_y(y);
+
+        prop_assert_eq!(s.x(), x);
+        prop_assert_eq!(s.y(), y);
+
+        let mut expected = 0u16;
+        expected |= x as u16;
+        expected |= (y as u16) << 4;
+
+        prop_assert_eq!(s.to_bits(), expected as i16);
     }
 }

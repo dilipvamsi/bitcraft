@@ -5,7 +5,7 @@
 `bitcraft` is a high-performance declarative macro library designed for systems where every bit counts. Engineered for **Mechanical Sympathy**, it allows developers to define data structures that align perfectly with CPU cache lines and memory bus widths, eliminating the silent performance tax of implicit padding.
 
 > [!NOTE]
-> **Roadmap**: `bitcraft` base storage will remain unsigned for maximum register efficiency and deterministic bit-packing. Support for interpreting fields as **signed integers** (two's complement) within these unsigned containers is currently on the roadmap.
+> **Type Safety**: `bitcraft` natively supports both **unsigned** (`u8` through `u128`) and **signed** (`i8` through `i128`) base integers for underlying storage. When using a signed base, the macro enforces a strict boundary (e.g. 15 bits for `i16`) to guarantee the sign bit is never compromised. Support for interpreting the *fields themselves* as signed integers (two's complement) is currently on the roadmap.
 
 > [!TIP]
 > **New to Bitfields?** See our [Ecosystem Comparison](comparisons.md) to understand how `bitcraft` differs from `modular-bitfield`, `packed_struct`, and standard Rust enums.
@@ -14,7 +14,7 @@
 > **Technical Deep Dive**: Curious about how it works? See our [Internal Implementation Guide](implementation.md) for a breakdown of TT-munching, register specialization, and hardware alignment.
 
 > [!IMPORTANT]
-> **Type Safety**: `bitcraft` base storage is **always unsigned** (`u8` through `u128`) to ensure hardware alignment and register efficiency. Currently, fields are also restricted to unsigned types at compile-time. Support for interpreting bits as **signed values** (two's complement fields) within these unsigned structs is on the future roadmap.
+> **Register Safety**: Using signed base types naturally restricts the total sum of allocated bits to avoid overflowing into the sign bit. For example, a `bitstruct` wrapping an `i32` can allocate a maximum of 31 bits. The internal bitwise mask generation safely executes in the unsigned domain to completely prevent unintended sign-extension bugs.
 
 ---
 
@@ -169,8 +169,8 @@ Standard Rust doesn't prevent you from defining a struct that is "too big" for a
 
 The `bitcraft` crate provides four specialized tools. Choosing the right one determines your memory density and instruction efficiency:
 
-- **Use `bitstruct!`** `(Base: u8 - u128)`
-  - **When:** You need to pack multiple small fields (booleans, 3-bit ints, 4-bit enums) into a single, standard CPU register (up to 128 bits).
+- **Use `bitstruct!`** `(Base: u8 - u128, i8 - i128)`
+  - **When:** You need to pack multiple small fields (booleans, 3-bit ints, 4-bit enums) into a single, standard CPU register (up to 128 bits). For signed bases, the macro restricts usage to size - 1 bits to keep the sign bit safe.
   - **Why:** Fastest execution. The CPU loads the entire struct in a single instruction, manipulates the bits in registers, and writes them back. Perfect for protocol headers or status registers.
 
 - **Use `bytestruct!`** `(Base: [u8/u16/u32...; N])`
@@ -252,14 +252,14 @@ reg.set_mode(2);
 
 ### 4. Database Storage Density
 
-Store billion-scale metadata with the absolute minimum footprint. Packing a 24-bit ID and 8-bit status into a single `u32` saves significant storage compared to standard Rust padding.
+Store billion-scale metadata with the absolute minimum footprint. Packing a 24-bit ID and a 7-bit status into a single `i32` saves significant storage compared to standard Rust padding while safely ignoring the sign bit.
 
 ```rust
 bitstruct! {
-    pub struct RecordMetadata(u32) {
+    pub struct RecordMetadata(i32) {
         pub user_id: u32 = 24,
-        pub status_flags: u8 = 8,
-    }
+        pub status_flags: u8 = 7,
+    } // 24 + 7 = 31 bits total. Safe for i32.
 }
 // 1 Billion records = 4.0GB with bitcraft vs 8.0GB+ with standard structs.
 ```

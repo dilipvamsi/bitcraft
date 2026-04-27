@@ -16,7 +16,8 @@ Choosing a bit manipulation library in Rust often involves balancing **Ergonomic
 | **Literal Guarding** | ❌ | ❌ | ❌ | ❌ | **✅ (Branchless unrolling)** |
 | **Byte-Array Support** | ❌ | ⚠️ (Manual) | ✅ (Proc-macro) | ✅ (Proc-macro) | **✅ (Instant/Declarative)** |
 | **Odd-Int IDs (24-bit)** | ❌ | ❌ | ❌ | ❌ | **✅ (`byteval!` Built-in)** |
-| **Signed Bitfields** | ✅ | ✅ | ✅ | ✅ | **❌ (Strictly Checked)** |
+| **Signed Base Storage** | ✅ | ✅ | ✅ | ✅ | **✅ (Strict Bounds)** |
+| **Signed Fields** | ✅ | ✅ | ✅ | ✅ | **❌ (On Roadmap)** |
 | **C FFI / ABI** | ✅ | ⚠️ | ✅ | ✅ | **✅ (Transparent)** |
 
 ---
@@ -35,7 +36,7 @@ We evaluated 1,000,000,000 (1B) operations of complex read/write logic on an opt
 > **Why are we faster than manual code?** Our macros generate perfectly unrolled bitwise expressions. Modern compilers (LLVM) recognize these patterns and perform **Instruction Fusion**, effectively turning multiple shifts/masks into a single **Unaligned Load** instruction. Standard loops or procedural-macro-generated getters often fail to reach this level of hardware optimization.
 
 > [!NOTE]
-> **Roadmap**: `bitcraft` base storage will remain unsigned for maximum register efficiency and deterministic bit-packing. Support for interpreting fields as **signed integers** (two's complement) within these unsigned containers is currently on the roadmap.
+> **Type Safety**: `bitcraft` natively supports both **unsigned** (`u8` through `u128`) and **signed** (`i8` through `i128`) base integers for underlying storage, with strict compiler bounds (e.g., 15 bits for `i16`) to guarantee the sign bit is safely isolated. Support for interpreting the *fields themselves* as signed integers (two's complement) is currently on the roadmap.
 
 ---
 
