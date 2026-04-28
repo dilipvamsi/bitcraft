@@ -552,6 +552,14 @@ impl ValidField for u64 {
 impl ValidField for u128 {
     const ASSERT_VALID: () = ();
 }
+// Signed primitives natively handle two's complement evaluation and sign-extension 
+// safely via mathematical shifting across underlying base boundaries. These primitives
+// represent the external API surface mapped securely into the bitfields.
+impl ValidField for i8 { const ASSERT_VALID: () = (); }
+impl ValidField for i16 { const ASSERT_VALID: () = (); }
+impl ValidField for i32 { const ASSERT_VALID: () = (); }
+impl ValidField for i64 { const ASSERT_VALID: () = (); }
+impl ValidField for i128 { const ASSERT_VALID: () = (); }
 
 /// **Internal Function**: Reads bit-ranges from a byte array. Optimized via const-generics and alignment-aware fast paths.
 ///
@@ -961,6 +969,11 @@ macro_rules! bitstruct {
     (@impl_getters_setters $base_type:ty, $shift:expr, $field_vis:vis $field_name:ident u32 $bits:tt $($rest:tt)*) => { $crate::bitstruct!(@impl_int $base_type, $shift, $field_vis $field_name u32 $bits $($rest)*); };
     (@impl_getters_setters $base_type:ty, $shift:expr, $field_vis:vis $field_name:ident u64 $bits:tt $($rest:tt)*) => { $crate::bitstruct!(@impl_int $base_type, $shift, $field_vis $field_name u64 $bits $($rest)*); };
     (@impl_getters_setters $base_type:ty, $shift:expr, $field_vis:vis $field_name:ident u128 $bits:tt $($rest:tt)*) => { $crate::bitstruct!(@impl_int $base_type, $shift, $field_vis $field_name u128 $bits $($rest)*); };
+    (@impl_getters_setters $base_type:ty, $shift:expr, $field_vis:vis $field_name:ident i8 $bits:tt $($rest:tt)*) => { $crate::bitstruct!(@impl_signed_int $base_type, $shift, $field_vis $field_name i8 $bits $($rest)*); };
+    (@impl_getters_setters $base_type:ty, $shift:expr, $field_vis:vis $field_name:ident i16 $bits:tt $($rest:tt)*) => { $crate::bitstruct!(@impl_signed_int $base_type, $shift, $field_vis $field_name i16 $bits $($rest)*); };
+    (@impl_getters_setters $base_type:ty, $shift:expr, $field_vis:vis $field_name:ident i32 $bits:tt $($rest:tt)*) => { $crate::bitstruct!(@impl_signed_int $base_type, $shift, $field_vis $field_name i32 $bits $($rest)*); };
+    (@impl_getters_setters $base_type:ty, $shift:expr, $field_vis:vis $field_name:ident i64 $bits:tt $($rest:tt)*) => { $crate::bitstruct!(@impl_signed_int $base_type, $shift, $field_vis $field_name i64 $bits $($rest)*); };
+    (@impl_getters_setters $base_type:ty, $shift:expr, $field_vis:vis $field_name:ident i128 $bits:tt $($rest:tt)*) => { $crate::bitstruct!(@impl_signed_int $base_type, $shift, $field_vis $field_name i128 $bits $($rest)*); };
 
     // Standard integer implementation: Extracts the requested bit width, shifting by the accumulated offset.
     (@impl_int $base_type:ty, $shift:expr, $field_vis:vis $field_name:ident $field_type:tt $bits:tt $($rest:tt)*) => {
@@ -1013,6 +1026,84 @@ macro_rules! bitstruct {
             $field_vis const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
                 if (val as $base_type) > Self::[<$field_name:upper _MASK>] {
                     return Err($crate::BitstructError::Overflow { value: (val as $base_type) as u128, allocated_bits: $bits });
+                }
+                let val_masked = (val as $base_type) & Self::[<$field_name:upper _MASK>];
+                Ok(Self((self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>])))
+            }
+        }
+
+        $crate::bitstruct!(@impl_getters_setters $base_type, $shift + $bits, $($rest)*);
+    };
+
+    // Signed integer implementation: Handles sign extension on read and bounds-checked writing for two's complement fields.
+    //
+    // This macro arm intercepts explicit signed field specifications (`i8` through `i128`).
+    // Read operations perform a zero-cost "shift trick":
+    // 1. Mask the underlying base integer down to the requested bits.
+    // 2. Cast into the signed target primitive.
+    // 3. Shift the isolated bits up so the target's sign bit aligns with the Most Significant Bit of the field length.
+    // 4. Arithmetic right-shift down to naturally propagate the sign bit across the full integer span.
+    //
+    // Write operations dynamically calculate MIN and MAX limits using an overflow-safe `(!0 << (bits - 1))` shift,
+    // ensuring data integrity across partial boundaries.
+    (@impl_signed_int $base_type:ty, $shift:expr, $field_vis:vis $field_name:ident $field_type:tt $bits:tt $($rest:tt)*) => {
+        $crate::paste::paste! {
+            /// The bit-offset of the `$field_name` property within the underlying storage.
+            pub const [<$field_name:upper _OFFSET>]: usize = $shift;
+            /// The number of bits allocated for the `$field_name` property.
+            pub const [<$field_name:upper _BITS>]: usize = $bits;
+
+            #[doc(hidden)]
+            const [<$field_name:upper _MASK>]: $base_type = ((!0 as <$base_type as $crate::IsValidBaseInt>::Unsigned) >> (<$base_type as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>])) as $base_type;
+
+            #[doc(hidden)]
+            pub const [<$field_name:upper _MIN>]: $field_type = (!0 as $field_type) << (Self::[<$field_name:upper _BITS>] - 1);
+            #[doc(hidden)]
+            pub const [<$field_name:upper _MAX>]: $field_type = !Self::[<$field_name:upper _MIN>];
+            #[doc(hidden)]
+            const [<$field_name:upper _SHIFT_UP>]: usize = <$field_type as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>];
+
+            #[allow(dead_code)]
+            #[inline]
+            #[doc = concat!("Returns the `", stringify!($field_name), "` property as a signed `", stringify!($field_type), "`.")]
+            $field_vis const fn $field_name(self) -> $field_type {
+                let raw = ((self.0 >> Self::[<$field_name:upper _OFFSET>]) & Self::[<$field_name:upper _MASK>]) as $field_type;
+                (raw << Self::[<$field_name:upper _SHIFT_UP>]) >> Self::[<$field_name:upper _SHIFT_UP>]
+            }
+
+            #[allow(dead_code)]
+            #[inline]
+            #[doc = concat!("Inline mutation to apply the `", stringify!($field_name), "` signed property. Ensures bounds checking.")]
+            $field_vis fn [<set_ $field_name>](&mut self, val: $field_type) {
+                debug_assert!(val >= Self::[<$field_name:upper _MIN>] && val <= Self::[<$field_name:upper _MAX>], "Value {} out of bounds for {} bits", val, $bits);
+                let val_masked = (val as $base_type) & Self::[<$field_name:upper _MASK>];
+                self.0 = (self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]);
+            }
+
+            #[allow(dead_code)]
+            #[doc = concat!("Returns a cloned copy of the bitfield with the `", stringify!($field_name), "` signed property mapped.")]
+            $field_vis const fn [<with_ $field_name>](self, val: $field_type) -> Self {
+                debug_assert!(val >= Self::[<$field_name:upper _MIN>] && val <= Self::[<$field_name:upper _MAX>], "Value overflows allocated bits");
+                let val_masked = (val as $base_type) & Self::[<$field_name:upper _MASK>];
+                Self((self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]))
+            }
+
+            #[allow(dead_code)]
+            #[doc = concat!("Strict inline mutation to apply the `", stringify!($field_name), "` signed property. Returns a `BitstructError` if out of bounds.")]
+            $field_vis fn [<try_set_ $field_name>](&mut self, val: $field_type) -> Result<(), $crate::BitstructError> {
+                if val < Self::[<$field_name:upper _MIN>] || val > Self::[<$field_name:upper _MAX>] {
+                    return Err($crate::BitstructError::Overflow { value: val as i128 as u128, allocated_bits: $bits });
+                }
+                let val_masked = (val as $base_type) & Self::[<$field_name:upper _MASK>];
+                self.0 = (self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]);
+                Ok(())
+            }
+
+            #[allow(dead_code)]
+            #[doc = concat!("Strict cloned evaluation to apply the `", stringify!($field_name), "` signed property. Returns a `BitstructError` if out of bounds.")]
+            $field_vis const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
+                if val < Self::[<$field_name:upper _MIN>] || val > Self::[<$field_name:upper _MAX>] {
+                    return Err($crate::BitstructError::Overflow { value: val as i128 as u128, allocated_bits: $bits });
                 }
                 let val_masked = (val as $base_type) & Self::[<$field_name:upper _MASK>];
                 Ok(Self((self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>])))
@@ -1422,6 +1513,11 @@ macro_rules! bytestruct {
     (@impl_fields $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident u32 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_int $name, $prim, $shift, $field_vis $field_name u32 $bits $($rest)*); };
     (@impl_fields $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident u64 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_int $name, $prim, $shift, $field_vis $field_name u64 $bits $($rest)*); };
     (@impl_fields $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident u128 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_int $name, $prim, $shift, $field_vis $field_name u128 $bits $($rest)*); };
+    (@impl_fields $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident i8 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_signed_int $name, $prim, $shift, $field_vis $field_name i8 $bits $($rest)*); };
+    (@impl_fields $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident i16 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_signed_int $name, $prim, $shift, $field_vis $field_name i16 $bits $($rest)*); };
+    (@impl_fields $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident i32 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_signed_int $name, $prim, $shift, $field_vis $field_name i32 $bits $($rest)*); };
+    (@impl_fields $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident i64 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_signed_int $name, $prim, $shift, $field_vis $field_name i64 $bits $($rest)*); };
+    (@impl_fields $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident i128 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_signed_int $name, $prim, $shift, $field_vis $field_name i128 $bits $($rest)*); };
 
     (@impl_int $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident $field_type:tt $bits:tt $($rest:tt)*) => {
         $crate::paste::paste! {
@@ -1450,7 +1546,50 @@ macro_rules! bytestruct {
                 Ok(self.[<with_ $field_name>](val))
             }
         }
-        $crate::bytestruct!(@impl_typed_fields $name, $unit, $prim, $shift + $bits, $($rest)*);
+        $crate::bytestruct!(@impl_fields $name, $prim, $shift + $bits, $($rest)*);
+    };
+
+    // Signed integer implementation for standard (localized) `bytestruct!` mappings.
+    // Utilizes arithmetic right-shifts on target primitives to synthesize seamless two's complement behavior
+    // across varying alignment constraints without complex branching logic.
+    (@impl_signed_int $name:ident, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident $field_type:tt $bits:tt $($rest:tt)*) => {
+        $crate::paste::paste! {
+            /// The bit-offset of the `$field_name` property within the underlying storage.
+            pub const [<$field_name:upper _OFFSET>]: usize = $shift;
+            /// The number of bits allocated for the `$field_name` property.
+            pub const [<$field_name:upper _BITS>]: usize = $bits;
+            #[doc(hidden)]
+            const [<$field_name:upper _MASK>]: u128 = (!0u128) >> (128 - Self::[<$field_name:upper _BITS>]);
+            #[doc(hidden)]
+            pub const [<$field_name:upper _MIN>]: $field_type = (!0 as $field_type) << (Self::[<$field_name:upper _BITS>] - 1);
+            #[doc(hidden)]
+            pub const [<$field_name:upper _MAX>]: $field_type = !Self::[<$field_name:upper _MIN>];
+            #[doc(hidden)]
+            const [<$field_name:upper _SHIFT_UP>]: usize = <$field_type as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>];
+
+            $field_vis const fn $field_name(self) -> $field_type {
+                let raw = $crate::bytestruct!(@read_localized_prim self.0, $shift, $bits) as $field_type;
+                (raw << Self::[<$field_name:upper _SHIFT_UP>]) >> Self::[<$field_name:upper _SHIFT_UP>]
+            }
+            $field_vis fn [<set_ $field_name>](&mut self, val: $field_type) {
+                debug_assert!(val >= Self::[<$field_name:upper _MIN>] && val <= Self::[<$field_name:upper _MAX>], "Value {} out of bounds for {} bits", val, $bits);
+                $crate::bytestruct!(@write_localized_prim self.0, $shift, $bits, val as u128);
+            }
+            $field_vis const fn [<with_ $field_name>](mut self, val: $field_type) -> Self {
+                debug_assert!(val >= Self::[<$field_name:upper _MIN>] && val <= Self::[<$field_name:upper _MAX>], "Value overflows allocated bits");
+                $crate::bytestruct!(@write_localized_prim self.0, $shift, $bits, val as u128);
+                self
+            }
+            $field_vis fn [<try_set_ $field_name>](&mut self, val: $field_type) -> Result<(), $crate::BitstructError> {
+                if val < Self::[<$field_name:upper _MIN>] || val > Self::[<$field_name:upper _MAX>] { return Err($crate::BitstructError::Overflow { value: val as i128 as u128, allocated_bits: $bits }); }
+                self.[<set_ $field_name>](val); Ok(())
+            }
+            $field_vis const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
+                if val < Self::[<$field_name:upper _MIN>] || val > Self::[<$field_name:upper _MAX>] { return Err($crate::BitstructError::Overflow { value: val as i128 as u128, allocated_bits: $bits }); }
+                Ok(self.[<with_ $field_name>](val))
+            }
+        }
+        $crate::bytestruct!(@impl_fields $name, $prim, $shift + $bits, $($rest)*);
     };
 
     // --- TYPED STORAGE HELPERS ---
@@ -1650,6 +1789,11 @@ macro_rules! bytestruct {
     (@impl_typed_fields $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident u32 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_typed_int $name, $unit, $prim, $shift, $field_vis $field_name u32 $bits $($rest)*); };
     (@impl_typed_fields $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident u64 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_typed_int $name, $unit, $prim, $shift, $field_vis $field_name u64 $bits $($rest)*); };
     (@impl_typed_fields $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident u128 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_typed_int $name, $unit, $prim, $shift, $field_vis $field_name u128 $bits $($rest)*); };
+    (@impl_typed_fields $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident i8 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_typed_signed_int $name, $unit, $prim, $shift, $field_vis $field_name i8 $bits $($rest)*); };
+    (@impl_typed_fields $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident i16 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_typed_signed_int $name, $unit, $prim, $shift, $field_vis $field_name i16 $bits $($rest)*); };
+    (@impl_typed_fields $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident i32 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_typed_signed_int $name, $unit, $prim, $shift, $field_vis $field_name i32 $bits $($rest)*); };
+    (@impl_typed_fields $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident i64 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_typed_signed_int $name, $unit, $prim, $shift, $field_vis $field_name i64 $bits $($rest)*); };
+    (@impl_typed_fields $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident i128 $bits:tt $($rest:tt)*) => { $crate::bytestruct!(@impl_typed_signed_int $name, $unit, $prim, $shift, $field_vis $field_name i128 $bits $($rest)*); };
 
     (@impl_typed_int $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident $field_type:tt $bits:tt $($rest:tt)*) => {
         $crate::paste::paste! {
@@ -1683,6 +1827,60 @@ macro_rules! bytestruct {
             #[allow(dead_code)]
             $field_vis const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
                 if (val as u128) > Self::[<$field_name:upper _MASK>] as u128 { return Err($crate::BitstructError::Overflow { value: val as u128, allocated_bits: $bits }); }
+                Ok(self.[<with_ $field_name>](val))
+            }
+        }
+        $crate::bytestruct!(@impl_typed_fields $name, $unit, $prim, $shift + $bits, $($rest)*);
+    };
+
+    // Signed integer implementation for explicit array-typed `bytestruct!` fields (`[u16; N]`, `[u32; N]`, etc.).
+    // Similar to the standard signed implementation, but operates on custom typed sub-primitives,
+    // extracting sub-arrays and re-mapping them linearly before applying the sign propagation.
+    (@impl_typed_signed_int $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident $field_type:tt $bits:tt $($rest:tt)*) => {
+        $crate::paste::paste! {
+            #[allow(dead_code)]
+            /// The bit-offset of the `$field_name` property within the underlying storage.
+            pub const [<$field_name:upper _OFFSET>]: usize = $shift;
+            #[allow(dead_code)]
+            /// The number of bits allocated for the `$field_name` property.
+            pub const [<$field_name:upper _BITS>]: usize = $bits;
+            #[allow(dead_code)]
+            #[doc(hidden)]
+            const [<$field_name:upper _MASK>]: $prim = (!0 as $prim) >> (<$prim as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>]);
+            #[allow(dead_code)]
+            #[doc(hidden)]
+            pub const [<$field_name:upper _MIN>]: $field_type = (!0 as $field_type) << (Self::[<$field_name:upper _BITS>] - 1);
+            #[allow(dead_code)]
+            #[doc(hidden)]
+            pub const [<$field_name:upper _MAX>]: $field_type = !Self::[<$field_name:upper _MIN>];
+            #[allow(dead_code)]
+            #[doc(hidden)]
+            const [<$field_name:upper _SHIFT_UP>]: usize = <$field_type as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>];
+
+            #[allow(dead_code)]
+            $field_vis const fn $field_name(self) -> $field_type {
+                let raw = $crate::bytestruct!(@read_typed_prim self.0, $unit, $prim, $shift, $bits) as $field_type;
+                (raw << Self::[<$field_name:upper _SHIFT_UP>]) >> Self::[<$field_name:upper _SHIFT_UP>]
+            }
+            #[allow(dead_code)]
+            $field_vis fn [<set_ $field_name>](&mut self, val: $field_type) {
+                debug_assert!(val >= Self::[<$field_name:upper _MIN>] && val <= Self::[<$field_name:upper _MAX>], "Value {} out of bounds for {} bits", val, $bits);
+                $crate::bytestruct!(@write_typed_prim self.0, $unit, $prim, $shift, $bits, val as $prim);
+            }
+            #[allow(dead_code)]
+            $field_vis const fn [<with_ $field_name>](mut self, val: $field_type) -> Self {
+                debug_assert!(val >= Self::[<$field_name:upper _MIN>] && val <= Self::[<$field_name:upper _MAX>], "Value overflows allocated bits");
+                $crate::bytestruct!(@write_typed_prim self.0, $unit, $prim, $shift, $bits, val as $prim);
+                self
+            }
+            #[allow(dead_code)]
+            $field_vis fn [<try_set_ $field_name>](&mut self, val: $field_type) -> Result<(), $crate::BitstructError> {
+                if val < Self::[<$field_name:upper _MIN>] || val > Self::[<$field_name:upper _MAX>] { return Err($crate::BitstructError::Overflow { value: val as i128 as u128, allocated_bits: $bits }); }
+                self.[<set_ $field_name>](val); Ok(())
+            }
+            #[allow(dead_code)]
+            $field_vis const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
+                if val < Self::[<$field_name:upper _MIN>] || val > Self::[<$field_name:upper _MAX>] { return Err($crate::BitstructError::Overflow { value: val as i128 as u128, allocated_bits: $bits }); }
                 Ok(self.[<with_ $field_name>](val))
             }
         }
@@ -2979,21 +3177,14 @@ mod tests {
 
 /// --- NEGATIVE COMPILATION TESTS ---
 /// These remain in the codebase as `compile_fail` doc-tests to verify and document
-/// that invalid configurations (like signed integers) are caught at compile-time.
+/// that invalid configurations (like overflowing boundaries or negative widths) are caught at compile-time.
 ///
-/// ### Disallowing Signed Base Types
+/// ### Enforcing Signed Base Type Bit Limits
+/// Signed base types enforce that the sign bit is reserved, meaning an `i32` base can only store up to 31 bits.
 /// ```compile_fail
 /// use bitcraft::bitstruct;
 /// bitstruct! {
 ///     struct SignedBase(i32) { val: u32 = 32 }
-/// }
-/// ```
-///
-/// ### Disallowing Signed Field Types
-/// ```compile_fail
-/// use bitcraft::bitstruct;
-/// bitstruct! {
-///     struct SignedField(u32) { val: i32 = 32 }
 /// }
 /// ```
 ///

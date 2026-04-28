@@ -82,6 +82,7 @@ bitstruct! {
     pub struct Status(u8) {
         pub ready: bool = 1,
         pub mode: u8 = 3,
+        pub offset: i8 = 4,
     }
 }
 ```
@@ -151,6 +152,43 @@ impl Status {
     pub fn try_set_mode(&mut self, val: u8) -> Result<(), BitstructError> {
         if val > Self::MODE_MASK { return Err(BitstructError::Overflow { ... }); }
         self.set_mode(val); Ok(())
+    }
+
+    #[allow(dead_code)]
+    pub const OFFSET_OFFSET: usize = 4;
+    #[allow(dead_code)]
+    pub const OFFSET_BITS: usize = 4;
+    #[allow(dead_code)]
+    const OFFSET_MASK: u8 = 0x0F;
+
+    #[doc(hidden)]
+    pub const OFFSET_MIN: i8 = -8;
+    #[doc(hidden)]
+    pub const OFFSET_MAX: i8 = 7;
+    #[doc(hidden)]
+    const OFFSET_SHIFT_UP: usize = 8 - Self::OFFSET_BITS;
+
+    #[inline]
+    #[allow(dead_code)]
+    pub const fn offset(self) -> i8 {
+        let raw = ((self.0 >> Self::OFFSET_OFFSET) & Self::OFFSET_MASK) as i8;
+        (raw << Self::OFFSET_SHIFT_UP) >> Self::OFFSET_SHIFT_UP
+    }
+
+    #[inline]
+    #[allow(dead_code)]
+    pub fn set_offset(&mut self, val: i8) {
+        debug_assert!(val >= Self::OFFSET_MIN && val <= Self::OFFSET_MAX);
+        let val_masked = (val as u8) & Self::OFFSET_MASK;
+        self.0 = (self.0 & !(Self::OFFSET_MASK << Self::OFFSET_OFFSET))
+               | (val_masked << Self::OFFSET_OFFSET);
+    }
+
+    #[inline]
+    #[allow(dead_code)]
+    pub fn try_set_offset(&mut self, val: i8) -> Result<(), BitstructError> {
+        if val < Self::OFFSET_MIN || val > Self::OFFSET_MAX { return Err(BitstructError::Overflow { ... }); }
+        self.set_offset(val); Ok(())
     }
 }
 ```

@@ -4058,6 +4058,953 @@ impl U32Packet {
     }
 }
 
+#[repr(transparent)]
+pub struct SignedFieldsConfig(pub u64);
+
+#[automatically_derived]
+impl ::core::marker::Copy for SignedFieldsConfig {}
+
+#[automatically_derived]
+#[doc(hidden)]
+unsafe impl ::core::clone::TrivialClone for SignedFieldsConfig {}
+
+#[automatically_derived]
+impl ::core::clone::Clone for SignedFieldsConfig {
+    #[inline]
+    fn clone(&self) -> SignedFieldsConfig {
+        let _: ::core::clone::AssertParamIsClone<u64>;
+        *self
+    }
+}
+
+#[automatically_derived]
+impl ::core::marker::StructuralPartialEq for SignedFieldsConfig {}
+
+#[automatically_derived]
+impl ::core::cmp::PartialEq for SignedFieldsConfig {
+    #[inline]
+    fn eq(&self, other: &SignedFieldsConfig) -> bool {
+        self.0 == other.0
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Eq for SignedFieldsConfig {
+    #[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    fn assert_receiver_is_total_eq(&self) -> () {
+        let _: ::core::cmp::AssertParamIsEq<u64>;
+    }
+}
+
+#[automatically_derived]
+impl ::core::default::Default for SignedFieldsConfig {
+    #[inline]
+    fn default() -> SignedFieldsConfig {
+        SignedFieldsConfig(::core::default::Default::default())
+    }
+}
+
+impl core::fmt::Debug for SignedFieldsConfig {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("SignedFieldsConfig")
+            .field("raw", &self.0)
+            .field("temperature", &self.temperature())
+            .field("altitude", &self.altitude())
+            .field("offset_x", &self.offset_x())
+            .finish()
+    }
+}
+
+impl SignedFieldsConfig {
+    #[allow(dead_code)]
+    pub const BITS: usize = <u64 as ::bitcraft::BitLength>::BITS;
+    /// The bit-offset of the `$field_name` property within the underlying storage.
+    pub const TEMPERATURE_OFFSET: usize = 0;
+    /// The number of bits allocated for the `$field_name` property.
+    pub const TEMPERATURE_BITS: usize = 8;
+    #[doc(hidden)]
+    const TEMPERATURE_MASK: u64 = ((!0 as <u64 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u64 as ::bitcraft::BitLength>::BITS - Self::TEMPERATURE_BITS)) as u64;
+    #[doc(hidden)]
+    pub const TEMPERATURE_MIN: i8 = (!0 as i8) << (Self::TEMPERATURE_BITS - 1);
+    #[doc(hidden)]
+    pub const TEMPERATURE_MAX: i8 = !Self::TEMPERATURE_MIN;
+    #[doc(hidden)]
+    const TEMPERATURE_SHIFT_UP: usize = <i8 as ::bitcraft::BitLength>::BITS
+        - Self::TEMPERATURE_BITS;
+    #[allow(dead_code)]
+    #[inline]
+    ///Returns the `temperature` property as a signed `i8`.
+    pub const fn temperature(self) -> i8 {
+        let raw = ((self.0 >> Self::TEMPERATURE_OFFSET) & Self::TEMPERATURE_MASK) as i8;
+        (raw << Self::TEMPERATURE_SHIFT_UP) >> Self::TEMPERATURE_SHIFT_UP
+    }
+    #[allow(dead_code)]
+    #[inline]
+    ///Inline mutation to apply the `temperature` signed property. Ensures bounds checking.
+    pub fn set_temperature(&mut self, val: i8) {
+        if true {
+            if !(val >= Self::TEMPERATURE_MIN && val <= Self::TEMPERATURE_MAX) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value {0} out of bounds for {1} bits", val, 8),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as u64) & Self::TEMPERATURE_MASK;
+        self.0 = (self.0 & !(Self::TEMPERATURE_MASK << Self::TEMPERATURE_OFFSET))
+            | (val_masked << Self::TEMPERATURE_OFFSET);
+    }
+    #[allow(dead_code)]
+    ///Returns a cloned copy of the bitfield with the `temperature` signed property mapped.
+    pub const fn with_temperature(self, val: i8) -> Self {
+        if true {
+            if !(val >= Self::TEMPERATURE_MIN && val <= Self::TEMPERATURE_MAX) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value overflows allocated bits"),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as u64) & Self::TEMPERATURE_MASK;
+        Self(
+            (self.0 & !(Self::TEMPERATURE_MASK << Self::TEMPERATURE_OFFSET))
+                | (val_masked << Self::TEMPERATURE_OFFSET),
+        )
+    }
+    #[allow(dead_code)]
+    ///Strict inline mutation to apply the `temperature` signed property. Returns a `BitstructError` if out of bounds.
+    pub fn try_set_temperature(
+        &mut self,
+        val: i8,
+    ) -> Result<(), ::bitcraft::BitstructError> {
+        if val < Self::TEMPERATURE_MIN || val > Self::TEMPERATURE_MAX {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: val as i128 as u128,
+                allocated_bits: 8,
+            });
+        }
+        let val_masked = (val as u64) & Self::TEMPERATURE_MASK;
+        self.0 = (self.0 & !(Self::TEMPERATURE_MASK << Self::TEMPERATURE_OFFSET))
+            | (val_masked << Self::TEMPERATURE_OFFSET);
+        Ok(())
+    }
+    #[allow(dead_code)]
+    ///Strict cloned evaluation to apply the `temperature` signed property. Returns a `BitstructError` if out of bounds.
+    pub const fn try_with_temperature(
+        self,
+        val: i8,
+    ) -> Result<Self, ::bitcraft::BitstructError> {
+        if val < Self::TEMPERATURE_MIN || val > Self::TEMPERATURE_MAX {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: val as i128 as u128,
+                allocated_bits: 8,
+            });
+        }
+        let val_masked = (val as u64) & Self::TEMPERATURE_MASK;
+        Ok(
+            Self(
+                (self.0 & !(Self::TEMPERATURE_MASK << Self::TEMPERATURE_OFFSET))
+                    | (val_masked << Self::TEMPERATURE_OFFSET),
+            ),
+        )
+    }
+    /// The bit-offset of the `$field_name` property within the underlying storage.
+    pub const ALTITUDE_OFFSET: usize = 0 + 8;
+    /// The number of bits allocated for the `$field_name` property.
+    pub const ALTITUDE_BITS: usize = 16;
+    #[doc(hidden)]
+    const ALTITUDE_MASK: u64 = ((!0 as <u64 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u64 as ::bitcraft::BitLength>::BITS - Self::ALTITUDE_BITS)) as u64;
+    #[doc(hidden)]
+    pub const ALTITUDE_MIN: i16 = (!0 as i16) << (Self::ALTITUDE_BITS - 1);
+    #[doc(hidden)]
+    pub const ALTITUDE_MAX: i16 = !Self::ALTITUDE_MIN;
+    #[doc(hidden)]
+    const ALTITUDE_SHIFT_UP: usize = <i16 as ::bitcraft::BitLength>::BITS
+        - Self::ALTITUDE_BITS;
+    #[allow(dead_code)]
+    #[inline]
+    ///Returns the `altitude` property as a signed `i16`.
+    pub const fn altitude(self) -> i16 {
+        let raw = ((self.0 >> Self::ALTITUDE_OFFSET) & Self::ALTITUDE_MASK) as i16;
+        (raw << Self::ALTITUDE_SHIFT_UP) >> Self::ALTITUDE_SHIFT_UP
+    }
+    #[allow(dead_code)]
+    #[inline]
+    ///Inline mutation to apply the `altitude` signed property. Ensures bounds checking.
+    pub fn set_altitude(&mut self, val: i16) {
+        if true {
+            if !(val >= Self::ALTITUDE_MIN && val <= Self::ALTITUDE_MAX) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value {0} out of bounds for {1} bits", val, 16),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as u64) & Self::ALTITUDE_MASK;
+        self.0 = (self.0 & !(Self::ALTITUDE_MASK << Self::ALTITUDE_OFFSET))
+            | (val_masked << Self::ALTITUDE_OFFSET);
+    }
+    #[allow(dead_code)]
+    ///Returns a cloned copy of the bitfield with the `altitude` signed property mapped.
+    pub const fn with_altitude(self, val: i16) -> Self {
+        if true {
+            if !(val >= Self::ALTITUDE_MIN && val <= Self::ALTITUDE_MAX) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value overflows allocated bits"),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as u64) & Self::ALTITUDE_MASK;
+        Self(
+            (self.0 & !(Self::ALTITUDE_MASK << Self::ALTITUDE_OFFSET))
+                | (val_masked << Self::ALTITUDE_OFFSET),
+        )
+    }
+    #[allow(dead_code)]
+    ///Strict inline mutation to apply the `altitude` signed property. Returns a `BitstructError` if out of bounds.
+    pub fn try_set_altitude(
+        &mut self,
+        val: i16,
+    ) -> Result<(), ::bitcraft::BitstructError> {
+        if val < Self::ALTITUDE_MIN || val > Self::ALTITUDE_MAX {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: val as i128 as u128,
+                allocated_bits: 16,
+            });
+        }
+        let val_masked = (val as u64) & Self::ALTITUDE_MASK;
+        self.0 = (self.0 & !(Self::ALTITUDE_MASK << Self::ALTITUDE_OFFSET))
+            | (val_masked << Self::ALTITUDE_OFFSET);
+        Ok(())
+    }
+    #[allow(dead_code)]
+    ///Strict cloned evaluation to apply the `altitude` signed property. Returns a `BitstructError` if out of bounds.
+    pub const fn try_with_altitude(
+        self,
+        val: i16,
+    ) -> Result<Self, ::bitcraft::BitstructError> {
+        if val < Self::ALTITUDE_MIN || val > Self::ALTITUDE_MAX {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: val as i128 as u128,
+                allocated_bits: 16,
+            });
+        }
+        let val_masked = (val as u64) & Self::ALTITUDE_MASK;
+        Ok(
+            Self(
+                (self.0 & !(Self::ALTITUDE_MASK << Self::ALTITUDE_OFFSET))
+                    | (val_masked << Self::ALTITUDE_OFFSET),
+            ),
+        )
+    }
+    /// The bit-offset of the `$field_name` property within the underlying storage.
+    pub const OFFSET_X_OFFSET: usize = 0 + 8 + 16;
+    /// The number of bits allocated for the `$field_name` property.
+    pub const OFFSET_X_BITS: usize = 20;
+    #[doc(hidden)]
+    const OFFSET_X_MASK: u64 = ((!0 as <u64 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u64 as ::bitcraft::BitLength>::BITS - Self::OFFSET_X_BITS)) as u64;
+    #[doc(hidden)]
+    pub const OFFSET_X_MIN: i32 = (!0 as i32) << (Self::OFFSET_X_BITS - 1);
+    #[doc(hidden)]
+    pub const OFFSET_X_MAX: i32 = !Self::OFFSET_X_MIN;
+    #[doc(hidden)]
+    const OFFSET_X_SHIFT_UP: usize = <i32 as ::bitcraft::BitLength>::BITS
+        - Self::OFFSET_X_BITS;
+    #[allow(dead_code)]
+    #[inline]
+    ///Returns the `offset_x` property as a signed `i32`.
+    pub const fn offset_x(self) -> i32 {
+        let raw = ((self.0 >> Self::OFFSET_X_OFFSET) & Self::OFFSET_X_MASK) as i32;
+        (raw << Self::OFFSET_X_SHIFT_UP) >> Self::OFFSET_X_SHIFT_UP
+    }
+    #[allow(dead_code)]
+    #[inline]
+    ///Inline mutation to apply the `offset_x` signed property. Ensures bounds checking.
+    pub fn set_offset_x(&mut self, val: i32) {
+        if true {
+            if !(val >= Self::OFFSET_X_MIN && val <= Self::OFFSET_X_MAX) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value {0} out of bounds for {1} bits", val, 20),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as u64) & Self::OFFSET_X_MASK;
+        self.0 = (self.0 & !(Self::OFFSET_X_MASK << Self::OFFSET_X_OFFSET))
+            | (val_masked << Self::OFFSET_X_OFFSET);
+    }
+    #[allow(dead_code)]
+    ///Returns a cloned copy of the bitfield with the `offset_x` signed property mapped.
+    pub const fn with_offset_x(self, val: i32) -> Self {
+        if true {
+            if !(val >= Self::OFFSET_X_MIN && val <= Self::OFFSET_X_MAX) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value overflows allocated bits"),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as u64) & Self::OFFSET_X_MASK;
+        Self(
+            (self.0 & !(Self::OFFSET_X_MASK << Self::OFFSET_X_OFFSET))
+                | (val_masked << Self::OFFSET_X_OFFSET),
+        )
+    }
+    #[allow(dead_code)]
+    ///Strict inline mutation to apply the `offset_x` signed property. Returns a `BitstructError` if out of bounds.
+    pub fn try_set_offset_x(
+        &mut self,
+        val: i32,
+    ) -> Result<(), ::bitcraft::BitstructError> {
+        if val < Self::OFFSET_X_MIN || val > Self::OFFSET_X_MAX {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: val as i128 as u128,
+                allocated_bits: 20,
+            });
+        }
+        let val_masked = (val as u64) & Self::OFFSET_X_MASK;
+        self.0 = (self.0 & !(Self::OFFSET_X_MASK << Self::OFFSET_X_OFFSET))
+            | (val_masked << Self::OFFSET_X_OFFSET);
+        Ok(())
+    }
+    #[allow(dead_code)]
+    ///Strict cloned evaluation to apply the `offset_x` signed property. Returns a `BitstructError` if out of bounds.
+    pub const fn try_with_offset_x(
+        self,
+        val: i32,
+    ) -> Result<Self, ::bitcraft::BitstructError> {
+        if val < Self::OFFSET_X_MIN || val > Self::OFFSET_X_MAX {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: val as i128 as u128,
+                allocated_bits: 20,
+            });
+        }
+        let val_masked = (val as u64) & Self::OFFSET_X_MASK;
+        Ok(
+            Self(
+                (self.0 & !(Self::OFFSET_X_MASK << Self::OFFSET_X_OFFSET))
+                    | (val_masked << Self::OFFSET_X_OFFSET),
+            ),
+        )
+    }
+    /// Returns the raw interior integer value.
+    ///
+    /// This is useful for serializing the struct or passing it to external APIs.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn to_bits(self) -> u64 {
+        self.0
+    }
+    /// Creates a new instance from a raw integer value.
+    ///
+    /// # Safety
+    /// While this method is safe, providing values with bits set outside
+    /// the defined field ranges may result in those bits being preserved
+    /// (padded) or ignored depending on the getters used.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn from_bits(val: u64) -> Self {
+        Self(val)
+    }
+}
+
+#[repr(C)]
+pub struct SignedCoordinate(pub [u8; 4]);
+
+#[automatically_derived]
+impl ::core::marker::Copy for SignedCoordinate {}
+
+#[automatically_derived]
+#[doc(hidden)]
+unsafe impl ::core::clone::TrivialClone for SignedCoordinate {}
+
+#[automatically_derived]
+impl ::core::clone::Clone for SignedCoordinate {
+    #[inline]
+    fn clone(&self) -> SignedCoordinate {
+        let _: ::core::clone::AssertParamIsClone<[u8; 4]>;
+        *self
+    }
+}
+
+#[automatically_derived]
+impl ::core::marker::StructuralPartialEq for SignedCoordinate {}
+
+#[automatically_derived]
+impl ::core::cmp::PartialEq for SignedCoordinate {
+    #[inline]
+    fn eq(&self, other: &SignedCoordinate) -> bool {
+        self.0 == other.0
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Eq for SignedCoordinate {
+    #[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    fn assert_receiver_is_total_eq(&self) -> () {
+        let _: ::core::cmp::AssertParamIsEq<[u8; 4]>;
+    }
+}
+
+#[automatically_derived]
+impl ::core::default::Default for SignedCoordinate {
+    #[inline]
+    fn default() -> SignedCoordinate {
+        SignedCoordinate(::core::default::Default::default())
+    }
+}
+
+impl core::fmt::Debug for SignedCoordinate {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("SignedCoordinate")
+            .field("raw", &self.0)
+            .field("x", &self.x())
+            .field("y", &self.y())
+            .finish()
+    }
+}
+
+impl SignedCoordinate {
+    #[allow(dead_code)]
+    pub const BITS: usize = <u8 as ::bitcraft::BitLength>::BITS_4;
+    #[allow(dead_code)]
+    pub const UNIT_BITS: usize = <u8 as ::bitcraft::BitLength>::BITS;
+    #[allow(dead_code)]
+    #[inline(always)]
+    pub const fn to_array(self) -> [u8; 4] {
+        self.0
+    }
+    #[allow(dead_code)]
+    #[inline(always)]
+    pub const fn from_array(arr: [u8; 4]) -> Self {
+        Self(arr)
+    }
+    /// Converts the packed structure into its raw bit representation as the narrowest possible
+    /// primitive integer (u32, u64, or u128) that can hold all bits.
+    ///
+    /// This method utilizes the fully-unrolled bitwise engine for maximum register efficiency.
+    #[allow(dead_code)]
+    #[inline(always)]
+    pub const fn to_bits(
+        self,
+    ) -> <::bitcraft::Bits<{ Self::BITS }> as ::bitcraft::BitenumType>::Prim {
+        (((self.0[0]
+            as <::bitcraft::Bits<{ Self::BITS }> as ::bitcraft::BitenumType>::Prim
+            | ((self.0[0 + 1]
+                as <::bitcraft::Bits<{ Self::BITS }> as ::bitcraft::BitenumType>::Prim)
+                << <u8 as ::bitcraft::BitLength>::BITS)
+            | ((self.0[0 + 2]
+                as <::bitcraft::Bits<{ Self::BITS }> as ::bitcraft::BitenumType>::Prim)
+                << <u8 as ::bitcraft::BitLength>::BITS_2)
+            | ((self.0[0 + 3]
+                as <::bitcraft::Bits<{ Self::BITS }> as ::bitcraft::BitenumType>::Prim)
+                << <u8 as ::bitcraft::BitLength>::BITS_3)) >> 0)
+            & ((!0
+                as <::bitcraft::Bits<{ Self::BITS }> as ::bitcraft::BitenumType>::Prim)
+                >> (<<::bitcraft::Bits<
+                    { Self::BITS },
+                > as ::bitcraft::BitenumType>::Prim as ::bitcraft::BitLength>::BITS
+                    - Self::BITS))) as _
+    }
+    /// Reconstructs the packed structure from a raw bit representation.
+    ///
+    /// This uses a specialized 'fresh write' path that initializes the underlying array
+    /// in a single unrolled pass, avoiding redundant masking operations on empty storage.
+    #[allow(dead_code)]
+    #[inline(always)]
+    pub const fn from_bits(
+        val: <::bitcraft::Bits<{ Self::BITS }> as ::bitcraft::BitenumType>::Prim,
+    ) -> Self {
+        let mut arr = [0 as u8; 4];
+        {
+            let mask = (!0
+                as <::bitcraft::Bits<{ Self::BITS }> as ::bitcraft::BitenumType>::Prim)
+                >> (<<::bitcraft::Bits<
+                    { Self::BITS },
+                > as ::bitcraft::BitenumType>::Prim as ::bitcraft::BitLength>::BITS
+                    - Self::BITS);
+            let full = (val & mask) << 0;
+            arr[0] = full as u8;
+            arr[0 + 1] = (full >> <u8 as ::bitcraft::BitLength>::BITS) as u8;
+            arr[0 + 2] = (full >> <u8 as ::bitcraft::BitLength>::BITS_2) as u8;
+            arr[0 + 3] = (full >> <u8 as ::bitcraft::BitLength>::BITS_3) as u8;
+        };
+        Self(arr)
+    }
+    #[allow(dead_code)]
+    #[inline(always)]
+    pub const fn to_u32(self) -> u32 {
+        self.to_bits() as u32
+    }
+    #[allow(dead_code)]
+    #[inline(always)]
+    pub const fn from_u32(val: u32) -> Self {
+        Self::from_bits(val as _)
+    }
+    #[allow(dead_code)]
+    /// The bit-offset of the `$field_name` property within the underlying storage.
+    pub const X_OFFSET: usize = 0;
+    #[allow(dead_code)]
+    /// The number of bits allocated for the `$field_name` property.
+    pub const X_BITS: usize = 16;
+    #[allow(dead_code)]
+    #[doc(hidden)]
+    const X_MASK: <::bitcraft::Bits<{ Self::BITS }> as ::bitcraft::BitenumType>::Prim = (!0
+        as <::bitcraft::Bits<{ Self::BITS }> as ::bitcraft::BitenumType>::Prim)
+        >> (<<::bitcraft::Bits<
+            { Self::BITS },
+        > as ::bitcraft::BitenumType>::Prim as ::bitcraft::BitLength>::BITS
+            - Self::X_BITS);
+    #[allow(dead_code)]
+    #[doc(hidden)]
+    pub const X_MIN: i16 = (!0 as i16) << (Self::X_BITS - 1);
+    #[allow(dead_code)]
+    #[doc(hidden)]
+    pub const X_MAX: i16 = !Self::X_MIN;
+    #[allow(dead_code)]
+    #[doc(hidden)]
+    const X_SHIFT_UP: usize = <i16 as ::bitcraft::BitLength>::BITS - Self::X_BITS;
+    #[allow(dead_code)]
+    pub const fn x(self) -> i16 {
+        let raw = {
+            const UNIT_BITS: usize = <u8 as ::bitcraft::BitLength>::BITS;
+            const WORD_INDEX: usize = 0 / UNIT_BITS;
+            const BIT_OFFSET: usize = 0 % UNIT_BITS;
+            const WORD_COUNT: usize = (0 as usize + 16 as usize).div_ceil(UNIT_BITS)
+                - WORD_INDEX;
+            {
+                let mut i = 0;
+                let mut acc = 0
+                    as <::bitcraft::Bits<
+                        { Self::BITS },
+                    > as ::bitcraft::BitenumType>::Prim;
+                let mut shift = 0;
+                while i < WORD_COUNT {
+                    acc
+                        |= (self.0[WORD_INDEX + i]
+                            as <::bitcraft::Bits<
+                                { Self::BITS },
+                            > as ::bitcraft::BitenumType>::Prim) << shift;
+                    shift += <u8 as ::bitcraft::BitLength>::BITS;
+                    i += 1;
+                }
+                ((acc >> BIT_OFFSET)
+                    & ((!0
+                        as <::bitcraft::Bits<
+                            { Self::BITS },
+                        > as ::bitcraft::BitenumType>::Prim)
+                        >> (<<::bitcraft::Bits<
+                            { Self::BITS },
+                        > as ::bitcraft::BitenumType>::Prim as ::bitcraft::BitLength>::BITS
+                            - 16)))
+            }
+        } as i16;
+        (raw << Self::X_SHIFT_UP) >> Self::X_SHIFT_UP
+    }
+    #[allow(dead_code)]
+    pub fn set_x(&mut self, val: i16) {
+        if true {
+            if !(val >= Self::X_MIN && val <= Self::X_MAX) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value {0} out of bounds for {1} bits", val, 16),
+                    );
+                }
+            }
+        }
+        {
+            const UNIT_BITS: usize = <u8 as ::bitcraft::BitLength>::BITS;
+            const WORD_INDEX: usize = 0 / UNIT_BITS;
+            const BIT_OFFSET: usize = 0 % UNIT_BITS;
+            const WORD_COUNT: usize = (0 as usize + 16 as usize).div_ceil(UNIT_BITS)
+                - WORD_INDEX;
+            {
+                let mut full = {
+                    let mut i = 0;
+                    let mut acc = 0
+                        as <::bitcraft::Bits<
+                            { Self::BITS },
+                        > as ::bitcraft::BitenumType>::Prim;
+                    let mut shift = 0;
+                    while i < WORD_COUNT {
+                        acc
+                            |= (self.0[WORD_INDEX + i]
+                                as <::bitcraft::Bits<
+                                    { Self::BITS },
+                                > as ::bitcraft::BitenumType>::Prim) << shift;
+                        shift += <u8 as ::bitcraft::BitLength>::BITS;
+                        i += 1;
+                    }
+                    ((acc >> 0)
+                        & ((!0
+                            as <::bitcraft::Bits<
+                                { Self::BITS },
+                            > as ::bitcraft::BitenumType>::Prim)
+                            >> (<<::bitcraft::Bits<
+                                { Self::BITS },
+                            > as ::bitcraft::BitenumType>::Prim as ::bitcraft::BitLength>::BITS
+                                - <<::bitcraft::Bits<
+                                    { Self::BITS },
+                                > as ::bitcraft::BitenumType>::Prim as ::bitcraft::BitLength>::BITS)))
+                };
+                let mask = (!0
+                    as <::bitcraft::Bits<
+                        { Self::BITS },
+                    > as ::bitcraft::BitenumType>::Prim)
+                    >> (<<::bitcraft::Bits<
+                        { Self::BITS },
+                    > as ::bitcraft::BitenumType>::Prim as ::bitcraft::BitLength>::BITS
+                        - 16);
+                full = (full & !(mask << BIT_OFFSET))
+                    | ((val
+                        as <::bitcraft::Bits<
+                            { Self::BITS },
+                        > as ::bitcraft::BitenumType>::Prim & mask) << BIT_OFFSET);
+                {
+                    let mut i = 0;
+                    let mut shift = 0;
+                    while i < WORD_COUNT {
+                        self.0[WORD_INDEX + i] = (full >> shift) as u8;
+                        shift += <u8 as ::bitcraft::BitLength>::BITS;
+                        i += 1;
+                    }
+                };
+            }
+        };
+    }
+    #[allow(dead_code)]
+    pub const fn with_x(mut self, val: i16) -> Self {
+        if true {
+            if !(val >= Self::X_MIN && val <= Self::X_MAX) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value overflows allocated bits"),
+                    );
+                }
+            }
+        }
+        {
+            const UNIT_BITS: usize = <u8 as ::bitcraft::BitLength>::BITS;
+            const WORD_INDEX: usize = 0 / UNIT_BITS;
+            const BIT_OFFSET: usize = 0 % UNIT_BITS;
+            const WORD_COUNT: usize = (0 as usize + 16 as usize).div_ceil(UNIT_BITS)
+                - WORD_INDEX;
+            {
+                let mut full = {
+                    let mut i = 0;
+                    let mut acc = 0
+                        as <::bitcraft::Bits<
+                            { Self::BITS },
+                        > as ::bitcraft::BitenumType>::Prim;
+                    let mut shift = 0;
+                    while i < WORD_COUNT {
+                        acc
+                            |= (self.0[WORD_INDEX + i]
+                                as <::bitcraft::Bits<
+                                    { Self::BITS },
+                                > as ::bitcraft::BitenumType>::Prim) << shift;
+                        shift += <u8 as ::bitcraft::BitLength>::BITS;
+                        i += 1;
+                    }
+                    ((acc >> 0)
+                        & ((!0
+                            as <::bitcraft::Bits<
+                                { Self::BITS },
+                            > as ::bitcraft::BitenumType>::Prim)
+                            >> (<<::bitcraft::Bits<
+                                { Self::BITS },
+                            > as ::bitcraft::BitenumType>::Prim as ::bitcraft::BitLength>::BITS
+                                - <<::bitcraft::Bits<
+                                    { Self::BITS },
+                                > as ::bitcraft::BitenumType>::Prim as ::bitcraft::BitLength>::BITS)))
+                };
+                let mask = (!0
+                    as <::bitcraft::Bits<
+                        { Self::BITS },
+                    > as ::bitcraft::BitenumType>::Prim)
+                    >> (<<::bitcraft::Bits<
+                        { Self::BITS },
+                    > as ::bitcraft::BitenumType>::Prim as ::bitcraft::BitLength>::BITS
+                        - 16);
+                full = (full & !(mask << BIT_OFFSET))
+                    | ((val
+                        as <::bitcraft::Bits<
+                            { Self::BITS },
+                        > as ::bitcraft::BitenumType>::Prim & mask) << BIT_OFFSET);
+                {
+                    let mut i = 0;
+                    let mut shift = 0;
+                    while i < WORD_COUNT {
+                        self.0[WORD_INDEX + i] = (full >> shift) as u8;
+                        shift += <u8 as ::bitcraft::BitLength>::BITS;
+                        i += 1;
+                    }
+                };
+            }
+        };
+        self
+    }
+    #[allow(dead_code)]
+    pub fn try_set_x(&mut self, val: i16) -> Result<(), ::bitcraft::BitstructError> {
+        if val < Self::X_MIN || val > Self::X_MAX {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: val as i128 as u128,
+                allocated_bits: 16,
+            });
+        }
+        self.set_x(val);
+        Ok(())
+    }
+    #[allow(dead_code)]
+    pub const fn try_with_x(self, val: i16) -> Result<Self, ::bitcraft::BitstructError> {
+        if val < Self::X_MIN || val > Self::X_MAX {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: val as i128 as u128,
+                allocated_bits: 16,
+            });
+        }
+        Ok(self.with_x(val))
+    }
+    #[allow(dead_code)]
+    /// The bit-offset of the `$field_name` property within the underlying storage.
+    pub const Y_OFFSET: usize = 0 + 16;
+    #[allow(dead_code)]
+    /// The number of bits allocated for the `$field_name` property.
+    pub const Y_BITS: usize = 16;
+    #[allow(dead_code)]
+    #[doc(hidden)]
+    const Y_MASK: <::bitcraft::Bits<{ Self::BITS }> as ::bitcraft::BitenumType>::Prim = (!0
+        as <::bitcraft::Bits<{ Self::BITS }> as ::bitcraft::BitenumType>::Prim)
+        >> (<<::bitcraft::Bits<
+            { Self::BITS },
+        > as ::bitcraft::BitenumType>::Prim as ::bitcraft::BitLength>::BITS
+            - Self::Y_BITS);
+    #[allow(dead_code)]
+    #[doc(hidden)]
+    pub const Y_MIN: i16 = (!0 as i16) << (Self::Y_BITS - 1);
+    #[allow(dead_code)]
+    #[doc(hidden)]
+    pub const Y_MAX: i16 = !Self::Y_MIN;
+    #[allow(dead_code)]
+    #[doc(hidden)]
+    const Y_SHIFT_UP: usize = <i16 as ::bitcraft::BitLength>::BITS - Self::Y_BITS;
+    #[allow(dead_code)]
+    pub const fn y(self) -> i16 {
+        let raw = {
+            const UNIT_BITS: usize = <u8 as ::bitcraft::BitLength>::BITS;
+            const WORD_INDEX: usize = (0 + 16) / UNIT_BITS;
+            const BIT_OFFSET: usize = (0 + 16) % UNIT_BITS;
+            const WORD_COUNT: usize = ((0 + 16) as usize + 16 as usize)
+                .div_ceil(UNIT_BITS) - WORD_INDEX;
+            {
+                let mut i = 0;
+                let mut acc = 0
+                    as <::bitcraft::Bits<
+                        { Self::BITS },
+                    > as ::bitcraft::BitenumType>::Prim;
+                let mut shift = 0;
+                while i < WORD_COUNT {
+                    acc
+                        |= (self.0[WORD_INDEX + i]
+                            as <::bitcraft::Bits<
+                                { Self::BITS },
+                            > as ::bitcraft::BitenumType>::Prim) << shift;
+                    shift += <u8 as ::bitcraft::BitLength>::BITS;
+                    i += 1;
+                }
+                ((acc >> BIT_OFFSET)
+                    & ((!0
+                        as <::bitcraft::Bits<
+                            { Self::BITS },
+                        > as ::bitcraft::BitenumType>::Prim)
+                        >> (<<::bitcraft::Bits<
+                            { Self::BITS },
+                        > as ::bitcraft::BitenumType>::Prim as ::bitcraft::BitLength>::BITS
+                            - 16)))
+            }
+        } as i16;
+        (raw << Self::Y_SHIFT_UP) >> Self::Y_SHIFT_UP
+    }
+    #[allow(dead_code)]
+    pub fn set_y(&mut self, val: i16) {
+        if true {
+            if !(val >= Self::Y_MIN && val <= Self::Y_MAX) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value {0} out of bounds for {1} bits", val, 16),
+                    );
+                }
+            }
+        }
+        {
+            const UNIT_BITS: usize = <u8 as ::bitcraft::BitLength>::BITS;
+            const WORD_INDEX: usize = (0 + 16) / UNIT_BITS;
+            const BIT_OFFSET: usize = (0 + 16) % UNIT_BITS;
+            const WORD_COUNT: usize = ((0 + 16) as usize + 16 as usize)
+                .div_ceil(UNIT_BITS) - WORD_INDEX;
+            {
+                let mut full = {
+                    let mut i = 0;
+                    let mut acc = 0
+                        as <::bitcraft::Bits<
+                            { Self::BITS },
+                        > as ::bitcraft::BitenumType>::Prim;
+                    let mut shift = 0;
+                    while i < WORD_COUNT {
+                        acc
+                            |= (self.0[WORD_INDEX + i]
+                                as <::bitcraft::Bits<
+                                    { Self::BITS },
+                                > as ::bitcraft::BitenumType>::Prim) << shift;
+                        shift += <u8 as ::bitcraft::BitLength>::BITS;
+                        i += 1;
+                    }
+                    ((acc >> 0)
+                        & ((!0
+                            as <::bitcraft::Bits<
+                                { Self::BITS },
+                            > as ::bitcraft::BitenumType>::Prim)
+                            >> (<<::bitcraft::Bits<
+                                { Self::BITS },
+                            > as ::bitcraft::BitenumType>::Prim as ::bitcraft::BitLength>::BITS
+                                - <<::bitcraft::Bits<
+                                    { Self::BITS },
+                                > as ::bitcraft::BitenumType>::Prim as ::bitcraft::BitLength>::BITS)))
+                };
+                let mask = (!0
+                    as <::bitcraft::Bits<
+                        { Self::BITS },
+                    > as ::bitcraft::BitenumType>::Prim)
+                    >> (<<::bitcraft::Bits<
+                        { Self::BITS },
+                    > as ::bitcraft::BitenumType>::Prim as ::bitcraft::BitLength>::BITS
+                        - 16);
+                full = (full & !(mask << BIT_OFFSET))
+                    | ((val
+                        as <::bitcraft::Bits<
+                            { Self::BITS },
+                        > as ::bitcraft::BitenumType>::Prim & mask) << BIT_OFFSET);
+                {
+                    let mut i = 0;
+                    let mut shift = 0;
+                    while i < WORD_COUNT {
+                        self.0[WORD_INDEX + i] = (full >> shift) as u8;
+                        shift += <u8 as ::bitcraft::BitLength>::BITS;
+                        i += 1;
+                    }
+                };
+            }
+        };
+    }
+    #[allow(dead_code)]
+    pub const fn with_y(mut self, val: i16) -> Self {
+        if true {
+            if !(val >= Self::Y_MIN && val <= Self::Y_MAX) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value overflows allocated bits"),
+                    );
+                }
+            }
+        }
+        {
+            const UNIT_BITS: usize = <u8 as ::bitcraft::BitLength>::BITS;
+            const WORD_INDEX: usize = (0 + 16) / UNIT_BITS;
+            const BIT_OFFSET: usize = (0 + 16) % UNIT_BITS;
+            const WORD_COUNT: usize = ((0 + 16) as usize + 16 as usize)
+                .div_ceil(UNIT_BITS) - WORD_INDEX;
+            {
+                let mut full = {
+                    let mut i = 0;
+                    let mut acc = 0
+                        as <::bitcraft::Bits<
+                            { Self::BITS },
+                        > as ::bitcraft::BitenumType>::Prim;
+                    let mut shift = 0;
+                    while i < WORD_COUNT {
+                        acc
+                            |= (self.0[WORD_INDEX + i]
+                                as <::bitcraft::Bits<
+                                    { Self::BITS },
+                                > as ::bitcraft::BitenumType>::Prim) << shift;
+                        shift += <u8 as ::bitcraft::BitLength>::BITS;
+                        i += 1;
+                    }
+                    ((acc >> 0)
+                        & ((!0
+                            as <::bitcraft::Bits<
+                                { Self::BITS },
+                            > as ::bitcraft::BitenumType>::Prim)
+                            >> (<<::bitcraft::Bits<
+                                { Self::BITS },
+                            > as ::bitcraft::BitenumType>::Prim as ::bitcraft::BitLength>::BITS
+                                - <<::bitcraft::Bits<
+                                    { Self::BITS },
+                                > as ::bitcraft::BitenumType>::Prim as ::bitcraft::BitLength>::BITS)))
+                };
+                let mask = (!0
+                    as <::bitcraft::Bits<
+                        { Self::BITS },
+                    > as ::bitcraft::BitenumType>::Prim)
+                    >> (<<::bitcraft::Bits<
+                        { Self::BITS },
+                    > as ::bitcraft::BitenumType>::Prim as ::bitcraft::BitLength>::BITS
+                        - 16);
+                full = (full & !(mask << BIT_OFFSET))
+                    | ((val
+                        as <::bitcraft::Bits<
+                            { Self::BITS },
+                        > as ::bitcraft::BitenumType>::Prim & mask) << BIT_OFFSET);
+                {
+                    let mut i = 0;
+                    let mut shift = 0;
+                    while i < WORD_COUNT {
+                        self.0[WORD_INDEX + i] = (full >> shift) as u8;
+                        shift += <u8 as ::bitcraft::BitLength>::BITS;
+                        i += 1;
+                    }
+                };
+            }
+        };
+        self
+    }
+    #[allow(dead_code)]
+    pub fn try_set_y(&mut self, val: i16) -> Result<(), ::bitcraft::BitstructError> {
+        if val < Self::Y_MIN || val > Self::Y_MAX {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: val as i128 as u128,
+                allocated_bits: 16,
+            });
+        }
+        self.set_y(val);
+        Ok(())
+    }
+    #[allow(dead_code)]
+    pub const fn try_with_y(self, val: i16) -> Result<Self, ::bitcraft::BitstructError> {
+        if val < Self::Y_MIN || val > Self::Y_MAX {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: val as i128 as u128,
+                allocated_bits: 16,
+            });
+        }
+        Ok(self.with_y(val))
+    }
+}
+
 #[repr(C)]
 pub struct SmallId(pub [u8; 1]);
 

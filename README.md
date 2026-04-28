@@ -5,7 +5,7 @@
 `bitcraft` is a high-performance declarative macro library designed for systems where every bit counts. Engineered for **Mechanical Sympathy**, it allows developers to define data structures that align perfectly with CPU cache lines and memory bus widths, eliminating the silent performance tax of implicit padding.
 
 > [!NOTE]
-> **Type Safety**: `bitcraft` natively supports both **unsigned** (`u8` through `u128`) and **signed** (`i8` through `i128`) base integers for underlying storage. When using a signed base, the macro enforces a strict boundary (e.g. 15 bits for `i16`) to guarantee the sign bit is never compromised. Support for interpreting the *fields themselves* as signed integers (two's complement) is currently on the roadmap.
+> **Type Safety**: `bitcraft` natively supports both **unsigned** (`u8` through `u128`) and **signed** (`i8` through `i128`) base integers for underlying storage. When using a signed base, the macro enforces a strict boundary (e.g. 15 bits for `i16`) to guarantee the sign bit is never compromised. It also includes full support for interpreting the *fields themselves* as signed integers (two's complement) through a zero-cost shift-based sign extension.
 
 > [!TIP]
 > **New to Bitfields?** See our [Ecosystem Comparison](comparisons.md) to understand how `bitcraft` differs from `modular-bitfield`, `packed_struct`, and standard Rust enums.
@@ -155,7 +155,7 @@ Standard Rust doesn't prevent you from defining a struct that is "too big" for a
 | Feature | Standard Rust (`struct`/`enum`) | `bitstruct` bitcraft Library |
 | :--- | :--- | :--- |
 | **Granularity** | Byte-level (minimum 8 bits) | **Bit-level** (minimum 1 bit) |
-| **Signed Bitfields** | ✅ | **❌ (Strictly Checked)** |
+| **Signed Bitfields** | ✅ | **✅ (Zero-cost shift)** |
 | **Padding** | Implicit (inserted by rustc) | **None** (Explicit control) |
 | **Instruction Count** | Multiple loads/stores | **Atomic** (Register-wide) |
 | **Alignment** | Compiler-enforced | **Hardware-aligned** (LSB-First) |
@@ -310,7 +310,7 @@ let my_struct: MyBytestruct = bytemuck::cast(raw_bytes);
 
 ### 🛠️ Roadmap & Future Implementation
 
-- [ ] **Signed Field Interpretation**: Support for `i8`, `i16`, etc., via automatic Sign Extension on the N-bit fields.
+- [x] **Signed Field Interpretation**: Support for `i8`, `i16`, etc., via automatic Sign Extension on the N-bit fields.
 - [ ] **C-Header Generation**: Integration with `cbindgen` to automatically generate FFI-compatible C headers for C/C++ firmware.
 - [ ] **`serde` Integration**: Optional feature to derive `Serialize` and `Deserialize` for all packed types.
 - [x] **Property-Based Testing**: Comprehensive fuzzing of bit-packing logic via `proptest`.

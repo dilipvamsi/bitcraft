@@ -98,6 +98,61 @@ bytestruct! {
     }
 }
 
+bitstruct! {
+    struct SignedFieldsBitstruct(u64) {
+        a: i8 = 5,   // min -16, max 15
+        b: i16 = 10, // min -512, max 511
+        c: i32 = 20, // min -524288, max 524287
+        d: i64 = 29, // min -268435456, max 268435455
+    }
+}
+
+bytestruct! {
+    struct SignedFieldsBytestruct(8) {
+        a: i8 = 5,
+        b: i16 = 10,
+        c: i32 = 20,
+        d: i64 = 29,
+    }
+}
+
+bytestruct! {
+    struct SignedTypedFieldsBytestruct([u32; 2]) {
+        a: i8 = 5,
+        b: i16 = 10,
+        c: i32 = 20,
+        d: i64 = 29,
+    }
+}
+
+bitstruct! {
+    struct SignedFullWidthBitstruct(u128) {
+        a: i8 = 8,
+        b: i16 = 16,
+        c: i32 = 32,
+        d: i64 = 64,
+        e: i8 = 8,
+    }
+}
+
+bitstruct! {
+    struct MixedSignBitstruct(u64) {
+        a: i8 = 5,
+        b: u16 = 10,
+        c: i32 = 20,
+        d: u64 = 29,
+    }
+}
+
+bytestruct! {
+    struct MixedSignBytestruct(8) {
+        a: i8 = 5,
+        b: u16 = 10,
+        c: i32 = 20,
+        d: u64 = 29,
+    }
+}
+
 proptest! {
     #[test]
     fn test_bitstruct_roundtrip(
@@ -603,5 +658,119 @@ proptest! {
         expected |= (y as u16) << 4;
 
         prop_assert_eq!(s.to_bits(), expected as i16);
+    }
+
+    #[test]
+    fn test_signed_fields_fuzz(
+        a in -16i8..=15,
+        b in -512i16..=511,
+        c in -524288i32..=524287,
+        d in -268435456i64..=268435455,
+    ) {
+        // bitstruct! variant
+        let mut bs = SignedFieldsBitstruct::default();
+        prop_assert!(bs.try_set_a(a).is_ok());
+        prop_assert!(bs.try_set_b(b).is_ok());
+        prop_assert!(bs.try_set_c(c).is_ok());
+        prop_assert!(bs.try_set_d(d).is_ok());
+
+        prop_assert_eq!(bs.a(), a);
+        prop_assert_eq!(bs.b(), b);
+        prop_assert_eq!(bs.c(), c);
+        prop_assert_eq!(bs.d(), d);
+
+        // Verify bounds rejection with out of bounds values
+        let a_out = if a >= 0 { a.saturating_add(16) } else { a.saturating_sub(16) };
+        if a_out > 15 || a_out < -16 {
+            prop_assert!(bs.try_set_a(a_out).is_err());
+        }
+
+        // bytestruct! variant
+        let mut by = SignedFieldsBytestruct::default();
+        prop_assert!(by.try_set_a(a).is_ok());
+        prop_assert!(by.try_set_b(b).is_ok());
+        prop_assert!(by.try_set_c(c).is_ok());
+        prop_assert!(by.try_set_d(d).is_ok());
+
+        prop_assert_eq!(by.a(), a);
+        prop_assert_eq!(by.b(), b);
+        prop_assert_eq!(by.c(), c);
+        prop_assert_eq!(by.d(), d);
+        
+        let expected_raw = bs.to_bits();
+        // Since both have the same layout and are 8 bytes total
+        let expected_bytes = expected_raw.to_le_bytes(); // bytestruct uses LE natively on LE systems. Wait, bitstruct is host endian.
+        // Actually, let's just ensure they hold their values properly.
+    }
+
+    #[test]
+    fn test_signed_typed_fields_fuzz(
+        a in -16i8..=15,
+        b in -512i16..=511,
+        c in -524288i32..=524287,
+        d in -268435456i64..=268435455,
+    ) {
+        let mut bs = SignedTypedFieldsBytestruct::default();
+        prop_assert!(bs.try_set_a(a).is_ok());
+        prop_assert!(bs.try_set_b(b).is_ok());
+        prop_assert!(bs.try_set_c(c).is_ok());
+        prop_assert!(bs.try_set_d(d).is_ok());
+
+        prop_assert_eq!(bs.a(), a);
+        prop_assert_eq!(bs.b(), b);
+        prop_assert_eq!(bs.c(), c);
+        prop_assert_eq!(bs.d(), d);
+    }
+
+    #[test]
+    fn test_signed_full_width_fuzz(
+        a in any::<i8>(),
+        b in any::<i16>(),
+        c in any::<i32>(),
+        d in any::<i64>(),
+        e in any::<i8>(),
+    ) {
+        let mut bs = SignedFullWidthBitstruct::default();
+        prop_assert!(bs.try_set_a(a).is_ok());
+        prop_assert!(bs.try_set_b(b).is_ok());
+        prop_assert!(bs.try_set_c(c).is_ok());
+        prop_assert!(bs.try_set_d(d).is_ok());
+        prop_assert!(bs.try_set_e(e).is_ok());
+
+        prop_assert_eq!(bs.a(), a);
+        prop_assert_eq!(bs.b(), b);
+        prop_assert_eq!(bs.c(), c);
+        prop_assert_eq!(bs.d(), d);
+        prop_assert_eq!(bs.e(), e);
+    }
+
+    #[test]
+    fn test_mixed_sign_fields_fuzz(
+        a in -16i8..=15,
+        b in 0u16..=1023,
+        c in -524288i32..=524287,
+        d in 0u64..=536870911,
+    ) {
+        let mut bs = MixedSignBitstruct::default();
+        prop_assert!(bs.try_set_a(a).is_ok());
+        prop_assert!(bs.try_set_b(b).is_ok());
+        prop_assert!(bs.try_set_c(c).is_ok());
+        prop_assert!(bs.try_set_d(d).is_ok());
+
+        prop_assert_eq!(bs.a(), a);
+        prop_assert_eq!(bs.b(), b);
+        prop_assert_eq!(bs.c(), c);
+        prop_assert_eq!(bs.d(), d);
+
+        let mut by = MixedSignBytestruct::default();
+        prop_assert!(by.try_set_a(a).is_ok());
+        prop_assert!(by.try_set_b(b).is_ok());
+        prop_assert!(by.try_set_c(c).is_ok());
+        prop_assert!(by.try_set_d(d).is_ok());
+
+        prop_assert_eq!(by.a(), a);
+        prop_assert_eq!(by.b(), b);
+        prop_assert_eq!(by.c(), c);
+        prop_assert_eq!(by.d(), d);
     }
 }

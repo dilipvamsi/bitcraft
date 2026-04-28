@@ -65,6 +65,23 @@ bytestruct! {
     }
 }
 
+bitstruct! {
+    /// A sample configuration with signed fields.
+    pub struct SignedFieldsConfig(u64) {
+        pub temperature: i8 = 8, // -128 to 127
+        pub altitude: i16 = 16,  // -32768 to 32767
+        pub offset_x: i32 = 20,  // -524288 to 524287
+    }
+}
+
+bytestruct! {
+    /// A sample bytestruct with signed fields.
+    pub struct SignedCoordinate(4) {
+        pub x: i16 = 16,
+        pub y: i16 = 16,
+    }
+}
+
 byteval! {
     /// A small 8-bit identifier (u8).
     pub struct SmallId(1);
@@ -210,5 +227,23 @@ fn main() {
     let dual_id128 = DualId128::from_u128(0xDEADBEEFCAFEBABEDEADBEEFCAFEBABE);
     println!("\nDualId128: {:?} (Bits: {})", dual_id128, DualId128::BITS);
     println!("Value: 0x{:X}", dual_id128.value());
+
+    // 3. Demonstration of signed fields
+    let signed_cfg = SignedFieldsConfig::default()
+        .with_temperature(-40)
+        .with_altitude(12000)
+        .with_offset_x(-250000);
+
+    println!("\nSignedFieldsConfig: {:?}", signed_cfg);
+    println!("Temperature: {}", signed_cfg.temperature());
+    println!("Altitude: {}", signed_cfg.altitude());
+    println!("Offset X: {}", signed_cfg.offset_x());
+
+    let signed_coord = SignedCoordinate::default()
+        .with_x(-1234)
+        .with_y(5678);
+
+    println!("\nSignedCoordinate: {:?}", signed_coord);
+    println!("X: {}, Y: {}", signed_coord.x(), signed_coord.y());
 }
 

@@ -284,6 +284,23 @@ When you manually manipulate byte arrays (e.g., `[u8; 3]`), you often introduce 
 
 `bitcraft` avoids this by generating a single unrolled "Shift-and-OR" expression (e.g., `(b0 as u32) | ((b1 as u32) << 8) | ...`). Modern compilers recognize this pattern and perform **Instruction Fusion**. Instead of multiple individual shifts, the backend generates a single **Unaligned Load** instruction (like `MOV` or `LDR`), effectively loading your "packed" data directly into a high-speed CPU register in one cycle.
 
+### Zero-Cost Sign Extension ("The Shift Trick")
+
+When using signed field types (`i8` through `i128`), `bitcraft` implements a branchless, arithmetic right-shift algorithm to propagate the sign bit natively across the CPU register.
+
+```rust
+// 1. Calculate shift distance to top of register at compile time
+const SHIFT_UP: usize = 32 - BITS;
+
+// ... Inside accessor method ...
+// 2. Extract raw masked bits
+let raw = ((self.0 >> OFFSET) & MASK) as i32;
+// 3. Left shift to top, then arithmetic right shift down
+(raw << SHIFT_UP) >> SHIFT_UP
+```
+
+This transforms a potentially complex sign-bit conditional into a pure arithmetic operation that compiles down to a single `SHL` and `SAR` (Shift Arithmetic Right) instruction, achieving zero-cost sign extension natively on the CPU.
+
 ---
 
 ## ⚖️ 12. Summary Feature Matrix
@@ -431,7 +448,7 @@ Macros now expand to `<$unit as BitLength>::BITS_N`, which the compiler resolves
 
 ## 🛠️ Roadmap & Future Implementation
 
-- [ ] **Signed Field Interpretation**: Support for `i8`, `i16`, etc., via automatic Sign Extension on the N-bit fields.
+- [x] **Signed Field Interpretation**: Support for `i8`, `i16`, etc., via automatic Sign Extension on the N-bit fields.
 - [ ] **C-Header Generation**: Integration with `cbindgen` to automatically generate FFI-compatible C headers for C/C++ firmware.
 - [ ] **`serde` Integration**: Optional feature to derive `Serialize` and `Deserialize` for all packed types.
 - [x] **Property-Based Testing**: Comprehensive fuzzing of bit-packing logic via `proptest`.
