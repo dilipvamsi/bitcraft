@@ -36,6 +36,18 @@ We evaluated 1,000,000,000 (1B) operations of complex read/write logic on an opt
 | **Execution Latency** | `bitstruct!` | **0.96x (Faster!)** | **2.00x Higher** |
 | **Execution Latency** | **bytestruct!** | **1.05x (Near Parity!)** | **3.20x Higher** |
 
+### 🔄 Atomic Concurrency (Contended, 8 Threads)
+
+We evaluated 8 concurrent threads performing 1,000,000 updates each on a shared status word, comparing `bitcraft` atomics against standard `Mutex` synchronization.
+
+| Metric | Pattern | Overhead vs. `Mutex` | Advantage |
+| :--- | :--- | :--- | :--- |
+| **Contention Latency** | `atomic_bitenum!` | **18.8x Faster** | Single-Instruction Update |
+| **Contention Latency** | `atomic_bitstruct!` | **1.11x Faster** | Lock-Free CAS Transaction |
+
+> **Why the massive gap?** A `Mutex` forces threads into a queue, often requiring kernel context switches under high contention. `atomic_bitenum!` uses a single CPU instruction (`store`), while `atomic_bitstruct!` uses a lock-free `fetch_update` loop. Under high contention, the lock-free approach avoids the "Thundering Herd" problem and keeps the CPU pipeline saturated.
+
+
 > **Why are we faster than manual code?** Our macros generate perfectly unrolled bitwise expressions. Modern compilers (LLVM) recognize these patterns and perform **Instruction Fusion**, effectively turning multiple shifts/masks into a single **Unaligned Load** instruction. Standard loops or procedural-macro-generated getters often fail to reach this level of hardware optimization.
 
 > [!NOTE]

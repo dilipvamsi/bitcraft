@@ -28,6 +28,9 @@ fuzz:
 perf:
 	@echo "==> Running Performance Benchmarks (Release Mode)"
 	cargo test --release --test performance -- --nocapture
+	@echo ""
+	@echo "==> Running Atomic Concurrency Benchmarks (Release Mode)"
+	cargo test --release --test performance_atomic -- --nocapture
 
 ## --- UTILITIES ---
 
@@ -53,7 +56,7 @@ help:
 	@echo "Usage:"
 	@echo "  make normal      Run unit tests, doc-tests, and core integration tests."
 	@echo "  make fuzz        Run property-based fuzz tests (proptest)."
-	@echo "  make perf        Run performance benchmarks in release mode."
+	@echo "  make perf        Run performance benchmarks in release mode (Standard + Atomic)."
 	@echo "  make test        Alias for 'make normal'."
 	@echo "  make check       Check compilation without running tests."
 	@echo "  make lint        Run clippy with strict warnings."
