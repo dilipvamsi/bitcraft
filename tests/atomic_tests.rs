@@ -1,4 +1,4 @@
-use bitcraft::{atomic_bitstruct, bitenum};
+use bitcraft::{atomic_bitenum, atomic_bitstruct, bitenum};
 use core::sync::atomic::Ordering;
 
 bitenum! {
@@ -160,4 +160,80 @@ fn test_threaded_concurrent_updates() {
     // 0 + 1000 = 1000. 1000 % 16 = 8. Wait! 1000 increments each adding 1 and wrapping at 16.
     // So the final value should be (1000 % 16) = 8.
     assert_eq!(shared.value(Ordering::SeqCst), 8);
+}
+
+atomic_bitenum! {
+    pub enum ConcurrentMode(AtomicU8, 2) {
+        STANDBY = 0,
+        ACTIVE = 1,
+        ERROR = 2,
+    }
+}
+
+#[test]
+fn test_atomic_bitenum() {
+    let mode = ConcurrentMode::new(ConcurrentModeValue::STANDBY);
+    assert_eq!(mode.load(Ordering::SeqCst), ConcurrentModeValue::STANDBY);
+
+    mode.store(ConcurrentModeValue::ACTIVE, Ordering::SeqCst);
+    assert_eq!(mode.load(Ordering::SeqCst), ConcurrentModeValue::ACTIVE);
+
+    let prev = mode.swap(ConcurrentModeValue::ERROR, Ordering::SeqCst);
+    assert_eq!(prev, ConcurrentModeValue::ACTIVE);
+    assert_eq!(mode.load(Ordering::SeqCst), ConcurrentModeValue::ERROR);
+
+    let res = mode.compare_exchange(
+        ConcurrentModeValue::ERROR,
+        ConcurrentModeValue::STANDBY,
+        Ordering::SeqCst,
+        Ordering::Relaxed,
+    );
+    assert!(res.is_ok());
+    assert_eq!(mode.load(Ordering::SeqCst), ConcurrentModeValue::STANDBY);
+
+    let bad_res = mode.compare_exchange(
+        ConcurrentModeValue::ERROR,
+        ConcurrentModeValue::ACTIVE,
+        Ordering::SeqCst,
+        Ordering::Relaxed,
+    );
+    assert!(bad_res.is_err());
+
+    let fetch_res = mode.update_or_abort(Ordering::SeqCst, Ordering::Relaxed, |v| {
+        if v == ConcurrentModeValue::STANDBY {
+            Some(ConcurrentModeValue::ACTIVE)
+        } else {
+            None
+        }
+    });
+    assert!(fetch_res.is_ok());
+    assert_eq!(mode.load(Ordering::SeqCst), ConcurrentModeValue::ACTIVE);
+
+    mode.update(Ordering::SeqCst, Ordering::Relaxed, |v| {
+        assert_eq!(v, ConcurrentModeValue::ACTIVE);
+        ConcurrentModeValue::STANDBY
+    });
+    assert_eq!(mode.load(Ordering::SeqCst), ConcurrentModeValue::STANDBY);
+
+    let mut current = mode.load(Ordering::SeqCst);
+    loop {
+        match mode.compare_exchange_weak(
+            current,
+            ConcurrentModeValue::ERROR,
+            Ordering::SeqCst,
+            Ordering::Relaxed,
+        ) {
+            Ok(_) => break,
+            Err(actual) => current = actual,
+        }
+    }
+    assert_eq!(mode.load(Ordering::SeqCst), ConcurrentModeValue::ERROR);
+
+    assert_eq!(ConcurrentMode::BITS, 2);
+
+    let def_mode = ConcurrentMode::default();
+    assert_eq!(def_mode.load(Ordering::SeqCst), ConcurrentModeValue::STANDBY);
+
+    let debug_str = format!("{:?}", mode);
+    assert!(debug_str.contains("ConcurrentMode(ConcurrentModeValue(2)::ERROR)"));
 }

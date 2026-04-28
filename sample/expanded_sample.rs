@@ -9385,3 +9385,299 @@ impl AtomicPoolTracker {
     }
 }
 
+#[repr(transparent)]
+pub struct AtomicStatus(pub core::sync::atomic::AtomicU32);
+
+impl core::fmt::Debug for AtomicStatus {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let raw = self.0.load(core::sync::atomic::Ordering::Relaxed);
+        let val = AtomicStatusValue::from_bits(raw as _);
+        f.debug_tuple("AtomicStatus").field(&val).finish()
+    }
+}
+
+#[repr(transparent)]
+pub struct AtomicStatusValue(pub <::bitcraft::Bits<2> as ::bitcraft::BitenumType>::Prim);
+
+#[automatically_derived]
+impl ::core::marker::Copy for AtomicStatusValue {}
+
+#[automatically_derived]
+#[doc(hidden)]
+unsafe impl ::core::clone::TrivialClone for AtomicStatusValue {}
+
+#[automatically_derived]
+impl ::core::clone::Clone for AtomicStatusValue {
+    #[inline]
+    fn clone(&self) -> AtomicStatusValue {
+        let _: ::core::clone::AssertParamIsClone<
+            <::bitcraft::Bits<2> as ::bitcraft::BitenumType>::Prim,
+        >;
+        *self
+    }
+}
+
+#[automatically_derived]
+impl ::core::marker::StructuralPartialEq for AtomicStatusValue {}
+
+#[automatically_derived]
+impl ::core::cmp::PartialEq for AtomicStatusValue {
+    #[inline]
+    fn eq(&self, other: &AtomicStatusValue) -> bool {
+        self.0 == other.0
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Eq for AtomicStatusValue {
+    #[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    fn assert_receiver_is_total_eq(&self) -> () {
+        let _: ::core::cmp::AssertParamIsEq<
+            <::bitcraft::Bits<2> as ::bitcraft::BitenumType>::Prim,
+        >;
+    }
+}
+
+#[automatically_derived]
+impl ::core::default::Default for AtomicStatusValue {
+    #[inline]
+    fn default() -> AtomicStatusValue {
+        AtomicStatusValue(::core::default::Default::default())
+    }
+}
+
+impl core::fmt::Debug for AtomicStatusValue {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let s = match self.0 {
+            0 => "OFF",
+            1 => "ON",
+            2 => "FAULT",
+            _ => "UNKNOWN",
+        };
+        f.write_fmt(format_args!("{0}({1})::{2}", "AtomicStatusValue", self.0, s))
+    }
+}
+
+impl AtomicStatusValue {
+    #[allow(non_upper_case_globals, dead_code)]
+    ///Enumeration variant for `OFF` with raw value `0`.
+    pub const OFF: Self = Self(0);
+    #[allow(non_upper_case_globals, dead_code)]
+    ///Enumeration variant for `ON` with raw value `1`.
+    pub const ON: Self = Self(1);
+    #[allow(non_upper_case_globals, dead_code)]
+    ///Enumeration variant for `FAULT` with raw value `2`.
+    pub const FAULT: Self = Self(2);
+    #[allow(dead_code)]
+    /// The number of bits allocated for this enumeration in memory.
+    pub const BITS: usize = 2;
+    #[allow(dead_code)]
+    /// The maximum value allowed for this enumeration variant based on the allocated $bits bits.
+    ///
+    /// Useful for manually validating raw input before conversion.
+    pub const MASK: <::bitcraft::Bits<2> as ::bitcraft::BitenumType>::Prim = {
+        type Prim = <::bitcraft::Bits<2> as ::bitcraft::BitenumType>::Prim;
+        #[allow(dead_code)]
+        const TOTAL_BITS: usize = <Prim as ::bitcraft::BitLength>::BITS;
+        (!0 as Prim) >> (TOTAL_BITS - 2)
+    };
+    /// Returns true if the raw value corresponds to a defined enumeration variant.
+    ///
+    /// This is a zero-cost check that compiles to a simple comparison or a small jump table.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn is_defined(self) -> bool {
+        match self.0 {
+            0 => true,
+            1 => true,
+            2 => true,
+            _ => false,
+        }
+    }
+    /// Returns the raw integer value of the enumeration variant.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn to_bits(
+        self,
+    ) -> <::bitcraft::Bits<2> as ::bitcraft::BitenumType>::Prim {
+        self.0
+    }
+    /// Creates an enumeration variant from a raw integer value.
+    ///
+    /// # Panics
+    /// In debug mode, this will panic if the value exceeds the allocated bit width.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn from_bits(
+        val: <::bitcraft::Bits<2> as ::bitcraft::BitenumType>::Prim,
+    ) -> Self {
+        if true {
+            if !(val <= Self::MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!(
+                            "Value overflows allocated bit width for this enumeration",
+                        ),
+                    );
+                }
+            }
+        }
+        Self(val)
+    }
+    /// Creates an enumeration variant from a raw integer value, returning an error if it is invalid.
+    ///
+    /// This returns `Ok(Self)` if the value corresponds to a defined variant,
+    /// or `Err(BitstructError::InvalidVariant)` if it does not.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn try_from_bits(
+        val: <::bitcraft::Bits<2> as ::bitcraft::BitenumType>::Prim,
+    ) -> Result<Self, ::bitcraft::BitstructError> {
+        let s = Self(val);
+        if s.is_defined() {
+            Ok(s)
+        } else {
+            Err(::bitcraft::BitstructError::InvalidVariant {
+                value: val as u128,
+                enum_name: "AtomicStatusValue",
+            })
+        }
+    }
+}
+
+impl ::bitcraft::ValidField for AtomicStatusValue {
+    const ASSERT_VALID: () = ();
+}
+
+impl Default for AtomicStatus {
+    fn default() -> Self {
+        Self::new(AtomicStatusValue::default())
+    }
+}
+
+impl AtomicStatus {
+    #[allow(dead_code)]
+    pub const BITS: usize = 2;
+    /// Creates a new atomic instance from an enum variant.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn new(val: AtomicStatusValue) -> Self {
+        Self(<core::sync::atomic::AtomicU32>::new(val.to_bits() as _))
+    }
+    /// Returns the current variant via `load`.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub fn load(&self, order: core::sync::atomic::Ordering) -> AtomicStatusValue {
+        AtomicStatusValue::from_bits(self.0.load(order) as _)
+    }
+    /// Stores a new variant via `store`.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub fn store(&self, val: AtomicStatusValue, order: core::sync::atomic::Ordering) {
+        self.0.store(val.to_bits() as _, order)
+    }
+    /// Atomically swaps the variant and returns the previous one.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub fn swap(
+        &self,
+        val: AtomicStatusValue,
+        order: core::sync::atomic::Ordering,
+    ) -> AtomicStatusValue {
+        AtomicStatusValue::from_bits(self.0.swap(val.to_bits() as _, order) as _)
+    }
+    /// Compares and exchanges the variant.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub fn compare_exchange(
+        &self,
+        current: AtomicStatusValue,
+        new: AtomicStatusValue,
+        success: core::sync::atomic::Ordering,
+        failure: core::sync::atomic::Ordering,
+    ) -> Result<AtomicStatusValue, AtomicStatusValue> {
+        self.0
+            .compare_exchange(
+                current.to_bits() as _,
+                new.to_bits() as _,
+                success,
+                failure,
+            )
+            .map(|raw| AtomicStatusValue::from_bits(raw as _))
+            .map_err(|raw| AtomicStatusValue::from_bits(raw as _))
+    }
+    /// Weakly compares and exchanges the variant.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub fn compare_exchange_weak(
+        &self,
+        current: AtomicStatusValue,
+        new: AtomicStatusValue,
+        success: core::sync::atomic::Ordering,
+        failure: core::sync::atomic::Ordering,
+    ) -> Result<AtomicStatusValue, AtomicStatusValue> {
+        self.0
+            .compare_exchange_weak(
+                current.to_bits() as _,
+                new.to_bits() as _,
+                success,
+                failure,
+            )
+            .map(|raw| AtomicStatusValue::from_bits(raw as _))
+            .map_err(|raw| AtomicStatusValue::from_bits(raw as _))
+    }
+    /// Fetches and updates the variant via a CAS loop closure.
+    /// The closure must return `Some(variant)` to commit, or `None` to abort.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub fn update_or_abort<F>(
+        &self,
+        set_order: core::sync::atomic::Ordering,
+        fetch_order: core::sync::atomic::Ordering,
+        mut f: F,
+    ) -> Result<AtomicStatusValue, AtomicStatusValue>
+    where
+        F: FnMut(AtomicStatusValue) -> Option<AtomicStatusValue>,
+    {
+        self.0
+            .fetch_update(
+                set_order,
+                fetch_order,
+                |raw| {
+                    let snap = AtomicStatusValue::from_bits(raw as _);
+                    f(snap).map(|v| v.to_bits() as _)
+                },
+            )
+            .map(|raw| AtomicStatusValue::from_bits(raw as _))
+            .map_err(|raw| AtomicStatusValue::from_bits(raw as _))
+    }
+    /// Fetches and updates the variant via a CAS loop closure.
+    /// The closure must return the new variant to commit.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub fn update<F>(
+        &self,
+        set_order: core::sync::atomic::Ordering,
+        fetch_order: core::sync::atomic::Ordering,
+        mut f: F,
+    ) -> AtomicStatusValue
+    where
+        F: FnMut(AtomicStatusValue) -> AtomicStatusValue,
+    {
+        let raw_prev = self
+            .0
+            .fetch_update(
+                set_order,
+                fetch_order,
+                |raw| {
+                    let snap = AtomicStatusValue::from_bits(raw as _);
+                    Some(f(snap).to_bits() as _)
+                },
+            )
+            .unwrap();
+        AtomicStatusValue::from_bits(raw_prev as _)
+    }
+}
+

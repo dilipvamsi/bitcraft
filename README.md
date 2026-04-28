@@ -177,6 +177,10 @@ The `bitcraft` crate provides four specialized tools. Choosing the right one det
   - **When:** You need thread-safe, lock-free concurrent mutation of individual bit-packed fields within a shared memory location.
   - **Why:** Safely mutate disjoint bit-fields concurrently across multiple threads without taking heavy locks. Offers a high-performance CAS loop transaction API (`.update_or_abort()`) to resolve race conditions and enforce business logic cleanly.
 
+- **Use `atomic_bitenum!`** `(Base: AtomicU8 - AtomicU64, AtomicI8 - AtomicI64)`
+  - **When:** You need to manage high-level state machine transitions (e.g., `WorkerStatus`, `PoolMode`) atomically.
+  - **Why:** Provides a type-safe, variant-based CAS API. Allows atomic transitions like `IDLE -> BUSY` using a single hardware instruction, with built-in retry logic for concurrent updates.
+
 - **Use `bytestruct!`** `(Base: [u8/u16/u32...; N])`
   - **When:** Your data structure logically exceeds 16 bytes (128 bits) but must still remain perfectly dense without padding, or when the data is intrinsically an array (like a generic payload buffer with flags at the end).
   - **Why:** Allows dense packing up to 128 bits while still utilizing the widest available CPU registers (like `u64` or `u128`) behind the scenes to modify localized chunks of the array efficiently.
@@ -277,7 +281,9 @@ bitstruct! {
 | Macro | Storage Basis | Range | Primary Use Case |
 | :--- | :--- | :--- | :--- |
 | [**`bitenum!`**](#1-bitenum) | `u8` .. `u128` | 1 - 128 Bits | Type-safe variants inside packed fields |
+| [**`atomic_bitenum!`**](atomics-implementation.md) | **Atomic Primitives** | **1 - 64 Bits** | **Unique**: Lock-free atomic state machine transitions |
 | [**`bitstruct!`**](#2-bitstruct) | Primitives | 1 - 128 Bits | Word-aligned "Hot Path" CPU optimization |
+| [**`atomic_bitstruct!`**](atomics-implementation.md) | **Atomic Primitives** | **1 - 64 Bits** | **Unique**: Lock-free bit-packed concurrent fields |
 | [**`bytestruct!`**](#3-bytestruct) | **`[u8-u128; N]`** | **2 - 16 Bytes** | **Unique**: Array-backed dense buffers with register-speed |
 | [**`byteval!`**](#4-byteval) | **`[u8-u128; N]`** | **3 - 16 Bytes** | **Unique**: Packed IDs (24-bit, 40-bit) as first-class numbers |
 
@@ -319,6 +325,8 @@ let my_struct: MyBytestruct = bytemuck::cast(raw_bytes);
 - [ ] **`serde` Integration**: Optional feature to derive `Serialize` and `Deserialize` for all packed types.
 - [x] **Property-Based Testing**: Comprehensive fuzzing of bit-packing logic via `proptest`.
 - [x] **Safe Mutators**: `try_set` and `try_with` methods for guaranteed boundary safety.
+- [x] **Atomic State Machines**: Full support for `atomic_bitenum!` with CAS-based transitions.
+- [x] **Atomic Bit-Packing**: Full support for `atomic_bitstruct!` for multi-field concurrent updates.
 
 ## 🔬 Technical Deep Dive: The Engineering Behind the Speed
 

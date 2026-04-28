@@ -1,6 +1,6 @@
-# Atomics Implementation (`atomic_bitstruct!`)
+# Atomics Implementation (`atomic_bitstruct!` & `atomic_bitenum!`)
 
-The `atomic_bitstruct!` macro provides **zero-cost, lock-free concurrent mutation** of individual bitfields packed inside standard Rust atomic integers.
+The `atomic_bitstruct!` and `atomic_bitenum!` macros provide **zero-cost, lock-free concurrent mutation** of individual bitfields and enumerations packed inside standard Rust atomic integers.
 
 This architecture allows developers to define memory-efficient flags, counters, and states that can be safely updated concurrently by multiple threads without the need for traditional synchronization primitives like `Mutex` or `RwLock`.
 
@@ -8,7 +8,7 @@ This architecture allows developers to define memory-efficient flags, counters, 
 
 ## 1. Supported Base & Field Types
 
-The macro natively maps to `core::sync::atomic` types, giving you full control over the underlying memory footprint:
+The macros natively map to `core::sync::atomic` types, giving you full control over the underlying memory footprint:
 
 - **Unsigned Atomics**: `AtomicU8`, `AtomicU16`, `AtomicU32`, `AtomicU64`
 - **Signed Atomics**: `AtomicI8`, `AtomicI16`, `AtomicI32`, `AtomicI64`
@@ -23,7 +23,48 @@ Fields defined inside an `atomic_bitstruct!` inherit all the robust capabilities
 
 ---
 
-## 2. Generated API Surface
+## 2. `atomic_bitenum!` — Atomic State Machines
+
+The `atomic_bitenum!` macro generates a `#[repr(transparent)]` wrapper around an atomic integer that represents a strictly bounded enumeration. This is ideal for representing high-level states (e.g., `Status`, `Mode`, `ConnectionState`) that must be transitioned atomically.
+
+### Example: Concurrent Connection State
+
+```rust
+use bitcraft::atomic_bitenum;
+use core::sync::atomic::{AtomicU8, Ordering};
+
+atomic_bitenum! {
+    /// A lock-free atomic connection state tracker.
+    pub enum ConnectionState(AtomicU8, 2) {
+        DISCONNECTED = 0,
+        CONNECTING = 1,
+        CONNECTED = 2,
+        ERROR = 3,
+    }
+}
+
+let state = ConnectionState::new(ConnectionStateValue::DISCONNECTED);
+
+// Atomically transition to CONNECTING
+state.store(ConnectionStateValue::CONNECTING, Ordering::Release);
+```
+
+### Key API Surface
+
+- **`load(order)`**: Returns the current `[Name]Value` snapshot.
+- **`store(val, order)`**: Atomically overwrites the current variant.
+- **`swap(val, order)`**: Atomically swaps and returns the previous variant.
+- **`compare_exchange(current, new, success, failure)`**: Atomic CAS transition. Returns `Ok(previous)` if successful, or `Err(actual)` if the current value didn't match.
+- **`update(set_order, fetch_order, closure)`**: Forces a CAS transition to a new variant.
+- **`update_or_abort(set_order, fetch_order, closure)`**: Conditionally transitions or aborts based on business logic.
+
+### Memory Layout & Safety
+
+Because `atomic_bitenum!` is `#[repr(transparent)]`, it has the **exact same memory layout** as its underlying atomic primitive. This makes it safe to use in FFI or MMIO contexts where hardware expects a specific integer width.
+
+---
+
+## 3. Generated API Surface (`atomic_bitstruct!`)
 
 When you use the `atomic_bitstruct!` macro, it generates an outer **Atomic Struct** and an inner **Snapshot Value Struct**. Here is a complete overview of the methods available to you.
 
@@ -64,7 +105,7 @@ The snapshot value (`v` in closures, or returned by `get()`) is a standard, non-
 
 ---
 
-## 3. Architecture & Concurrency Model
+## 4. Architecture & Concurrency Model
 
 ### The Challenge of Atomic Bitfields
 
@@ -89,7 +130,7 @@ self.0.fetch_update(set_order, core::sync::atomic::Ordering::Relaxed, |raw| {
 
 ---
 
-## 4. Struct-Level Batch Updates (The `Value` Pattern)
+## 5. Struct-Level Batch Updates (The `Value` Pattern)
 
 Performing back-to-back single-field updates on an atomic struct is highly inefficient, as each individual setter triggers its own independent CAS loop. Furthermore, it breaks transactionality: another thread might observe the struct in a partially updated state.
 
@@ -163,7 +204,7 @@ For example, you might only want to increment a connection counter if the pool i
 
 It is crucial to understand that the `v` parameter passed into your closure is a **complete snapshot** of the atomic state at that exact microsecond. Because it holds *all* the bits, you **only need to call setters for the fields you want to change**.
 
-Any field you *don't* modify simply retains its value from the initial load. You do not need to read a field and write it back just to preserve it. The CAS loop inherently guarantees that the unmodified fields will be perfectly preserved during the atomic swap.
+Any field you *don't* modify simply retains its value from the initial load. The CAS loop inherently guarantees that the unmodified fields will be perfectly preserved during the atomic swap.
 
 ```rust
 let result = pool_flags.update_or_abort(Ordering::SeqCst, Ordering::Relaxed, |v| {
@@ -205,7 +246,7 @@ This completely replaces the need for heavy synchronization primitives, allowing
 
 ---
 
-## 5. Bounds Checking & Safety in Atomic Contexts
+## 6. Bounds Checking & Safety in Atomic Contexts
 
 Because `atomic_bitstruct!` is built directly on top of the `bitstruct!` engine, all field-level protections are strictly enforced even within concurrent CAS loops.
 
@@ -240,7 +281,7 @@ f.update_or_abort(Ordering::SeqCst, Ordering::Relaxed, |v| {
 
 ---
 
-## 6. Mechanical Sympathy & Memory Orderings
+## 7. Mechanical Sympathy & Memory Orderings
 
 To provide "Mechanical Sympathy" with the underlying hardware, `atomic_bitstruct!` never hides synchronization costs. Every getter and setter explicitly requires a `core::sync::atomic::Ordering`.
 
@@ -250,4 +291,87 @@ This enforces that developers actively dictate the CPU-level memory barriers emi
 - **Setters** (`f.set_ready(true, Ordering::Release)`): The provided `order` acts as the `set_order` (the successful write path) for the CAS loop. The underlying failure/retry load path is hardcoded to `Ordering::Relaxed` internally, ensuring optimal performance by not emitting unnecessary CPU synchronization barriers when a loop iteration is aborted.
 - **Batch Updates** (`f.update(set_order, fetch_order, closure)`): Allows full explicit configuration of both the success and the retry ordering constraints.
 
-By passing `Ordering` directly into the generated methods, `atomic_bitstruct!` adheres strictly to Rust's concurrency paradigms, giving you high-level abstractions without sacrificing low-level performance tuning.
+### Best Practices for Memory Ordering
+
+1. **Counter Increments**: Use `Ordering::Acquire` for reading and `Ordering::Release` for writing. This ensures that any data modified by the thread *before* it updated the counter is visible to other threads that *see* the updated counter.
+2. **Internal Flags**: If a bitfield is purely used for internal thread logic (e.g., a "dirty" flag), `Ordering::Relaxed` is often sufficient and avoids expensive CPU memory barriers.
+3. **Global Synchronization**: Use `Ordering::SeqCst` if you need a total global order of operations across all CPUs. Note that this is the most expensive ordering.
+
+---
+
+## 8. Performance & Memory Safety
+
+### CAS Retry Cost
+
+Under high contention, the CAS loop may retry. However, because the closure executes in registers, a retry typically costs only a few nanoseconds. This is significantly cheaper than a context switch caused by a blocked `Mutex`.
+
+### Zero Padding & Alignment
+
+Since `bitcraft` uses `#[repr(transparent)]`, there is **zero padding**. Your atomic structs are bit-for-bit identical to raw atomic integers in memory.
+
+### Thread Safety
+
+All generated atomic structures automatically implement `Send` and `Sync`, provided the underlying atomic type is `Send + Sync`. This allows them to be shared across thread boundaries and accessed concurrently from multiple `Arc` references.
+
+---
+
+## 9. Real-World Example: Network Sequence Tracker
+
+A common use case is tracking a network sequence number along with status flags in a single 64-bit word.
+
+```rust
+atomic_bitstruct! {
+    pub struct SequenceTracker(AtomicU64) {
+        pub sequence: u48 = 48,
+        pub is_acked: bool = 1,
+        pub is_retransmitted: bool = 1,
+        pub priority: u8 = 4,
+        pub reserved: u16 = 10,
+    }
+}
+
+let tracker = SequenceTracker::new(0);
+
+// Atomically increment sequence while preserving flags
+tracker.update(Ordering::SeqCst, Ordering::Relaxed, |v| {
+    let next = v.sequence().wrapping_add(1);
+    v.set_sequence(next);
+});
+```
+
+---
+
+## 10. Real-World Example: Worker Pool State Machine
+
+`atomic_bitenum!` is perfect for managing the lifecycle of background workers in a thread pool.
+
+```rust
+atomic_bitenum! {
+    /// High-level lifecycle states for a background worker.
+    pub enum WorkerLifeCycle(AtomicU8, 3) {
+        IDLE = 0,
+        FETCHING = 1,
+        PROCESSING = 2,
+        BACKOFF = 3,
+        STOPPING = 4,
+        TERMINATED = 5,
+    }
+}
+
+let worker_state = WorkerLifeCycle::new(WorkerLifeCycleValue::IDLE);
+
+// Use update_or_abort to transition safely
+let result = worker_state.update_or_abort(Ordering::SeqCst, Ordering::Relaxed, |current| {
+    match current {
+        WorkerLifeCycleValue::IDLE => Some(WorkerLifeCycleValue::FETCHING),
+        WorkerLifeCycleValue::FETCHING => Some(WorkerLifeCycleValue::PROCESSING),
+        WorkerLifeCycleValue::PROCESSING => Some(WorkerLifeCycleValue::IDLE),
+        // If the worker is STOPPING, we cannot transition back to FETCHING
+        _ => None,
+    }
+});
+
+if result.is_ok() {
+    println!("Worker successfully transitioned state!");
+}
+```

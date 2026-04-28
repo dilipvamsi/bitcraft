@@ -1,7 +1,7 @@
-use bitcraft::{atomic_bitstruct, bitenum, bitstruct, bytestruct, byteval};
+use bitcraft::{atomic_bitenum, atomic_bitstruct, bitenum, bitstruct, bytestruct, byteval};
 use proptest::prelude::*;
 
-use core::sync::atomic::AtomicU64;
+
 atomic_bitstruct! {
     struct FuzzAtomicStruct(AtomicU64) {
         a: bool = 1,
@@ -9,6 +9,14 @@ atomic_bitstruct! {
         c: u32 = 24,
         d: FuzzEnum = 2,
         e: u32 = 30, // 1+7+24+2+30 = 64
+    }
+}
+
+atomic_bitenum! {
+    enum FuzzAtomicEnum(AtomicU8, 2) {
+        A = 0,
+        B = 1,
+        C = 2,
     }
 }
 
@@ -770,7 +778,7 @@ proptest! {
 
         let expected_raw = bs.to_bits();
         // Since both have the same layout and are 8 bytes total
-        let expected_bytes = expected_raw.to_le_bytes(); // bytestruct uses LE natively on LE systems. Wait, bitstruct is host endian.
+        let _expected_bytes = expected_raw.to_le_bytes(); // bytestruct uses LE natively on LE systems. Wait, bitstruct is host endian.
         // Actually, let's just ensure they hold their values properly.
     }
 
@@ -906,5 +914,43 @@ proptest! {
 
         prop_assert!(abort_res.is_err());
         prop_assert_eq!(bs.c(core::sync::atomic::Ordering::Relaxed), c); // C should remain unchanged!
+    }
+
+    #[test]
+    fn test_atomic_bitenum_fuzz(
+        initial in 0u8..=2,
+        target in 0u8..=2,
+    ) {
+        let variants = [FuzzAtomicEnumValue::A, FuzzAtomicEnumValue::B, FuzzAtomicEnumValue::C];
+        let initial_val = variants[initial as usize];
+        let target_val = variants[target as usize];
+
+        let ae = FuzzAtomicEnum::new(initial_val);
+        prop_assert_eq!(ae.load(core::sync::atomic::Ordering::Relaxed), initial_val);
+
+        ae.store(target_val, core::sync::atomic::Ordering::SeqCst);
+        prop_assert_eq!(ae.load(core::sync::atomic::Ordering::Relaxed), target_val);
+
+        // Update via CAS loop
+        ae.update(core::sync::atomic::Ordering::SeqCst, core::sync::atomic::Ordering::Relaxed, |v| {
+            if v == target_val {
+                initial_val
+            } else {
+                v
+            }
+        });
+
+        prop_assert_eq!(ae.load(core::sync::atomic::Ordering::Relaxed), initial_val);
+
+        // test update_or_abort
+        let res = ae.update_or_abort(core::sync::atomic::Ordering::SeqCst, core::sync::atomic::Ordering::Relaxed, |v| {
+            if v == initial_val {
+                Some(target_val)
+            } else {
+                None
+            }
+        });
+        prop_assert!(res.is_ok());
+        prop_assert_eq!(ae.load(core::sync::atomic::Ordering::Relaxed), target_val);
     }
 }

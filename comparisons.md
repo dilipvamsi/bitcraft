@@ -20,7 +20,7 @@ Choosing a bit manipulation library in Rust often involves balancing **Ergonomic
 | **Signed Arrays** | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (`byteval!(i $count)`)** |
 | **Signed Fields** | ✅ | ❌ | ✅ | ✅ | ✅ | **✅ (Zero-cost shift)** |
 | **Signed Enums** | ✅ | ❌ | ❌ (Custom impl) | ❌ (Custom impl) | ⚠️ (Requires trait) | **✅ (Native `i $bits`)** |
-| **Atomic CAS Loops** | ❌ (Manual only) | ❌ | ❌ | ❌ | ❌ | **✅ (`atomic_bitstruct!`)** |
+| **Atomic CAS Loops** | ❌ (Manual only) | ❌ | ❌ | ❌ | ❌ | **✅ (`atomic_bitstruct!` / `atomic_bitenum!`)** |
 | **C FFI / ABI** | ✅ | ✅ | ✅ | ✅ | ✅ | **✅ (Transparent)** |
 
 ---
@@ -82,6 +82,15 @@ If you are interfacing with C firmware or legacy network protocols, layout predi
 * **ABI Stability**: Every `bitstruct!`, `bytestruct!`, and `bitenum!` is marked `#[repr(transparent)]`. This means they have the **exact same memory representation** as their underlying Rust primitive (u8-u128) or byte-array.
 * **Natural LSB-First**: Unlike many procedural macros that can be ambiguous about bit-ordering, `bitcraft` enforces a strict LSB-first mapping. This matches the standard layout of C bitfields on Little-Endian architectures (x86_64/ARM64), allowing you to safely cast raw C-originated pointers directly into Rust types using `bytemuck`.
 
+### 6. `atomic_bitstruct!` & `atomic_bitenum!` vs. `Mutex`/`RwLock`
+
+Most bit manipulation libraries completely ignore concurrency. If you need to share a bitfield across threads, you typically have to wrap it in a heavy synchronization primitive.
+
+* **The Locking Tax**: A `Mutex<T>` or `RwLock<T>` requires entering the kernel to put a thread to sleep if there is contention. Even without contention, it involves expensive memory bus locking.
+* **Lock-Free with `bitcraft`**: `atomic_bitstruct!` and `atomic_bitenum!` wrap standard `core::sync::atomic` types. They provide a **lock-free** API where threads never sleep.
+* **Transactional CAS Loops**: Instead of locking the whole struct, `bitcraft` uses **Compare-And-Swap (CAS)** loops. The `.update_or_abort()` method allows you to define complex state transitions that are resolved at the hardware level. This is significantly faster in high-throughput kernels or network drivers where thousands of threads might be hitting the same status word simultaneously.
+* **No Deadlocks**: Since there are no locks, there are no deadlocks. This simplifies concurrent system design significantly.
+
 ---
 
 ## ⚡ The `bitcraft` Edge: Unique Innovations
@@ -105,10 +114,10 @@ Most bitfield libraries in the Rust ecosystem (`modular-bitfield`, `packed_struc
 * **Wait, why does this matter?** If you need a 3-byte integer (24-bit ID) that is packed 1,000,000 times in an array, standard Rust forces you to use a 4-byte `u32` (wasting 25% of your memory footprint) or write massive boilerplate. `byteval! { struct Id(3); }` solves this in one line with zero runtime cost. Using `byteval! { struct SignedId(i 3); }` instantly turns it into a signed Two's Complement container, perfect for hardware ADCs!
 * **Register Routing**: While other array-backed solutions use slow byte-by-byte loops, `bytestruct!` uses **Acting Primitives** (e.g., loading an 8-byte slice of a 13-byte array into a `u64` register). It supports any unsigned array type (`u8`, `u16`, `u32`, `u64`, `u128`) while maintaining a strict 128-bit architectural limit.
 
-### 🔄 `atomic_bitstruct!`: Lock-Free Concurrency
+### 🔄 Atomic Concurrency (`atomic_bitstruct!` & `atomic_bitenum!`)
 
 Most bitfield libraries completely ignore concurrency. If you want to share a bitfield across threads, you have to wrap it in a heavy `Mutex` or `RwLock`.
-`bitcraft` provides `atomic_bitstruct!` which wraps standard `core::sync::atomic` types, generating a fully lock-free API. It provides a highly ergonomic `.update_or_abort()` closure pattern for building transaction-safe CAS loops that resolve concurrent mutations on disjoint bit-fields automatically, without taking any locks.
+`bitcraft` provides `atomic_bitstruct!` and `atomic_bitenum!` which wrap standard `core::sync::atomic` types, generating a fully lock-free API. They provide a highly ergonomic `.update_or_abort()` closure pattern for building transaction-safe CAS loops that resolve concurrent mutations on disjoint bit-fields or state variants automatically, without taking any locks. This is critical for building high-throughput kernels, network stacks, and shared-memory applications.
 
 ### 🛡️ Compile-Time Bounds Checking (Zero Runtime Panic)
 

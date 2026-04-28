@@ -1,4 +1,4 @@
-use bitcraft::{atomic_bitstruct, bitenum, bitstruct, bytestruct, byteval};
+use bitcraft::{atomic_bitenum, atomic_bitstruct, bitenum, bitstruct, bytestruct, byteval};
 use core::sync::atomic::{AtomicU32, Ordering};
 
 bitenum! {
@@ -159,6 +159,15 @@ atomic_bitstruct! {
     }
 }
 
+atomic_bitenum! {
+    /// A lock-free atomic status tracker.
+    pub enum AtomicStatus(AtomicU32, 2) {
+        OFF = 0,
+        ON = 1,
+        FAULT = 2,
+    }
+}
+
 fn main() {
     let config = Config::default()
         .with_enabled(true)
@@ -308,4 +317,19 @@ fn main() {
         snapshot.is_active(),
         snapshot.status()
     );
+
+    // 5. Demonstration of atomic_bitenum
+    println!("\nTesting atomic_bitenum...");
+    let atomic_status = AtomicStatus::new(AtomicStatusValue::OFF);
+    atomic_status.store(AtomicStatusValue::ON, Ordering::SeqCst);
+    println!("  Status after store: {:?}", atomic_status.load(Ordering::SeqCst));
+
+    atomic_status.update(Ordering::SeqCst, Ordering::Relaxed, |v| {
+        if v == AtomicStatusValue::ON {
+            AtomicStatusValue::FAULT
+        } else {
+            v
+        }
+    });
+    println!("  Status after update: {:?}", atomic_status.load(Ordering::SeqCst));
 }

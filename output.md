@@ -475,6 +475,58 @@ impl AtomicPoolTracker {
 
 ---
 
+## 6. `atomic_bitenum!` (Atomic State Machines)
+
+Generates a lock-free wrapper for enumerations, enabling safe variant transitions via atomic primitives.
+
+### **Usage**
+
+```rust
+atomic_bitenum! {
+    pub enum AtomicStatus(AtomicU32, 2) {
+        OFF = 0,
+        ON = 1,
+        FAULT = 2,
+    }
+}
+```
+
+### **Generated "Struct Equivalent"**
+
+```rust
+#[repr(transparent)]
+pub struct AtomicStatus(pub core::sync::atomic::AtomicU32);
+
+// Companion snapshot type generated via bitenum!
+#[repr(transparent)]
+pub struct AtomicStatusValue(pub u8);
+
+impl AtomicStatus {
+    #[inline(always)]
+    pub fn load(&self, order: Ordering) -> AtomicStatusValue {
+        AtomicStatusValue::from_bits(self.0.load(order) as u8)
+    }
+
+    #[inline(always)]
+    pub fn store(&self, val: AtomicStatusValue, order: Ordering) {
+        self.0.store(val.to_bits() as u32, order)
+    }
+
+    #[inline(always)]
+    pub fn update<F>(&self, set_order: Ordering, fetch_order: Ordering, mut f: F) -> AtomicStatusValue
+    where F: FnMut(AtomicStatusValue) -> AtomicStatusValue
+    {
+        let raw = self.0.fetch_update(set_order, fetch_order, |r| {
+            let snap = AtomicStatusValue::from_bits(r as u8);
+            Some(f(snap).to_bits() as u32)
+        }).unwrap();
+        AtomicStatusValue::from_bits(raw as u8)
+    }
+}
+```
+
+---
+
 ## 🔍 Visibility and Inspection
 
 To see the real, machine-generated expansion for any macro in your project, install the `cargo-expand` tool:

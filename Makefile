@@ -41,6 +41,11 @@ clean:
 	@echo "==> Cleaning Build Artifacts"
 	cargo clean
 
+# Check compilation without running tests
+check:
+	@echo "==> Checking Compilation"
+	cargo check --all-targets
+
 # Show help
 help:
 	@echo "bitcraft - Zero-Cost Bitfield Engine"
@@ -50,9 +55,11 @@ help:
 	@echo "  make fuzz        Run property-based fuzz tests (proptest)."
 	@echo "  make perf        Run performance benchmarks in release mode."
 	@echo "  make test        Alias for 'make normal'."
+	@echo "  make check       Check compilation without running tests."
 	@echo "  make lint        Run clippy with strict warnings."
 	@echo "  make all         Run both normal and fuzz tests."
 	@echo "  make clean       Remove all build artifacts."
+	@echo "  make expand-sample  Expand sample/sample.rs into sample/expanded_sample.rs."
 
 # Convert sample/sample.rs to sample/expanded_sample.rs
 expand-sample:
