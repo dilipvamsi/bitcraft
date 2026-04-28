@@ -12,6 +12,7 @@ In high-performance domains (vector engines, network stacks, or high-frequency t
 
 - **Absolute Bit Control**: Define exactly which bits map to which logical fields.
 - **Unique `bytestruct!` Support**: Native support for **flexible 1-16 byte spans** via any unsigned array (`[u8; N]`, `[u16; N]`, `[u32; N]`, `[u64; N]`, `[u128; N]`).
+- **`bitarray!` & `bytearray!`**: High-density packed storage for sub-byte data (e.g., 3-bit integers or booleans). `bitarray!` uses **Automated Register Selection** (u8-u128) while `bytearray!` supports arbitrary-length byte arrays with cross-byte bit manipulation.
 - **Unique `byteval!` IDs**: Instant "Packed IDs" for 24-bit, 40-bit, or 56-bit values that behave like first-class integers—solving the "Odd-Width Integer" problem in one line. Native support for Signed Variants `(i $count)` via zero-cost sign extensions.
 - **Zero-Multiplication Engine**: High-performance bitwise operations using pre-calculated constants (`BitLength::BITS_N`) to eliminate manual multiplications in macro expansion.
 - **Hardware Alignment**: LSB-first mapping ensures your software layout matches the physical little-endian storage in modern hardware.
@@ -298,7 +299,7 @@ When you manually manipulate byte arrays (e.g., `[u8; 3]`), you often introduce 
 
 `bitcraft` avoids this by generating a single unrolled "Shift-and-OR" expression (e.g., `(b0 as u32) | ((b1 as u32) << 8) | ...`). Modern compilers recognize this pattern and perform **Instruction Fusion**. Instead of multiple individual shifts, the backend generates a single **Unaligned Load** instruction (like `MOV` or `LDR`), effectively loading your "packed" data directly into a high-speed CPU register in one cycle.
 
-### Zero-Cost Sign Extension ("The Shift Trick")
+### 4. Zero-Cost Sign Extension ("The Shift Trick")
 
 When using signed field types (`i8` through `i128`), `bitcraft` implements a branchless, arithmetic right-shift algorithm to propagate the sign bit natively across the CPU register.
 
@@ -317,7 +318,29 @@ This transforms a potentially complex sign-bit conditional into a pure arithmeti
 
 ---
 
-## ⚖️ 12. Summary Feature Matrix
+## 🛠️ 13. Packed Arrays Architecture (`bitarray!` & `bytearray!`)
+
+For collections of uniform sub-byte data, `bitcraft` provides two distinct array-based macros that balance register speed and storage capacity.
+
+### 1. `bitarray!` (Register-Backed)
+
+Designed for small-to-medium collections (up to 128 bits), `bitarray!` treats the entire array as a single CPU register.
+
+- **Automated Base Selection**: The macro uses a **Lookup Table Pattern** to automatically select the smallest base integer (`u8`, `u16`, `u32`, `u64`, or `u128`) that fits the total bits.
+- **LSB-First Mapping**: Elements are packed from right-to-left within the register.
+- **Zero-Copy FFI**: Directly castable to/from the underlying integer type using `bytemuck`.
+
+### 2. `bytearray!` (Byte-Array Backed)
+
+Designed for larger collections (e.g., thousands of flags) or where fixed `[u8; N]` storage is required.
+
+- **Cross-Byte Spanning**: The engine calculates `bit_offset / 8` and `bit_offset % 8` to perform bit manipulation across byte boundaries.
+- **Acting Primitive Unrolling**: Similar to `bytestruct!`, it loads the relevant bytes into a temporary `u128` register to perform the extraction/insertion in a single atomic-like operation, rather than byte-by-byte loops.
+- **Const-Sized Storage**: The array size is automatically calculated as a `const` expression: `[u8; (width * count + 7) / 8]`.
+
+---
+
+## ⚖️ 14. Summary Feature Matrix
 
 | Feature | Standard Rust (`struct`/`enum`) | `bitcraft` Library |
 | :--- | :--- | :--- |

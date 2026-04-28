@@ -9681,3 +9681,977 @@ impl AtomicStatus {
     }
 }
 
+#[repr(transparent)]
+pub struct NibblePalette(pub u32);
+
+#[automatically_derived]
+impl ::core::marker::Copy for NibblePalette {}
+
+#[automatically_derived]
+#[doc(hidden)]
+unsafe impl ::core::clone::TrivialClone for NibblePalette {}
+
+#[automatically_derived]
+impl ::core::clone::Clone for NibblePalette {
+    #[inline]
+    fn clone(&self) -> NibblePalette {
+        let _: ::core::clone::AssertParamIsClone<u32>;
+        *self
+    }
+}
+
+#[automatically_derived]
+impl ::core::default::Default for NibblePalette {
+    #[inline]
+    fn default() -> NibblePalette {
+        NibblePalette(::core::default::Default::default())
+    }
+}
+
+#[automatically_derived]
+impl ::core::marker::StructuralPartialEq for NibblePalette {}
+
+#[automatically_derived]
+impl ::core::cmp::PartialEq for NibblePalette {
+    #[inline]
+    fn eq(&self, other: &NibblePalette) -> bool {
+        self.0 == other.0
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Eq for NibblePalette {
+    #[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    fn assert_receiver_is_total_eq(&self) -> () {
+        let _: ::core::cmp::AssertParamIsEq<u32>;
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::PartialOrd for NibblePalette {
+    #[inline]
+    fn partial_cmp(
+        &self,
+        other: &NibblePalette,
+    ) -> ::core::option::Option<::core::cmp::Ordering> {
+        ::core::cmp::PartialOrd::partial_cmp(&self.0, &other.0)
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Ord for NibblePalette {
+    #[inline]
+    fn cmp(&self, other: &NibblePalette) -> ::core::cmp::Ordering {
+        ::core::cmp::Ord::cmp(&self.0, &other.0)
+    }
+}
+
+#[automatically_derived]
+impl ::core::hash::Hash for NibblePalette {
+    #[inline]
+    fn hash<__H: ::core::hash::Hasher>(&self, state: &mut __H) -> () {
+        ::core::hash::Hash::hash(&self.0, state)
+    }
+}
+
+impl core::fmt::Debug for NibblePalette {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut list = f.debug_list();
+        for i in 0..8 {
+            list.entry(&self.get(i));
+        }
+        list.finish()
+    }
+}
+
+impl NibblePalette {
+    pub const ELEMENT_WIDTH: usize = 4;
+    pub const ELEMENT_COUNT: usize = 8;
+    pub const TOTAL_BITS: usize = 4 * 8;
+    pub const MASK: u32 = if 4 == <u32 as ::bitcraft::BitLength>::BITS {
+        !0 as u32
+    } else {
+        ((1 as u32) << 4) - 1
+    };
+    #[inline(always)]
+    pub const fn new(val: u32) -> Self {
+        Self(val)
+    }
+    #[inline(always)]
+    pub const fn to_bits(self) -> u32 {
+        self.0
+    }
+    #[inline]
+    pub fn get(&self, index: usize) -> u128 {
+        if true {
+            if !(index < 8) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("bitarray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let shift = index * 4;
+        let raw = (self.0 >> shift) & Self::MASK;
+        raw as u128
+    }
+    #[inline]
+    pub fn set(&mut self, index: usize, value: u128) {
+        if true {
+            if !(index < 8) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("bitarray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let shift = index * 4;
+        let val_masked = value as u32 & Self::MASK;
+        self.0 &= !(Self::MASK << shift);
+        self.0 |= val_masked << shift;
+    }
+}
+
+#[repr(transparent)]
+pub struct SignedOffsets(pub u128);
+
+#[automatically_derived]
+impl ::core::marker::Copy for SignedOffsets {}
+
+#[automatically_derived]
+#[doc(hidden)]
+unsafe impl ::core::clone::TrivialClone for SignedOffsets {}
+
+#[automatically_derived]
+impl ::core::clone::Clone for SignedOffsets {
+    #[inline]
+    fn clone(&self) -> SignedOffsets {
+        let _: ::core::clone::AssertParamIsClone<u128>;
+        *self
+    }
+}
+
+#[automatically_derived]
+impl ::core::default::Default for SignedOffsets {
+    #[inline]
+    fn default() -> SignedOffsets {
+        SignedOffsets(::core::default::Default::default())
+    }
+}
+
+#[automatically_derived]
+impl ::core::marker::StructuralPartialEq for SignedOffsets {}
+
+#[automatically_derived]
+impl ::core::cmp::PartialEq for SignedOffsets {
+    #[inline]
+    fn eq(&self, other: &SignedOffsets) -> bool {
+        self.0 == other.0
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Eq for SignedOffsets {
+    #[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    fn assert_receiver_is_total_eq(&self) -> () {
+        let _: ::core::cmp::AssertParamIsEq<u128>;
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::PartialOrd for SignedOffsets {
+    #[inline]
+    fn partial_cmp(
+        &self,
+        other: &SignedOffsets,
+    ) -> ::core::option::Option<::core::cmp::Ordering> {
+        ::core::cmp::PartialOrd::partial_cmp(&self.0, &other.0)
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Ord for SignedOffsets {
+    #[inline]
+    fn cmp(&self, other: &SignedOffsets) -> ::core::cmp::Ordering {
+        ::core::cmp::Ord::cmp(&self.0, &other.0)
+    }
+}
+
+#[automatically_derived]
+impl ::core::hash::Hash for SignedOffsets {
+    #[inline]
+    fn hash<__H: ::core::hash::Hasher>(&self, state: &mut __H) -> () {
+        ::core::hash::Hash::hash(&self.0, state)
+    }
+}
+
+impl core::fmt::Debug for SignedOffsets {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut list = f.debug_list();
+        for i in 0..10 {
+            list.entry(&self.get(i));
+        }
+        list.finish()
+    }
+}
+
+impl SignedOffsets {
+    pub const ELEMENT_WIDTH: usize = 3;
+    pub const ELEMENT_COUNT: usize = 10;
+    pub const TOTAL_BITS: usize = 3 * 10;
+    pub const MASK: u128 = if 3 == <u128 as ::bitcraft::BitLength>::BITS {
+        !0 as u128
+    } else {
+        ((1 as u128) << 3) - 1
+    };
+    #[inline(always)]
+    pub const fn new(val: u128) -> Self {
+        Self(val)
+    }
+    #[inline(always)]
+    pub const fn to_bits(self) -> u128 {
+        self.0
+    }
+    #[inline]
+    pub fn get(&self, index: usize) -> i128 {
+        if true {
+            if !(index < 10) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("bitarray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let shift = index * 3;
+        let raw = (self.0 >> shift) & Self::MASK;
+        {
+            let val = raw as i128;
+            let shift = (core::mem::size_of::<i128>() * 8) - 3;
+            (val << shift) >> shift
+        }
+    }
+    #[inline]
+    pub fn set(&mut self, index: usize, value: i128) {
+        if true {
+            if !(index < 10) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("bitarray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let shift = index * 3;
+        let val_masked = value as u128 & Self::MASK;
+        self.0 &= !(Self::MASK << shift);
+        self.0 |= val_masked << shift;
+    }
+}
+
+#[repr(transparent)]
+pub struct StatusFlags(pub u32);
+
+#[automatically_derived]
+impl ::core::marker::Copy for StatusFlags {}
+
+#[automatically_derived]
+#[doc(hidden)]
+unsafe impl ::core::clone::TrivialClone for StatusFlags {}
+
+#[automatically_derived]
+impl ::core::clone::Clone for StatusFlags {
+    #[inline]
+    fn clone(&self) -> StatusFlags {
+        let _: ::core::clone::AssertParamIsClone<u32>;
+        *self
+    }
+}
+
+#[automatically_derived]
+impl ::core::default::Default for StatusFlags {
+    #[inline]
+    fn default() -> StatusFlags {
+        StatusFlags(::core::default::Default::default())
+    }
+}
+
+#[automatically_derived]
+impl ::core::marker::StructuralPartialEq for StatusFlags {}
+
+#[automatically_derived]
+impl ::core::cmp::PartialEq for StatusFlags {
+    #[inline]
+    fn eq(&self, other: &StatusFlags) -> bool {
+        self.0 == other.0
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Eq for StatusFlags {
+    #[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    fn assert_receiver_is_total_eq(&self) -> () {
+        let _: ::core::cmp::AssertParamIsEq<u32>;
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::PartialOrd for StatusFlags {
+    #[inline]
+    fn partial_cmp(
+        &self,
+        other: &StatusFlags,
+    ) -> ::core::option::Option<::core::cmp::Ordering> {
+        ::core::cmp::PartialOrd::partial_cmp(&self.0, &other.0)
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Ord for StatusFlags {
+    #[inline]
+    fn cmp(&self, other: &StatusFlags) -> ::core::cmp::Ordering {
+        ::core::cmp::Ord::cmp(&self.0, &other.0)
+    }
+}
+
+#[automatically_derived]
+impl ::core::hash::Hash for StatusFlags {
+    #[inline]
+    fn hash<__H: ::core::hash::Hasher>(&self, state: &mut __H) -> () {
+        ::core::hash::Hash::hash(&self.0, state)
+    }
+}
+
+impl core::fmt::Debug for StatusFlags {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut list = f.debug_list();
+        for i in 0..32 {
+            list.entry(&self.get(i));
+        }
+        list.finish()
+    }
+}
+
+impl StatusFlags {
+    pub const ELEMENT_WIDTH: usize = 1;
+    pub const ELEMENT_COUNT: usize = 32;
+    pub const TOTAL_BITS: usize = 1 * 32;
+    pub const MASK: u32 = if 1 == <u32 as ::bitcraft::BitLength>::BITS {
+        !0 as u32
+    } else {
+        ((1 as u32) << 1) - 1
+    };
+    #[inline(always)]
+    pub const fn new(val: u32) -> Self {
+        Self(val)
+    }
+    #[inline(always)]
+    pub const fn to_bits(self) -> u32 {
+        self.0
+    }
+    #[inline]
+    pub fn get(&self, index: usize) -> bool {
+        if true {
+            if !(index < 32) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("bitarray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let shift = index * 1;
+        let raw = (self.0 >> shift) & Self::MASK;
+        raw != 0
+    }
+    #[inline]
+    pub fn set(&mut self, index: usize, value: bool) {
+        if true {
+            if !(index < 32) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("bitarray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let shift = index * 1;
+        let val_masked = if value { 1 } else { 0 } & Self::MASK;
+        self.0 &= !(Self::MASK << shift);
+        self.0 |= val_masked << shift;
+    }
+}
+
+#[repr(transparent)]
+pub struct LargeBitFlags(pub u128);
+
+#[automatically_derived]
+impl ::core::marker::Copy for LargeBitFlags {}
+
+#[automatically_derived]
+#[doc(hidden)]
+unsafe impl ::core::clone::TrivialClone for LargeBitFlags {}
+
+#[automatically_derived]
+impl ::core::clone::Clone for LargeBitFlags {
+    #[inline]
+    fn clone(&self) -> LargeBitFlags {
+        let _: ::core::clone::AssertParamIsClone<u128>;
+        *self
+    }
+}
+
+#[automatically_derived]
+impl ::core::default::Default for LargeBitFlags {
+    #[inline]
+    fn default() -> LargeBitFlags {
+        LargeBitFlags(::core::default::Default::default())
+    }
+}
+
+#[automatically_derived]
+impl ::core::marker::StructuralPartialEq for LargeBitFlags {}
+
+#[automatically_derived]
+impl ::core::cmp::PartialEq for LargeBitFlags {
+    #[inline]
+    fn eq(&self, other: &LargeBitFlags) -> bool {
+        self.0 == other.0
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Eq for LargeBitFlags {
+    #[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    fn assert_receiver_is_total_eq(&self) -> () {
+        let _: ::core::cmp::AssertParamIsEq<u128>;
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::PartialOrd for LargeBitFlags {
+    #[inline]
+    fn partial_cmp(
+        &self,
+        other: &LargeBitFlags,
+    ) -> ::core::option::Option<::core::cmp::Ordering> {
+        ::core::cmp::PartialOrd::partial_cmp(&self.0, &other.0)
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Ord for LargeBitFlags {
+    #[inline]
+    fn cmp(&self, other: &LargeBitFlags) -> ::core::cmp::Ordering {
+        ::core::cmp::Ord::cmp(&self.0, &other.0)
+    }
+}
+
+#[automatically_derived]
+impl ::core::hash::Hash for LargeBitFlags {
+    #[inline]
+    fn hash<__H: ::core::hash::Hasher>(&self, state: &mut __H) -> () {
+        ::core::hash::Hash::hash(&self.0, state)
+    }
+}
+
+impl core::fmt::Debug for LargeBitFlags {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut list = f.debug_list();
+        for i in 0..128 {
+            list.entry(&self.get(i));
+        }
+        list.finish()
+    }
+}
+
+impl LargeBitFlags {
+    pub const ELEMENT_WIDTH: usize = 1;
+    pub const ELEMENT_COUNT: usize = 128;
+    pub const TOTAL_BITS: usize = 1 * 128;
+    pub const MASK: u128 = if 1 == <u128 as ::bitcraft::BitLength>::BITS {
+        !0 as u128
+    } else {
+        ((1 as u128) << 1) - 1
+    };
+    #[inline(always)]
+    pub const fn new(val: u128) -> Self {
+        Self(val)
+    }
+    #[inline(always)]
+    pub const fn to_bits(self) -> u128 {
+        self.0
+    }
+    #[inline]
+    pub fn get(&self, index: usize) -> bool {
+        if true {
+            if !(index < 128) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("bitarray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let shift = index * 1;
+        let raw = (self.0 >> shift) & Self::MASK;
+        raw != 0
+    }
+    #[inline]
+    pub fn set(&mut self, index: usize, value: bool) {
+        if true {
+            if !(index < 128) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("bitarray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let shift = index * 1;
+        let val_masked = if value { 1 } else { 0 } & Self::MASK;
+        self.0 &= !(Self::MASK << shift);
+        self.0 |= val_masked << shift;
+    }
+}
+
+#[repr(transparent)]
+pub struct NibbleBuffer(pub [u8; (4 * 64 + 7) / 8]);
+
+#[automatically_derived]
+impl ::core::marker::Copy for NibbleBuffer {}
+
+#[automatically_derived]
+#[doc(hidden)]
+unsafe impl ::core::clone::TrivialClone for NibbleBuffer {}
+
+#[automatically_derived]
+impl ::core::clone::Clone for NibbleBuffer {
+    #[inline]
+    fn clone(&self) -> NibbleBuffer {
+        let _: ::core::clone::AssertParamIsClone<[u8; (4 * 64 + 7) / 8]>;
+        *self
+    }
+}
+
+#[automatically_derived]
+impl ::core::marker::StructuralPartialEq for NibbleBuffer {}
+
+#[automatically_derived]
+impl ::core::cmp::PartialEq for NibbleBuffer {
+    #[inline]
+    fn eq(&self, other: &NibbleBuffer) -> bool {
+        self.0 == other.0
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Eq for NibbleBuffer {
+    #[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    fn assert_receiver_is_total_eq(&self) -> () {
+        let _: ::core::cmp::AssertParamIsEq<[u8; (4 * 64 + 7) / 8]>;
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::PartialOrd for NibbleBuffer {
+    #[inline]
+    fn partial_cmp(
+        &self,
+        other: &NibbleBuffer,
+    ) -> ::core::option::Option<::core::cmp::Ordering> {
+        ::core::cmp::PartialOrd::partial_cmp(&self.0, &other.0)
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Ord for NibbleBuffer {
+    #[inline]
+    fn cmp(&self, other: &NibbleBuffer) -> ::core::cmp::Ordering {
+        ::core::cmp::Ord::cmp(&self.0, &other.0)
+    }
+}
+
+#[automatically_derived]
+impl ::core::hash::Hash for NibbleBuffer {
+    #[inline]
+    fn hash<__H: ::core::hash::Hasher>(&self, state: &mut __H) -> () {
+        ::core::hash::Hash::hash(&self.0, state)
+    }
+}
+
+impl Default for NibbleBuffer {
+    fn default() -> Self {
+        Self([0u8; (4 * 64 + 7) / 8])
+    }
+}
+
+impl core::fmt::Debug for NibbleBuffer {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut list = f.debug_list();
+        for i in 0..64 {
+            list.entry(&self.get(i));
+        }
+        list.finish()
+    }
+}
+
+impl NibbleBuffer {
+    pub const ELEMENT_WIDTH: usize = 4;
+    pub const ELEMENT_COUNT: usize = 64;
+    pub const TOTAL_BITS: usize = 4 * 64;
+    pub const BYTES: usize = (4 * 64 + 7) / 8;
+    const MASK: u128 = if 4 == 128 { !0u128 } else { (1u128 << 4) - 1 };
+    #[inline]
+    pub fn get(&self, index: usize) -> u128 {
+        if true {
+            if !(index < 64) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("bytearray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let bit_offset = index * 4;
+        let byte_idx = bit_offset / 8;
+        let inner_bit_offset = bit_offset % 8;
+        let bytes_to_read = (4 + inner_bit_offset + 7) / 8;
+        let mut raw = 0u128;
+        for i in 0..bytes_to_read {
+            if byte_idx + i < Self::BYTES {
+                raw |= (self.0[byte_idx + i] as u128) << (i * 8);
+            }
+        }
+        let extracted = (raw >> inner_bit_offset) & Self::MASK;
+        extracted as u128
+    }
+    #[inline]
+    pub fn set(&mut self, index: usize, value: u128) {
+        if true {
+            if !(index < 64) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("bytearray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let bit_offset = index * 4;
+        let byte_idx = bit_offset / 8;
+        let inner_bit_offset = bit_offset % 8;
+        let raw_val = value as u128 & Self::MASK;
+        let val_shifted = raw_val << inner_bit_offset;
+        let mask_shifted = Self::MASK << inner_bit_offset;
+        let bytes_to_modify = (4 + inner_bit_offset + 7) / 8;
+        for i in 0..bytes_to_modify {
+            if byte_idx + i < Self::BYTES {
+                let byte_mask = ((mask_shifted >> (i * 8)) & 0xFF) as u8;
+                let byte_val = ((val_shifted >> (i * 8)) & 0xFF) as u8;
+                self.0[byte_idx + i] &= !byte_mask;
+                self.0[byte_idx + i] |= byte_val;
+            }
+        }
+    }
+}
+
+#[repr(transparent)]
+pub struct DeltaStream(pub [u8; (7 * 20 + 7) / 8]);
+
+#[automatically_derived]
+impl ::core::marker::Copy for DeltaStream {}
+
+#[automatically_derived]
+#[doc(hidden)]
+unsafe impl ::core::clone::TrivialClone for DeltaStream {}
+
+#[automatically_derived]
+impl ::core::clone::Clone for DeltaStream {
+    #[inline]
+    fn clone(&self) -> DeltaStream {
+        let _: ::core::clone::AssertParamIsClone<[u8; (7 * 20 + 7) / 8]>;
+        *self
+    }
+}
+
+#[automatically_derived]
+impl ::core::marker::StructuralPartialEq for DeltaStream {}
+
+#[automatically_derived]
+impl ::core::cmp::PartialEq for DeltaStream {
+    #[inline]
+    fn eq(&self, other: &DeltaStream) -> bool {
+        self.0 == other.0
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Eq for DeltaStream {
+    #[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    fn assert_receiver_is_total_eq(&self) -> () {
+        let _: ::core::cmp::AssertParamIsEq<[u8; (7 * 20 + 7) / 8]>;
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::PartialOrd for DeltaStream {
+    #[inline]
+    fn partial_cmp(
+        &self,
+        other: &DeltaStream,
+    ) -> ::core::option::Option<::core::cmp::Ordering> {
+        ::core::cmp::PartialOrd::partial_cmp(&self.0, &other.0)
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Ord for DeltaStream {
+    #[inline]
+    fn cmp(&self, other: &DeltaStream) -> ::core::cmp::Ordering {
+        ::core::cmp::Ord::cmp(&self.0, &other.0)
+    }
+}
+
+#[automatically_derived]
+impl ::core::hash::Hash for DeltaStream {
+    #[inline]
+    fn hash<__H: ::core::hash::Hasher>(&self, state: &mut __H) -> () {
+        ::core::hash::Hash::hash(&self.0, state)
+    }
+}
+
+impl Default for DeltaStream {
+    fn default() -> Self {
+        Self([0u8; (7 * 20 + 7) / 8])
+    }
+}
+
+impl core::fmt::Debug for DeltaStream {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut list = f.debug_list();
+        for i in 0..20 {
+            list.entry(&self.get(i));
+        }
+        list.finish()
+    }
+}
+
+impl DeltaStream {
+    pub const ELEMENT_WIDTH: usize = 7;
+    pub const ELEMENT_COUNT: usize = 20;
+    pub const TOTAL_BITS: usize = 7 * 20;
+    pub const BYTES: usize = (7 * 20 + 7) / 8;
+    const MASK: u128 = if 7 == 128 { !0u128 } else { (1u128 << 7) - 1 };
+    #[inline]
+    pub fn get(&self, index: usize) -> i128 {
+        if true {
+            if !(index < 20) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("bytearray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let bit_offset = index * 7;
+        let byte_idx = bit_offset / 8;
+        let inner_bit_offset = bit_offset % 8;
+        let bytes_to_read = (7 + inner_bit_offset + 7) / 8;
+        let mut raw = 0u128;
+        for i in 0..bytes_to_read {
+            if byte_idx + i < Self::BYTES {
+                raw |= (self.0[byte_idx + i] as u128) << (i * 8);
+            }
+        }
+        let extracted = (raw >> inner_bit_offset) & Self::MASK;
+        {
+            let val = extracted as i128;
+            let shift = (core::mem::size_of::<i128>() * 8) - 7;
+            (val << shift) >> shift
+        }
+    }
+    #[inline]
+    pub fn set(&mut self, index: usize, value: i128) {
+        if true {
+            if !(index < 20) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("bytearray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let bit_offset = index * 7;
+        let byte_idx = bit_offset / 8;
+        let inner_bit_offset = bit_offset % 8;
+        let raw_val = value as u128 & Self::MASK;
+        let val_shifted = raw_val << inner_bit_offset;
+        let mask_shifted = Self::MASK << inner_bit_offset;
+        let bytes_to_modify = (7 + inner_bit_offset + 7) / 8;
+        for i in 0..bytes_to_modify {
+            if byte_idx + i < Self::BYTES {
+                let byte_mask = ((mask_shifted >> (i * 8)) & 0xFF) as u8;
+                let byte_val = ((val_shifted >> (i * 8)) & 0xFF) as u8;
+                self.0[byte_idx + i] &= !byte_mask;
+                self.0[byte_idx + i] |= byte_val;
+            }
+        }
+    }
+}
+
+#[repr(transparent)]
+pub struct ByteFlagArray(pub [u8; (1 * 128 + 7) / 8]);
+
+#[automatically_derived]
+impl ::core::marker::Copy for ByteFlagArray {}
+
+#[automatically_derived]
+#[doc(hidden)]
+unsafe impl ::core::clone::TrivialClone for ByteFlagArray {}
+
+#[automatically_derived]
+impl ::core::clone::Clone for ByteFlagArray {
+    #[inline]
+    fn clone(&self) -> ByteFlagArray {
+        let _: ::core::clone::AssertParamIsClone<[u8; (1 * 128 + 7) / 8]>;
+        *self
+    }
+}
+
+#[automatically_derived]
+impl ::core::marker::StructuralPartialEq for ByteFlagArray {}
+
+#[automatically_derived]
+impl ::core::cmp::PartialEq for ByteFlagArray {
+    #[inline]
+    fn eq(&self, other: &ByteFlagArray) -> bool {
+        self.0 == other.0
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Eq for ByteFlagArray {
+    #[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    fn assert_receiver_is_total_eq(&self) -> () {
+        let _: ::core::cmp::AssertParamIsEq<[u8; (1 * 128 + 7) / 8]>;
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::PartialOrd for ByteFlagArray {
+    #[inline]
+    fn partial_cmp(
+        &self,
+        other: &ByteFlagArray,
+    ) -> ::core::option::Option<::core::cmp::Ordering> {
+        ::core::cmp::PartialOrd::partial_cmp(&self.0, &other.0)
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Ord for ByteFlagArray {
+    #[inline]
+    fn cmp(&self, other: &ByteFlagArray) -> ::core::cmp::Ordering {
+        ::core::cmp::Ord::cmp(&self.0, &other.0)
+    }
+}
+
+#[automatically_derived]
+impl ::core::hash::Hash for ByteFlagArray {
+    #[inline]
+    fn hash<__H: ::core::hash::Hasher>(&self, state: &mut __H) -> () {
+        ::core::hash::Hash::hash(&self.0, state)
+    }
+}
+
+impl Default for ByteFlagArray {
+    fn default() -> Self {
+        Self([0u8; (1 * 128 + 7) / 8])
+    }
+}
+
+impl core::fmt::Debug for ByteFlagArray {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut list = f.debug_list();
+        for i in 0..128 {
+            list.entry(&self.get(i));
+        }
+        list.finish()
+    }
+}
+
+impl ByteFlagArray {
+    pub const ELEMENT_WIDTH: usize = 1;
+    pub const ELEMENT_COUNT: usize = 128;
+    pub const TOTAL_BITS: usize = 1 * 128;
+    pub const BYTES: usize = (1 * 128 + 7) / 8;
+    const MASK: u128 = if 1 == 128 { !0u128 } else { (1u128 << 1) - 1 };
+    #[inline]
+    pub fn get(&self, index: usize) -> bool {
+        if true {
+            if !(index < 128) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("bytearray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let bit_offset = index * 1;
+        let byte_idx = bit_offset / 8;
+        let inner_bit_offset = bit_offset % 8;
+        let bytes_to_read = (1 + inner_bit_offset + 7) / 8;
+        let mut raw = 0u128;
+        for i in 0..bytes_to_read {
+            if byte_idx + i < Self::BYTES {
+                raw |= (self.0[byte_idx + i] as u128) << (i * 8);
+            }
+        }
+        let extracted = (raw >> inner_bit_offset) & Self::MASK;
+        extracted != 0
+    }
+    #[inline]
+    pub fn set(&mut self, index: usize, value: bool) {
+        if true {
+            if !(index < 128) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("bytearray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let bit_offset = index * 1;
+        let byte_idx = bit_offset / 8;
+        let inner_bit_offset = bit_offset % 8;
+        let raw_val = if value { 1 } else { 0 } & Self::MASK;
+        let val_shifted = raw_val << inner_bit_offset;
+        let mask_shifted = Self::MASK << inner_bit_offset;
+        let bytes_to_modify = (1 + inner_bit_offset + 7) / 8;
+        for i in 0..bytes_to_modify {
+            if byte_idx + i < Self::BYTES {
+                let byte_mask = ((mask_shifted >> (i * 8)) & 0xFF) as u8;
+                let byte_val = ((val_shifted >> (i * 8)) & 0xFF) as u8;
+                self.0[byte_idx + i] &= !byte_mask;
+                self.0[byte_idx + i] |= byte_val;
+            }
+        }
+    }
+}
+

@@ -18,6 +18,7 @@ Choosing a bit manipulation library in Rust often involves balancing **Ergonomic
 | **Byte-Array Support** | ❌ | ❌ | ✅ (Proc-macro) | ✅ (Proc-macro) | ❌ | **✅ (Instant/Declarative)** |
 | **Odd-Int IDs (24-bit)** | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (`byteval!` Built-in)** |
 | **Signed Arrays** | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (`byteval!(i $count)`)** |
+| **Packed Arrays** | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (`bitarray!` / `bytearray!`)** |
 | **Signed Fields** | ✅ | ❌ | ✅ | ✅ | ✅ | **✅ (Zero-cost shift)** |
 | **Signed Enums** | ✅ | ❌ | ❌ (Custom impl) | ❌ (Custom impl) | ⚠️ (Requires trait) | **✅ (Native `i $bits`)** |
 | **Atomic CAS Loops** | ❌ (Manual only) | ❌ | ❌ | ❌ | ❌ | **✅ (`atomic_bitstruct!` / `atomic_bitenum!`)** |
@@ -140,6 +141,14 @@ Unlike other declarative macros that rely on `debug_assert!` at runtime to catch
 ### 🧩 LSB-First Consistency
 
 Many libraries struggle with bit-ordering consistency across different platforms. `bitcraft` enforces a strict **Little-Endian / LSB-First** convention. This ensures that the layout you see in your source code perfectly matches the physical bits on a little-endian CPU (x86_64, ARM64), eliminating cognitive load during debugging.
+
+### 🍱 `bitarray!` vs. `bitvec` or `Vec<bool>`
+
+Standard boolean collections in Rust are notoriously inefficient. `bitarray!` and `bytearray!` provide high-performance alternatives for uniform sub-byte data.
+
+* **Density**: `Vec<bool>` uses 8 bits per boolean. `bitarray!` and `bytearray!` use exactly **1 bit per boolean**.
+* **Zero-Copy FFI**: `bitarray!` types are `repr(transparent)` around a primitive integer, and `bytearray!` types are `repr(transparent)` around a `[u8; N]`. This means you can cast them to/from raw buffers using `bytemuck` without iteration. `bitvec` requires complex pointer manipulation and custom iterators.
+* **Automatic Specialization**: `bitarray!` automatically selects the optimal CPU register (`u8`-`u128`) for your collection size.
 
 ---
 

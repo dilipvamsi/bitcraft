@@ -1,6 +1,7 @@
-use bitcraft::{atomic_bitenum, atomic_bitstruct, bitenum, bitstruct, bytestruct, byteval};
+use bitcraft::{
+    atomic_bitenum, atomic_bitstruct, bitarray, bitenum, bitstruct, bytearray, bytestruct, byteval,
+};
 use proptest::prelude::*;
-
 
 atomic_bitstruct! {
     struct FuzzAtomicStruct(AtomicU64) {
@@ -129,6 +130,31 @@ bytestruct! {
     struct AlignedFuzzer(8) {
         val: u64 = 64,
     }
+}
+
+// --- Fuzz types for bitarray and bytearray ---
+bitarray! {
+    struct FuzzBitNibbles(u 4, 32); // 128 bits
+}
+
+bitarray! {
+    struct FuzzBitSigned(i 7, 10); // 70 bits
+}
+
+bitarray! {
+    struct FuzzBitBool(bool, 128); // 128 bits
+}
+
+bytearray! {
+    struct FuzzByteNibbles(u 4, 64); // 256 bits -> [u8; 32]
+}
+
+bytearray! {
+    struct FuzzByteSigned(i 7, 30); // 210 bits -> [u8; 27]
+}
+
+bytearray! {
+    struct FuzzByteBool(bool, 256); // 256 bits -> [u8; 32]
 }
 
 bytestruct! {
@@ -952,5 +978,89 @@ proptest! {
         });
         prop_assert!(res.is_ok());
         prop_assert_eq!(ae.load(core::sync::atomic::Ordering::Relaxed), target_val);
+    }
+}
+
+proptest! {
+    #[test]
+    fn fuzz_bitarray_nibbles(values in prop::collection::vec(0..16u128, 32)) {
+        let mut arr = FuzzBitNibbles::default();
+        for (i, &val) in values.iter().enumerate() {
+            arr.set(i, val);
+        }
+        for (i, &val) in values.iter().enumerate() {
+            prop_assert_eq!(arr.get(i), val);
+        }
+
+        // Test to_bits and casting
+        let bits = arr.to_bits();
+        let casted: FuzzBitNibbles = bytemuck::cast(bits);
+        prop_assert_eq!(casted.to_bits(), bits);
+        for (i, &val) in values.iter().enumerate() {
+            prop_assert_eq!(casted.get(i), val);
+        }
+    }
+
+    #[test]
+    fn fuzz_bitarray_signed(values in prop::collection::vec(-64..64i128, 10)) {
+        let mut arr = FuzzBitSigned::default();
+        for (i, &val) in values.iter().enumerate() {
+            arr.set(i, val);
+        }
+        for (i, &val) in values.iter().enumerate() {
+            prop_assert_eq!(arr.get(i), val);
+        }
+    }
+
+    #[test]
+    fn fuzz_bitarray_bool(values in prop::collection::vec(any::<bool>(), 128)) {
+        let mut arr = FuzzBitBool::default();
+        for (i, &val) in values.iter().enumerate() {
+            arr.set(i, val);
+        }
+        for (i, &val) in values.iter().enumerate() {
+            prop_assert_eq!(arr.get(i), val);
+        }
+    }
+
+    #[test]
+    fn fuzz_bytearray_nibbles(values in prop::collection::vec(0..16u128, 64)) {
+        let mut arr = FuzzByteNibbles::default();
+        for (i, &val) in values.iter().enumerate() {
+            arr.set(i, val);
+        }
+        for (i, &val) in values.iter().enumerate() {
+            prop_assert_eq!(arr.get(i), val);
+        }
+
+        // Test bytemuck casting
+        let bytes: [u8; 32] = bytemuck::cast(arr);
+        let casted: FuzzByteNibbles = bytemuck::cast(bytes);
+        prop_assert_eq!(casted.0, arr.0);
+        for (i, &val) in values.iter().enumerate() {
+            prop_assert_eq!(casted.get(i), val);
+        }
+    }
+
+    #[test]
+    fn fuzz_bytearray_signed(values in prop::collection::vec(-64..64i128, 30)) {
+        let mut arr = FuzzByteSigned::default();
+        for (i, &val) in values.iter().enumerate() {
+            arr.set(i, val);
+        }
+        for (i, &val) in values.iter().enumerate() {
+            prop_assert_eq!(arr.get(i), val);
+        }
+    }
+
+    #[test]
+    fn fuzz_bytearray_bool(values in prop::collection::vec(any::<bool>(), 256)) {
+        let mut arr = FuzzByteBool::default();
+        for (i, &val) in values.iter().enumerate() {
+            arr.set(i, val);
+        }
+        for (i, &val) in values.iter().enumerate() {
+            prop_assert_eq!(arr.get(i), val);
+        }
     }
 }

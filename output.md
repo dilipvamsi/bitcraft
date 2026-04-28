@@ -537,3 +537,99 @@ cargo expand --example your_example
 ```
 
 Our build system provides a filtered expansion specifically for the engine's internals via `make expand-sample`, which generates the clean `sample/expanded_sample.rs` file you see in the repository.
+
+## 6. `bitarray!` (Automated Register Packing)
+
+Generates a packed array that automatically selects the smallest CPU register.
+
+### **Usage**
+
+```rust
+bitarray! {
+    pub struct NibbleArray(u 4, 8); // 32 bits total -> u32 backed
+}
+```
+
+### **Generated "Struct Equivalent"**
+
+```rust
+#[derive(Copy, Clone, PartialEq, Eq, Default, bytemuck::Pod, bytemuck::Zeroable)]
+#[repr(transparent)]
+pub struct NibbleArray(pub u32);
+
+impl NibbleArray {
+    pub const ELEMENT_WIDTH: usize = 4;
+    pub const ELEMENT_COUNT: usize = 8;
+    pub const TOTAL_BITS:    usize = 32;
+
+    #[inline(always)]
+    pub fn get(&self, index: usize) -> u128 {
+        debug_assert!(index < 8);
+        let shift = index * 4;
+        let mask = (1u32 << 4) - 1;
+        ((self.0 >> shift) & mask) as u128
+    }
+
+    #[inline(always)]
+    pub fn set(&mut self, index: usize, value: u128) {
+        debug_assert!(index < 8);
+        let shift = index * 4;
+        let mask = (1u32 << 4) - 1;
+        self.0 &= !(mask << shift);
+        self.0 |= ((value as u32) & mask) << shift;
+    }
+}
+```
+
+---
+
+## 7. `bytearray!` (Byte-Array Packing)
+
+Generates a packed array backed by a fixed-size byte array, supporting arbitrary bit-widths across byte boundaries.
+
+### **Usage**
+
+```rust
+bytearray! {
+    pub struct FlagBuffer(bool, 1024); // 128 bytes -> [u8; 128] backed
+}
+```
+
+### **Generated "Struct Equivalent"**
+
+```rust
+#[derive(Copy, Clone, PartialEq, Eq, Default, bytemuck::Pod, bytemuck::Zeroable)]
+#[repr(transparent)]
+pub struct FlagBuffer(pub [u8; 128]);
+
+impl FlagBuffer {
+    pub const ELEMENT_WIDTH: usize = 1;
+    pub const ELEMENT_COUNT: usize = 1024;
+    pub const TOTAL_BITS:    usize = 1024;
+    pub const BYTES:         usize = 128;
+
+    #[inline(always)]
+    pub fn get(&self, index: usize) -> bool {
+        let bit_offset = index * 1;
+        let byte_idx = bit_offset / 8;
+        let inner_bit_offset = bit_offset % 8;
+        
+        // Extraction logic...
+        (self.0[byte_idx] >> inner_bit_offset) & 1 != 0
+    }
+
+    #[inline(always)]
+    pub fn set(&mut self, index: usize, value: bool) {
+        let bit_offset = index * 1;
+        let byte_idx = bit_offset / 8;
+        let inner_bit_offset = bit_offset % 8;
+        
+        // Insertion logic...
+        if value {
+            self.0[byte_idx] |= (1 << inner_bit_offset);
+        } else {
+            self.0[byte_idx] &= !(1 << inner_bit_offset);
+        }
+    }
+}
+```

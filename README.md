@@ -27,6 +27,7 @@ In high-performance domains (vector engines, network stacks, or high-frequency t
 - **Absolute Bit Control**: Define exactly which bits map to which logical fields.
 - **Unique `bytestruct!` Support**: Native support for **flexible 1-16 byte spans** via any unsigned array (`[u8; N]`, `[u16; N]`, `[u32; N]`, etc.). treated as primitive-like registers.
 - **Unique `byteval!` IDs**: Instant "Packed IDs" for 24-bit, 40-bit, or 56-bit values that behave like first-class integers.
+- **`bitarray!` & `bytearray!`**: High-density packed storage for sub-byte data (e.g., 3-bit integers or booleans) with automated base-type selection and cross-byte bit manipulation.
 - **Zero-Multiplication Engine**: High-performance bitwise operations using pre-calculated constants for all types up to 128 bits. The engine unrolls up to 16 bytes into a single contiguous register operation.
 - **Dynamic Register Routing**: Automatically selects the optimal CPU register (`u32`, `u64`, `u128`) based on total bit-width to minimize register pressure and maximize instruction throughput.
 - **Zero-Cost Abstractions**: Generated code compiles down to the exact bitwise shifts and masks you would write by hand—verified by LLV-MIR inspection.
@@ -141,7 +142,27 @@ let id = Id24::from_u32(0xABCDEF); // Behaves like a 3-byte u32
 - it ensures your 24-bit ID actually only consumes 3 bytes on disk/wire while behaving like a first-class `u32` in your code.
 - **API Precision**: Conversion methods are Restricted to the nearest Sufficient unsigned integer type (e.g., a 24-bit ID exposes `to_u32`/`from_u32` but not `to_u8` or `to_u128`), ensuring a clean and targeted API.
 
-### 5. Advanced Mechanism: Compile-Time & Runtime Verification
+### 5. `bitarray!` vs. `Vec<bool>`: Memory Density & Alignment
+
+Standard collection types like `Vec<bool>` or `[bool; N]` use 1 byte per boolean. `bitarray!` uses exactly 1 bit.
+
+**Standard Rust (`[bool; 8]`):**
+Consumes 8 bytes in memory.
+
+**`bitarray!` Core:**
+```rust
+bitarray! { struct Flags(bool, 8); } // Consumes 1 byte (u8)
+```
+
+**`bytearray!` Core:**
+```rust
+bytearray! { struct LargeFlags(bool, 1024); } // Consumes 128 bytes ([u8; 128])
+```
+
+- **Automatic Specialization**: `bitarray!` automatically selects the smallest CPU register (`u8`–`u128`) to hold your elements.
+- **Bytemuck Integration**: All array types derive `bytemuck::Pod` and `bytemuck::Zeroable`, enabling zero-copy casting from raw memory buffers.
+
+### 6. Advanced Mechanism: Compile-Time & Runtime Verification
 
 Standard Rust doesn't prevent you from defining a struct that is "too big" for a specific serialization format. `bitstruct` applies several layers of safety:
 

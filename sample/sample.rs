@@ -1,4 +1,6 @@
-use bitcraft::{atomic_bitenum, atomic_bitstruct, bitenum, bitstruct, bytestruct, byteval};
+use bitcraft::{
+    atomic_bitenum, atomic_bitstruct, bitarray, bitenum, bitstruct, bytearray, bytestruct, byteval,
+};
 use core::sync::atomic::{AtomicU32, Ordering};
 
 bitenum! {
@@ -168,6 +170,21 @@ atomic_bitenum! {
     }
 }
 
+// ---------------------------------------------------------------------------
+// bitarray! — register-backed packed arrays
+// ---------------------------------------------------------------------------
+bitarray! { pub struct NibblePalette(u 4, 8); } // 8 nibbles → u32
+bitarray! { pub struct SignedOffsets(i 3, 10); } // 10 × 3-bit signed → u128
+bitarray! { pub struct StatusFlags(bool, 32); } // 32 flags → u32
+bitarray! { pub struct LargeBitFlags(bool, 128); } // 128 flags → u128
+
+// ---------------------------------------------------------------------------
+// bytearray! — byte-array-backed packed arrays
+// ---------------------------------------------------------------------------
+bytearray! { pub struct NibbleBuffer(u 4, 64); } // 64 nibbles → [u8; 32]
+bytearray! { pub struct DeltaStream(i 7, 20); } // 20 × 7-bit signed → [u8; 18]
+bytearray! { pub struct ByteFlagArray(bool, 128); } // 128 flags → [u8; 16]
+
 fn main() {
     let config = Config::default()
         .with_enabled(true)
@@ -218,7 +235,7 @@ fn main() {
 
     let u32_packet = U32Packet::default()
         .with_header(0xAB)
-        .with_body(0x1234567890ABCDE);
+        .with_body(0x00234567890ABCDE); // 56-bit max: 0x00FFFFFFFFFFFFFF
 
     println!("\nU32Packet: {:?}", u32_packet);
     println!("Header: 0x{:X}", u32_packet.header());
@@ -322,7 +339,10 @@ fn main() {
     println!("\nTesting atomic_bitenum...");
     let atomic_status = AtomicStatus::new(AtomicStatusValue::OFF);
     atomic_status.store(AtomicStatusValue::ON, Ordering::SeqCst);
-    println!("  Status after store: {:?}", atomic_status.load(Ordering::SeqCst));
+    println!(
+        "  Status after store: {:?}",
+        atomic_status.load(Ordering::SeqCst)
+    );
 
     atomic_status.update(Ordering::SeqCst, Ordering::Relaxed, |v| {
         if v == AtomicStatusValue::ON {
@@ -331,5 +351,102 @@ fn main() {
             v
         }
     });
-    println!("  Status after update: {:?}", atomic_status.load(Ordering::SeqCst));
+    println!(
+        "  Status after update: {:?}",
+        atomic_status.load(Ordering::SeqCst)
+    );
+
+    // 6. Demonstration of bitarray!
+    println!("\n--- bitarray! ---");
+
+    let mut palette = NibblePalette::default();
+    palette.set(0, 0xA);
+    palette.set(7, 0xF);
+    println!("NibblePalette: {:?}", palette);
+    println!("  palette[0] = 0x{:X}", palette.get(0));
+    println!("  palette[7] = 0x{:X}", palette.get(7));
+    println!(
+        "  size_of    = {} bytes",
+        core::mem::size_of::<NibblePalette>()
+    );
+
+    let mut offsets = SignedOffsets::default();
+    offsets.set(0, -3);
+    offsets.set(1, 2);
+    offsets.set(9, -4);
+    println!("SignedOffsets: {:?}", offsets);
+    println!("  offsets[0] = {}", offsets.get(0));
+    println!("  offsets[1] = {}", offsets.get(1));
+    println!("  offsets[9] = {}", offsets.get(9));
+
+    let mut flags = StatusFlags::default();
+    flags.set(0, true);
+    flags.set(15, true);
+    flags.set(31, true);
+    println!("StatusFlags bits: 0b{:032b}", flags.to_bits());
+    println!("  flags[0]  = {}", flags.get(0));
+    println!("  flags[15] = {}", flags.get(15));
+    println!("  flags[31] = {}", flags.get(31));
+    println!(
+        "  size_of   = {} bytes",
+        core::mem::size_of::<StatusFlags>()
+    );
+
+    // bytemuck: cast raw u32 → StatusFlags
+    let raw_flags: u32 = 0b1000_0000_0000_0001;
+    let cast_flags: StatusFlags = bytemuck::cast(raw_flags);
+    println!(
+        "  cast from 0x{raw_flags:08X}: bit[0]={} bit[15]={}",
+        cast_flags.get(0),
+        cast_flags.get(15)
+    );
+
+    // 7. Demonstration of bytearray!
+    println!("\n--- bytearray! ---");
+
+    let mut buf = NibbleBuffer::default();
+    buf.set(0, 0xD);
+    buf.set(63, 0xE);
+    println!("NibbleBuffer: {:?}", buf);
+    println!("  buf[0]   = 0x{:X}", buf.get(0));
+    println!("  buf[63]  = 0x{:X}", buf.get(63));
+    println!("  BYTES    = {}", NibbleBuffer::BYTES);
+    println!(
+        "  size_of  = {} bytes",
+        core::mem::size_of::<NibbleBuffer>()
+    );
+
+    let mut stream = DeltaStream::default();
+    stream.set(0, -64);
+    stream.set(1, 63);
+    stream.set(19, -1);
+    println!("DeltaStream: {:?}", stream);
+    println!("  stream[0]  = {}", stream.get(0));
+    println!("  stream[1]  = {}", stream.get(1));
+    println!("  stream[19] = {}", stream.get(19));
+    println!("  BYTES      = {}", DeltaStream::BYTES);
+
+    let mut byte_flags = ByteFlagArray::default();
+    byte_flags.set(0, true);
+    byte_flags.set(63, true);
+    byte_flags.set(127, true);
+    println!(
+        "ByteFlagArray: bit[0]={} bit[63]={} bit[127]={}",
+        byte_flags.get(0),
+        byte_flags.get(63),
+        byte_flags.get(127)
+    );
+    println!("  BYTES   = {}", ByteFlagArray::BYTES);
+    println!(
+        "  size_of = {} bytes",
+        core::mem::size_of::<ByteFlagArray>()
+    );
+
+    // bytemuck: cast [u8; 16] → ByteFlagArray and LargeBitFlags
+    let raw_bytes = [0xFFu8; 16]; // all bits set
+    let bf: ByteFlagArray = bytemuck::cast(raw_bytes);
+    let lbf: LargeBitFlags = bytemuck::cast(raw_bytes);
+    println!("  After casting 0xFF×16:");
+    println!("  ByteFlagArray bit[100]  = {}", bf.get(100));
+    println!("  LargeBitFlags bit[100]  = {}", lbf.get(100));
 }
