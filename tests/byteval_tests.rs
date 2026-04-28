@@ -26,6 +26,14 @@ byteval! {
     struct Id24(3);
 }
 
+byteval! {
+    struct SignedId24(i 3);
+}
+
+byteval! {
+    struct SignedId48(i 3, u16);
+}
+
 #[test]
 fn test_new_byteval_syntax() {
     let id = Id48::from_u64(0x112233445566);
@@ -52,4 +60,23 @@ fn test_default_u8() {
     let id = Id24::from_u32(0xABCDEF);
     assert_eq!(id.value(), 0xABCDEF);
     assert_eq!(std::mem::size_of::<Id24>(), 3);
+}
+
+#[test]
+fn test_signed_byteval() {
+    // 24-bit signed bounds: -8,388,608 to 8,388,607
+    let mut id24 = SignedId24::default();
+    id24.set_value(-500);
+    assert_eq!(id24.value(), -500);
+
+    id24.set_value(8388607); // Max
+    assert_eq!(id24.value(), 8388607);
+
+    id24.set_value(-8388608); // Min
+    assert_eq!(id24.value(), -8388608);
+
+    // 48-bit signed bounds
+    let mut id48 = SignedId48::default();
+    id48.set_value(-999_999_999);
+    assert_eq!(id48.value(), -999_999_999);
 }

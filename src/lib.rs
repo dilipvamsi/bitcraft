@@ -1403,6 +1403,44 @@ macro_rules! bytestruct {
 
     (
         $(#[$meta:meta])*
+        $vis:vis struct $name:ident ([$unit:tt; $N:tt]) {
+            $field_vis:vis $field_name:ident : ($field_type:ty) = @unroll_signed($count:tt)
+        }
+    ) => {
+        $crate::paste::paste! {
+            $(#[$meta])*
+            #[derive(Copy, Clone, PartialEq, Eq, Default)]
+            #[derive($crate::bytemuck::Pod, $crate::bytemuck::Zeroable)]
+            #[repr(C)]
+            $vis struct $name(pub [$unit; $N]);
+
+            impl core::fmt::Debug for $name {
+                fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                    f.debug_struct(stringify!($name))
+                        .field("raw", &self.0)
+                        .field(stringify!($field_name), &self.$field_name())
+                        .finish()
+                }
+            }
+
+            impl $name {
+                #[allow(dead_code)]
+                pub const BITS: usize = $crate::bits_mul!($unit, $N);
+                #[allow(dead_code)]
+                pub const UNIT_BITS: usize = <$unit as $crate::BitLength>::BITS;
+                #[allow(dead_code)]
+                #[inline(always)] pub const fn to_array(self) -> [$unit; $N] { self.0 }
+                #[allow(dead_code)]
+                #[inline(always)] pub const fn from_array(arr: [$unit; $N]) -> Self { Self(arr) }
+
+                $crate::bytestruct!(@impl_typed_conversions $name, $unit, $N);
+                $crate::bytestruct!(@impl_typed_fields $name, $unit, <$crate::Bits<{ Self::BITS }> as $crate::BitenumType>::Prim, 0, $field_vis $field_name ($field_type) = @unroll_signed($count));
+            }
+        }
+    };
+
+    (
+        $(#[$meta:meta])*
         $vis:vis struct $name:ident ($N:tt) {
             $(
                 $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
@@ -1751,9 +1789,76 @@ macro_rules! bytestruct {
                  self.[<set_ $field_name>](val); Ok(())
             }
             #[allow(dead_code)]
+            #[allow(dead_code)]
             #[inline(always)]
             pub const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
                  if (val as u128) > Self::[<$field_name:upper _MASK>] as u128 { return Err($crate::BitstructError::Overflow { value: val as u128, allocated_bits: Self::[<$field_name:upper _BITS>] }); }
+                 Ok(self.[<with_ $field_name>](val))
+            }
+        }
+        $crate::bytestruct!(@impl_typed_fields $name, $unit, $prim, $shift + $crate::bits_mul!($unit, $count), $($rest)*);
+    };
+
+    (@impl_typed_fields $name:ident, $unit:tt, $prim:ty, $shift:expr, $field_vis:vis $field_name:ident ($field_type:ty) = @unroll_signed($count:tt) $($rest:tt)*) => {
+        $crate::paste::paste! {
+            #[allow(dead_code)]
+            pub const [<$field_name:upper _OFFSET>]: usize = $shift;
+            #[allow(dead_code)]
+            pub const [<$field_name:upper _BITS>]: usize = $crate::bits_mul!($unit, $count);
+            #[allow(dead_code)]
+            #[doc(hidden)]
+            const [<$field_name:upper _MASK>]: $field_type = (!0 as $field_type) >> (<$field_type as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>]);
+
+            #[allow(dead_code)]
+            #[doc(hidden)]
+            const [<$field_name:upper _SHIFT_UP>]: usize = <$field_type as $crate::BitLength>::BITS - Self::[<$field_name:upper _BITS>];
+
+            #[allow(dead_code)]
+            #[inline(always)]
+            pub const fn $field_name(self) -> $field_type {
+                 let val = $crate::bytestruct!(@unroll_typed_read self.0, $unit, $prim, 0, $count, 0, Self::[<$field_name:upper _BITS>]);
+                 let mut signed_val = val as $field_type;
+                 signed_val = (signed_val << Self::[<$field_name:upper _SHIFT_UP>]) >> Self::[<$field_name:upper _SHIFT_UP>];
+                 signed_val
+            }
+            #[allow(dead_code)]
+            #[inline(always)]
+            pub fn [<set_ $field_name>](&mut self, val: $field_type) {
+                 debug_assert!(
+                     (val >= ((!0 as $field_type) << (Self::[<$field_name:upper _BITS>] - 1))) &&
+                     (val <= !((!0 as $field_type) << (Self::[<$field_name:upper _BITS>] - 1))),
+                     "Value overflows allocated bits"
+                 );
+                 // Cast to unsigned for underlying bitwise ops
+                 let unsigned_val = val as $prim;
+                 $crate::bytestruct!(@unroll_typed_write self.0, $unit, $prim, 0, $count, 0, Self::[<$field_name:upper _BITS>], unsigned_val);
+            }
+            #[allow(dead_code)]
+            #[inline(always)]
+            pub const fn [<with_ $field_name>](mut self, val: $field_type) -> Self {
+                 debug_assert!(
+                     (val >= ((!0 as $field_type) << (Self::[<$field_name:upper _BITS>] - 1))) &&
+                     (val <= !((!0 as $field_type) << (Self::[<$field_name:upper _BITS>] - 1))),
+                     "Value overflows allocated bits"
+                 );
+                 let unsigned_val = val as $prim;
+                 $crate::bytestruct!(@unroll_typed_write self.0, $unit, $prim, 0, $count, 0, Self::[<$field_name:upper _BITS>], unsigned_val);
+                 self
+            }
+            #[allow(dead_code)]
+            #[inline(always)]
+            pub fn [<try_set_ $field_name>](&mut self, val: $field_type) -> Result<(), $crate::BitstructError> {
+                 let min = (!0 as $field_type) << (Self::[<$field_name:upper _BITS>] - 1);
+                 let max = !min;
+                 if val < min || val > max { return Err($crate::BitstructError::Overflow { value: (val as i128) as u128, allocated_bits: Self::[<$field_name:upper _BITS>] }); }
+                 self.[<set_ $field_name>](val); Ok(())
+            }
+            #[allow(dead_code)]
+            #[inline(always)]
+            pub const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
+                 let min = (!0 as $field_type) << (Self::[<$field_name:upper _BITS>] - 1);
+                 let max = !min;
+                 if val < min || val > max { return Err($crate::BitstructError::Overflow { value: (val as i128) as u128, allocated_bits: Self::[<$field_name:upper _BITS>] }); }
                  Ok(self.[<with_ $field_name>](val))
             }
         }
@@ -2275,7 +2380,30 @@ macro_rules! byteval {
     ($(#[$meta:meta])* $vis:vis struct $name:ident (7);) => { $crate::byteval! { $(#[$meta])* $vis struct $name (7, u8); } };
     ($(#[$meta:meta])* $vis:vis struct $name:ident (8);) => { $crate::byteval! { $(#[$meta])* $vis struct $name (8, u8); } };
 
-    // Generic fallback for count
+    // Branch for specialized storage unit (Signed)
+    ($(#[$meta:meta])* $vis:vis struct $name:ident (i $count:tt, $unit:tt);) => {
+        $crate::bytestruct! {
+            $(#[$meta])* $vis struct $name ([$unit; $count]) {
+                pub value: (<$crate::Bits<{ $crate::bits_mul!($unit, $count) }> as $crate::SignedBitenumType>::Prim) = @unroll_signed($count)
+            }
+        }
+    };
+    // Special shorthand for byte-based counts (Signed, u8 default)
+    ($(#[$meta:meta])* $vis:vis struct $name:ident (i 1);) => { $crate::byteval! { $(#[$meta])* $vis struct $name (i 1, u8); } };
+    ($(#[$meta:meta])* $vis:vis struct $name:ident (i 2);) => { $crate::byteval! { $(#[$meta])* $vis struct $name (i 2, u8); } };
+    ($(#[$meta:meta])* $vis:vis struct $name:ident (i 3);) => { $crate::byteval! { $(#[$meta])* $vis struct $name (i 3, u8); } };
+    ($(#[$meta:meta])* $vis:vis struct $name:ident (i 4);) => { $crate::byteval! { $(#[$meta])* $vis struct $name (i 4, u8); } };
+    ($(#[$meta:meta])* $vis:vis struct $name:ident (i 5);) => { $crate::byteval! { $(#[$meta])* $vis struct $name (i 5, u8); } };
+    ($(#[$meta:meta])* $vis:vis struct $name:ident (i 6);) => { $crate::byteval! { $(#[$meta])* $vis struct $name (i 6, u8); } };
+    ($(#[$meta:meta])* $vis:vis struct $name:ident (i 7);) => { $crate::byteval! { $(#[$meta])* $vis struct $name (i 7, u8); } };
+    ($(#[$meta:meta])* $vis:vis struct $name:ident (i 8);) => { $crate::byteval! { $(#[$meta])* $vis struct $name (i 8, u8); } };
+
+    // Generic fallback for signed count
+    ($(#[$meta:meta])* $vis:vis struct $name:ident (i $count:expr);) => {
+        $crate::byteval! { $(#[$meta])* $vis struct $name (i $count, u8); }
+    };
+
+    // Generic fallback for unsigned count
     ($(#[$meta:meta])* $vis:vis struct $name:ident ($count:expr);) => {
         $crate::byteval! { $(#[$meta])* $vis struct $name ($count, u8); }
     };

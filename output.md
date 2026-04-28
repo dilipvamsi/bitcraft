@@ -317,6 +317,7 @@ Shorthand for "Odd-Width" integers like 24-bit or 40-bit IDs. Utilizes the same 
 
 ```rust
 byteval! { pub struct Id24(3); }
+byteval! { pub struct SignedId24(i 3); }
 ```
 
 ### **Generated "Struct Equivalent"**
@@ -354,6 +355,38 @@ impl Id24 {
     #[inline]
     #[allow(dead_code)]
     pub const fn value(self) -> u32 { self.to_u32() }
+}
+
+// And for SignedId24:
+#[repr(transparent)]
+#[derive(Copy, Clone, PartialEq, Eq, Default)]
+pub struct SignedId24(pub [u8; 3]);
+
+impl SignedId24 {
+    #[allow(dead_code)]
+    pub const BITS: usize = 24;
+
+    #[allow(dead_code)]
+    const VALUE_SHIFT_UP: usize = 32 - 24;
+
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn value(self) -> i32 {
+        let val = (self.0[0] as u32) | (self.0[1] as u32 << 8) | (self.0[2] as u32 << 16);
+        let mut signed_val = val as i32;
+        signed_val = (signed_val << Self::VALUE_SHIFT_UP) >> Self::VALUE_SHIFT_UP;
+        signed_val
+    }
+
+    #[inline]
+    #[allow(dead_code)]
+    pub fn try_set_value(&mut self, val: i32) -> Result<(), BitstructError> {
+        if val < -8388608 || val > 8388607 { return Err(...); }
+        // Mask and pack into array
+        self.0[0] = (val & 0xFF) as u8;
+        // ...
+        Ok(())
+    }
 }
 ```
 

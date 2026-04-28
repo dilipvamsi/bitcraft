@@ -12,7 +12,7 @@ In high-performance domains (vector engines, network stacks, or high-frequency t
 
 - **Absolute Bit Control**: Define exactly which bits map to which logical fields.
 - **Unique `bytestruct!` Support**: Native support for **flexible 1-16 byte spans** via any unsigned array (`[u8; N]`, `[u16; N]`, `[u32; N]`, `[u64; N]`, `[u128; N]`).
-- **Unique `byteval!` IDs**: Instant "Packed IDs" for 24-bit, 40-bit, or 56-bit values that behave like first-class integers—solving the "Odd-Width Integer" problem in one line.
+- **Unique `byteval!` IDs**: Instant "Packed IDs" for 24-bit, 40-bit, or 56-bit values that behave like first-class integers—solving the "Odd-Width Integer" problem in one line. Native support for Signed Variants `(i $count)` via zero-cost sign extensions.
 - **Zero-Multiplication Engine**: High-performance bitwise operations using pre-calculated constants (`BitLength::BITS_N`) to eliminate manual multiplications in macro expansion.
 - **Hardware Alignment**: LSB-first mapping ensures your software layout matches the physical little-endian storage in modern hardware.
 - **Boilerplate-Free Ergonomics**: Automatic `Default` (zero-init) and a fluid `with_*` builder pattern come standard.

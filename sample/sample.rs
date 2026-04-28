@@ -119,6 +119,16 @@ byteval! {
 }
 
 byteval! {
+    /// A 24-bit signed identifier (default u8 unit).
+    pub struct SignedId24(i 3);
+}
+
+byteval! {
+    /// A sample 48-bit signed identifier (u16 unit).
+    pub struct SignedId48(i 3, u16);
+}
+
+byteval! {
     /// A 64-bit identifier (u64).
     pub struct Id64(8);
 }

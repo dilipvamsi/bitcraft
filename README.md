@@ -178,8 +178,8 @@ The `bitcraft` crate provides four specialized tools. Choosing the right one det
   - **Why:** Allows dense packing up to 128 bits while still utilizing the widest available CPU registers (like `u64` or `u128`) behind the scenes to modify localized chunks of the array efficiently.
 
 - **Use `byteval!`** `(Base: [u8; N])`
-  - **When:** You need a single integer value that has an "awkward" byte width (e.g., a **24-bit** (`[u8; 3]`) audio sample, or a **40-bit** (`[u8; 5]`) network ID).
-  - **Why:** It generates a zero-cost NewType wrapper around the byte array but gives you native `to_u32()`, `to_u64()`, and `from_u32()` methods so it behaves like a normal number in code, without wasting the 8 or 24 padding bits a true `u32`/`u64` would consume in an array of thousands.
+  - **When:** You need a single integer value that has an "awkward" byte width (e.g., a **24-bit** (`[u8; 3]`) audio sample, or a **40-bit** (`[u8; 5]`) network ID). Use `(i $count)` for signed variants.
+  - **Why:** It generates a zero-cost NewType wrapper around the byte array but gives you native `value()`, `to_u32()`, and `from_u32()` methods so it behaves like a normal number in code, without wasting the 8 or 24 padding bits a true `u32`/`u64` would consume in an array of thousands. If signed `(i $count)`, it natively performs Two's Complement sign extension using the zero-cost shift trick!
 
 - **Use `bitenum!`** `(Base: N Bits mapped to u8-u128, or i8-i128)`
   - **When:** You need a strongly-typed, memory-safe enumeration to represent a variant parameter inside one of the above structs. Use `(i $bits)` for signed variants (e.g., `-1`).
@@ -462,14 +462,20 @@ Content: [Low 8]    [High 8]   [Low 8]    [High 8]   [ u8  ]
 
 ### 4. `byteval!`
 
-A specialization for "NewType" byte-array wrappers (e.g., 24-bit IDs).
+A specialization for "NewType" byte-array wrappers (e.g., 24-bit IDs or 48-bit sensor readings).
 
 ```rust
 use bitcraft::byteval;
 
 byteval! {
-    /// A 3-byte packed ID.
+    /// A 3-byte unsigned packed ID.
     pub struct PackedID(3);
+}
+
+byteval! {
+    /// A native 3-byte signed integer (e.g. from an ADC).
+    /// Performs zero-cost sign extension upon reading!
+    pub struct SensorValue(i 3);
 }
 ```
 
@@ -481,6 +487,7 @@ Content: [Low 8]    [Mid 8]    [High 8]
 ```
 
 - Total Size: 3 bytes (LSB-First value).
+- `(i 3)` causes `value()` to return a native signed `i32`, properly sign-extended.
 
 ---
 

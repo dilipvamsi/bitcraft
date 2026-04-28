@@ -72,6 +72,10 @@ byteval! { struct FuzzId104(13); } // 104-bit
 byteval! { struct FuzzId48u16(3, u16); } // 48-bit with u16 storage
 byteval! { struct FuzzId96u32(3, u32); } // 96-bit with u32 storage
 
+// Signed byteval types
+byteval! { struct FuzzSignedId24(i 3); }
+byteval! { struct FuzzSignedId40(i 5); }
+
 bitstruct! {
     struct DenseFuzz(u32) {
         b00: bool = 1, b01: bool = 1, b02: bool = 1, b03: bool = 1,
@@ -828,5 +832,19 @@ proptest! {
         prop_assert_eq!(by.b(), b);
         prop_assert_eq!(by.c(), c);
         prop_assert_eq!(by.d(), d);
+    }
+
+    #[test]
+    fn test_signed_byteval_fuzz(
+        id24 in -8388608i32..=8388607,
+        id40 in -549755813888i64..=549755813887,
+    ) {
+        let mut s24 = FuzzSignedId24::default();
+        s24.set_value(id24);
+        prop_assert_eq!(s24.value(), id24);
+
+        let mut s40 = FuzzSignedId40::default();
+        s40.set_value(id40);
+        prop_assert_eq!(s40.value(), id40);
     }
 }
