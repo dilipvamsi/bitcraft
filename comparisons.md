@@ -4,21 +4,22 @@ Choosing a bit manipulation library in Rust often involves balancing **Ergonomic
 
 ## 📊 Feature Comparison Matrix
 
-| Feature | standard Rust | `bitfield` | `modular-bitfield` | `packed_struct` | `bitcraft` (this crate) |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Macro Type** | N/A | Declarative | Procedural | Procedural | **Declarative** |
-| **Bit-Level Density** | ❌ (Byte-min) | ✅ | ✅ | ✅ | **✅ (Bit-min)** |
-| **Memory Alignment** | Compiler-Chosen | Explicit | Explicit | Explicit | **Hardware-Aligned** |
-| **Safety** | High (UB risk) | Medium | High | High | **Strict (Total Types)** |
-| **`no_std` Support** | ✅ | ✅ | ✅ | ✅ | **✅ (Core-only)** |
-| **Compile Speed** | Instant | Fast | Slow | Slow | **Blazing Fast** |
-| **Acting Primitives** | ❌ | ❌ | ❌ | ❌ | **✅ (Direct Register Routing)** |
-| **Literal Guarding** | ❌ | ❌ | ❌ | ❌ | **✅ (Branchless unrolling)** |
-| **Byte-Array Support** | ❌ | ⚠️ (Manual) | ✅ (Proc-macro) | ✅ (Proc-macro) | **✅ (Instant/Declarative)** |
-| **Odd-Int IDs (24-bit)** | ❌ | ❌ | ❌ | ❌ | **✅ (`byteval!` Built-in)** |
-| **Signed Base Storage** | ✅ | ✅ | ✅ | ✅ | **✅ (Strict Bounds)** |
-| **Signed Fields** | ✅ | ✅ | ✅ | ✅ | **✅ (Zero-cost shift)** |
-| **C FFI / ABI** | ✅ | ⚠️ | ✅ | ✅ | **✅ (Transparent)** |
+| Feature | standard Rust | `bitflags` | `modular-bitfield` | `packed_struct` | `bilge` | `bitcraft` (this crate) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Macro Type** | N/A | Declarative | Procedural | Procedural | Procedural | **Declarative** |
+| **Bit-Level Density** | ❌ (Byte-min) | ❌ (Flags only) | ✅ | ✅ | ✅ | **✅ (Bit-min)** |
+| **Memory Alignment** | Compiler-Chosen | Compiler-Chosen | Explicit | Explicit | Hardware-Aligned | **Hardware-Aligned** |
+| **Compile-Time Bounds** | ❌ | ❌ | ❌ (Runtime/Macro) | ❌ (Runtime/Macro) | ✅ (Const Eval) | **✅ (Const Eval)** |
+| **Safety** | High (UB risk) | High | High | High | Strict | **Strict (Total Types)** |
+| **`no_std` Support** | ✅ | ✅ | ✅ | ✅ | ✅ | **✅ (Core-only)** |
+| **Compile Speed** | Instant | Fast | Slow | Slow | Slow | **Blazing Fast** |
+| **Acting Primitives** | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (Direct Register Routing)** |
+| **Literal Guarding** | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (Branchless unrolling)** |
+| **Byte-Array Support** | ❌ | ❌ | ✅ (Proc-macro) | ✅ (Proc-macro) | ❌ | **✅ (Instant/Declarative)** |
+| **Odd-Int IDs (24-bit)** | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (`byteval!` Built-in)** |
+| **Signed Fields** | ✅ | ❌ | ✅ | ✅ | ✅ | **✅ (Zero-cost shift)** |
+| **Signed Enums** | ✅ | ❌ | ❌ (Custom impl) | ❌ (Custom impl) | ⚠️ (Requires trait) | **✅ (Native `i $bits`)** |
+| **C FFI / ABI** | ✅ | ✅ | ✅ | ✅ | ✅ | **✅ (Transparent)** |
 
 ---
 
@@ -36,7 +37,7 @@ We evaluated 1,000,000,000 (1B) operations of complex read/write logic on an opt
 > **Why are we faster than manual code?** Our macros generate perfectly unrolled bitwise expressions. Modern compilers (LLVM) recognize these patterns and perform **Instruction Fusion**, effectively turning multiple shifts/masks into a single **Unaligned Load** instruction. Standard loops or procedural-macro-generated getters often fail to reach this level of hardware optimization.
 
 > [!NOTE]
-> **Type Safety**: `bitcraft` natively supports both **unsigned** (`u8` through `u128`) and **signed** (`i8` through `i128`) base integers for underlying storage, with strict compiler bounds (e.g., 15 bits for `i16`) to guarantee the sign bit is safely isolated. It also includes full support for interpreting the *fields themselves* as signed integers (two's complement) via a branchless, zero-cost shift implementation.
+> **Type Safety**: `bitcraft` natively supports both **unsigned** (`u8` through `u128`) and **signed** (`i8` through `i128`) base integers for underlying storage, with strict compiler bounds (e.g., 15 bits for `i16`) to guarantee the sign bit is safely isolated. It also includes full support for interpreting the *fields and enums themselves* as signed integers (two's complement) via a branchless, zero-cost shift implementation.
 
 ---
 
@@ -57,14 +58,22 @@ We evaluated 1,000,000,000 (1B) operations of complex read/write logic on an opt
 *   **Complexity vs. Speed**: `packed_struct` is feature-rich (endianness, custom bit-numbering) but can be "particular" about type signatures and has a steeper learning curve. `bitcraft` favors a **Flat & Fast** approach.
 *   **Instruction Fusion**: `bitcraft` implements specialized const-generic helpers that ensure **Instruction Fusion**. Instead of multiple fragmented loads, we generate code that LLVM can fuse into a single load-and-shift operation. In high-frequency loops, this directly translates to higher IPC (Instructions Per Cycle) compared to the more abstract `packed_struct` implementation.
 
-### 3. `bitcraft` vs. Standard Rust `enum`
+### 3. `bitcraft` vs. `bilge`
+
+`bilge` is a modern, highly-typed procedural macro leveraging recent Rust `const` capabilities.
+
+*   **Compilation Speed**: `bilge` heavily depends on procedural macros (`syn` / `quote`), significantly increasing build times, especially in smaller or embedded projects. `bitcraft` achieves similar `const` verification statically through purely declarative `macro_rules!`, yielding near-instant compilation.
+*   **Array Support (`bytestruct!`)**: `bilge` is restricted to primitive integer bounds. `bitcraft` offers `bytestruct!` to provide `1` to `16` byte array packing with direct CPU-register promotion (Acting Primitives).
+*   **Signed Types & Enums**: `bitcraft` provides Native Signed Enum capabilities `(i $bits)` right out of the box with zero boilerplate, dynamically performing zero-cost sign extensions upon read. `bilge` requires implementing custom traits for non-standard enum types.
+
+### 4. `bitcraft` vs. Standard Rust `enum`
 
 Standard Rust enums are **Algebraic Data Types**, which is dangerous when parsing untrusted data (like network packets).
 
 *   **The UB Gap**: Reading an invalid bit pattern into a standard `repr(u8)` enum is **Undefined Behavior (UB)**. You must manually validate the byte before transmute.
 *   **Total Types**: `bitcraft`'s `bitenum!` treats variants as "Active states" of a total underlying type. Using `try_from_bits()` ensures you never encounter UB, even if the raw input is corrupted or malicious.
 
-### 4. `bitcraft` vs. C-Style Bitfields (FFI)
+### 5. `bitcraft` vs. C-Style Bitfields (FFI)
 
 If you are interfacing with C firmware or legacy network protocols, layout predictability is mandatory.
 
@@ -92,6 +101,10 @@ Most bitfield libraries in the Rust ecosystem (`modular-bitfield`, `packed_struc
 
 *   **Wait, why does this matter?** If you need a 3-byte integer (24-bit ID) that is packed 1,000,000 times in an array, standard Rust forces you to use a 4-byte `u32` (wasting 25% of your memory footprint) or write massive boilerplate. `byteval! { struct Id(3); }` solves this in one line with zero runtime cost.
 *   **Register Routing**: While other array-backed solutions use slow byte-by-byte loops, `bytestruct!` uses **Acting Primitives** (e.g., loading an 8-byte slice of a 13-byte array into a `u64` register). It supports any unsigned array type (`u8`, `u16`, `u32`, `u64`, `u128`) while maintaining a strict 128-bit architectural limit.
+
+### 🛡️ Compile-Time Bounds Checking (Zero Runtime Panic)
+
+Unlike other declarative macros that rely on `debug_assert!` at runtime to catch invalid bit assignments (like assigning a 3-bit enum variant to a 2-bit field), `bitcraft` automatically generates `const _: () = assert!(...);` validations. This means if your structural logic is flawed, your code **will not compile**, preventing hidden runtime panics entirely.
 
 ### 🧩 LSB-First Consistency
 Many libraries struggle with bit-ordering consistency across different platforms. `bitcraft` enforces a strict **Little-Endian / LSB-First** convention. This ensures that the layout you see in your source code perfectly matches the physical bits on a little-endian CPU (x86_64, ARM64), eliminating cognitive load during debugging.

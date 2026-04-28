@@ -18,6 +18,15 @@ bitenum! {
         CONNECTED = 2,
     }
 }
+
+bitenum! {
+    pub enum SignedState(i 3) {
+        MIN = -4,
+        ERROR = -1,
+        OK = 0,
+        MAX = 3,
+    }
+}
 ```
 
 ### **Generated "Struct Equivalent"**
@@ -64,7 +73,47 @@ impl ConnectionState {
     #[allow(dead_code)]
     pub const fn try_from_bits(val: u8) -> Result<Self, BitstructError> {
         let s = Self(val);
-        if s.is_defined() { Ok(s) } else { Err(BitstructError::InvalidVariant) }
+        if s.is_defined() { Ok(s) } else { Err(BitstructError::InvalidVariant { value: val as u128, enum_name: "ConnectionState" }) }
+    }
+}
+
+// And for SignedState:
+#[derive(Copy, Clone, PartialEq, Eq, Default)]
+#[repr(transparent)]
+pub struct SignedState(pub i8);
+
+impl SignedState {
+    pub const MIN: Self = Self(-4);
+    pub const ERROR: Self = Self(-1);
+    pub const OK: Self = Self(0);
+    pub const MAX: Self = Self(3);
+
+    pub const BITS: usize = 3;
+
+    #[inline(always)]
+    pub const fn is_defined(self) -> bool {
+        match self.0 {
+            -4 | -1 | 0 | 3 => true,
+            _ => false,
+        }
+    }
+
+    #[inline(always)]
+    pub const fn to_bits(self) -> i8 { self.0 }
+
+    #[inline(always)]
+    pub const fn from_bits(mut val: i8) -> Self {
+        // Dynamic zero-cost sign extension via shift
+        val = (val << 5) >> 5;
+        debug_assert!(val >= Self::MIN.0 && val <= Self::MAX.0);
+        Self(val)
+    }
+
+    #[inline(always)]
+    pub const fn try_from_bits(mut val: i8) -> Result<Self, BitstructError> {
+        val = (val << 5) >> 5;
+        let s = Self(val);
+        if s.is_defined() { Ok(s) } else { Err(BitstructError::InvalidVariant { value: (val as i128) as u128, enum_name: "SignedState" }) }
     }
 }
 ```

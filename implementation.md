@@ -245,6 +245,20 @@ impl Safe {
 - **From Bits**: In debug mode, `from_bits` panics if the input is > mask. In release, it truncates.
 - **Try From Bits**: Returns `Result<Self, BitstructError::InvalidVariant>`, ensuring your system **never encounters UB** even when parsing malicious network packets.
 
+### Signed Enumerations (Zero-Cost Sign Extension)
+
+`bitenum!` natively supports signed variants using the `(i $bits)` syntax. When `bitstruct!` retrieves the value, it masks it as an unsigned integer from the bit-array. `bitenum!` reconstructs the negative values dynamically via a **zero-cost shift trick**.
+
+```rust
+bitenum! { enum Signed(i 3) { N = -1, Z = 0, P = 1 } }
+// Implementation reconstructs the value branchlessly:
+pub const fn from_bits(mut val: i8) -> Self {
+    const SHIFT_UP: usize = 8 - 3;
+    val = (val << SHIFT_UP) >> SHIFT_UP; // `...111` becomes `-1`
+    Self(val)
+}
+```
+
 ---
 
 ## ❄️ 10. `const` Initialization & Zero-Init Guarantee
@@ -421,12 +435,12 @@ The "Acting Primitive" pattern is central to our speed. We don't treat byte-arra
 
 By intentionally avoiding procedural macros (`syn`/`quote`), `bitcraft` remains **highly portable** and **compiles in milliseconds**. This architecture ensures that the crate has zero heavy dependencies, making it suitable for even the most minimal `no_std` embedded environments where compile-time resources are constrained.
 
-### 4. Zero-Cost Verification (Trait-Based Safety)
+### 4. Zero-Cost Verification (Trait-Based Safety & Compile-Time Checks)
 
-We use a **Two-Tier Verification** strategy:
+We use a **Multi-Tier Verification** strategy:
 
-- **Macro-Level**: Sum checks and bit-width assertions happen during expansion.
-- **Trait-Level**: We use marker traits (`ValidField`, `IsUnsignedInt`) to inject compile-time errors if a user attempts to use a signed integer or an invalid storage type. This architecture shifts the burden of safety from the **runtime** to the **compiler**, ensuring that a compiled `bitcraft` binary is as lean as manual C code.
+- **Macro-Level Bounds Checking**: Sum checks and bit-width assertions happen during expansion. Field assignments (like assigning a 3-bit enum to a 2-bit field) generate `const _: () = assert!(...)` validations, catching overflow errors statically at compile time rather than relying on runtime panics.
+- **Trait-Level Validation**: We use marker traits (`ValidField`, `IsUnsignedInt`, `SignedBitenumType`) to inject compile-time errors if a user attempts to use an invalid storage type or unsupported bit width. This architecture shifts the burden of safety from the **runtime** to the **compiler**, ensuring that a compiled `bitcraft` binary is as lean as manual C code.
 
 ---
 
@@ -446,10 +460,11 @@ Macros now expand to `<$unit as BitLength>::BITS_N`, which the compiler resolves
 
 ---
 
-## 🛠️ Roadmap & Future Implementation
+## 🛠️ 17. Roadmap & Future Implementation
 
 - [x] **Signed Field Interpretation**: Support for `i8`, `i16`, etc., via automatic Sign Extension on the N-bit fields.
-- [ ] **C-Header Generation**: Integration with `cbindgen` to automatically generate FFI-compatible C headers for C/C++ firmware.
-- [ ] **`serde` Integration**: Optional feature to derive `Serialize` and `Deserialize` for all packed types.
+- [x] **Signed Enum Support**: Support for defining signed variant types with `(i bits)` and seamless sign extension during decoding.
 - [x] **Property-Based Testing**: Comprehensive fuzzing of bit-packing logic via `proptest`.
 - [x] **Safe Mutators**: `try_set` and `try_with` methods for guaranteed boundary safety.
+- [ ] **C-Header Generation**: Integration with `cbindgen` to automatically generate FFI-compatible C headers for C/C++ firmware.
+- [ ] **`serde` Integration**: Optional feature to derive `Serialize` and `Deserialize` for all packed types.

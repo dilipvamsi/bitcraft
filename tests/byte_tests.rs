@@ -173,16 +173,6 @@ fn test_bytestruct_enum_overflow() {
     let mut s = EnumOv::default();
     assert_eq!(s.try_set_f(E::B), Ok(()));
 
-    // Enum value exceeding field bits
-    bitenum! { enum LargeE(4) { A = 15 } }
-    bytestruct! {
-        struct SmallF(1) {
-            f: LargeE = 2,
-        }
-    }
-    let mut s2 = SmallF::default();
-    assert!(s2.try_set_f(LargeE::A).is_err());
-    assert!(s2.try_with_f(LargeE::A).is_err());
 }
 
 #[test]

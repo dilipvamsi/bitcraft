@@ -13,6 +13,7 @@ def filter_expansion(content):
 
     current_block = []
     brace_count = 0
+    paren_count = 0
     in_interesting_block = False
 
     for line in lines[start_idx:]:
@@ -37,8 +38,10 @@ def filter_expansion(content):
         # Track braces to find block ends
         brace_count += line.count('{')
         brace_count -= line.count('}')
+        paren_count += line.count('(')
+        paren_count -= line.count(')')
 
-        if brace_count == 0 and in_interesting_block:
+        if brace_count == 0 and paren_count == 0 and in_interesting_block:
             # Check if what we collected so far is just attributes or a full item
             block_text = "\n".join(current_block)
             if any(keyword in block_text for keyword in ['struct', 'enum', 'impl', 'fn']):

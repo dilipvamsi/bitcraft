@@ -9,6 +9,15 @@ bitenum! {
     }
 }
 
+bitenum! {
+    enum FuzzSignedEnum(i 3) {
+        V_MIN = -4,
+        N_ONE = -1,
+        ZERO = 0,
+        V_MAX = 3,
+    }
+}
+
 bitstruct! {
     struct FuzzStruct(u64) {
         a: bool = 1,
@@ -16,6 +25,14 @@ bitstruct! {
         c: u32 = 24,
         d: FuzzEnum = 2,
         e: u32 = 30, // 1+7+24+2+30 = 64
+    }
+}
+
+bitstruct! {
+    struct FuzzSignedEnumStruct(u16) {
+        a: FuzzSignedEnum = 3,
+        b: FuzzSignedEnum = 4, // Intentionally wider field to test masking of signed values
+        c: i16 = 9,
     }
 }
 
@@ -191,6 +208,45 @@ proptest! {
 
         prop_assert_eq!(s.to_bits(), expected);
     }
+
+    #[test]
+    fn test_signed_enum_fuzz(
+        a_idx in 0usize..4usize,
+        b_idx in 0usize..4usize,
+        c in -256i16..256i16 // will be masked to 9 bits
+    ) {
+        let variants = [
+            FuzzSignedEnum::V_MIN,
+            FuzzSignedEnum::N_ONE,
+            FuzzSignedEnum::ZERO,
+            FuzzSignedEnum::V_MAX,
+        ];
+        let a = variants[a_idx];
+        let b = variants[b_idx];
+        let c_masked = (c as i32 & 0x1FF) as i16;
+        let c_final = ((c_masked << (16 - 9)) >> (16 - 9)) as i16;
+
+        let mut s = FuzzSignedEnumStruct::default();
+        s.set_a(a);
+        s.set_b(b);
+        s.set_c(c_final);
+
+        prop_assert_eq!(s.a(), a);
+        prop_assert_eq!(s.b(), b);
+        prop_assert_eq!(s.c(), c_final);
+
+        let a_bits = a.to_bits() as u16 & 0x7;
+        let b_bits = b.to_bits() as u16 & 0xF; // B is 4 bits
+        let c_bits = c_final as u16 & 0x1FF;
+
+        let mut expected = 0u16;
+        expected |= a_bits;
+        expected |= b_bits << 3;
+        expected |= c_bits << (3 + 4);
+
+        prop_assert_eq!(s.to_bits(), expected);
+    }
+
 
     #[test]
     #[allow(clippy::needless_range_loop)]
@@ -696,7 +752,7 @@ proptest! {
         prop_assert_eq!(by.b(), b);
         prop_assert_eq!(by.c(), c);
         prop_assert_eq!(by.d(), d);
-        
+
         let expected_raw = bs.to_bits();
         // Since both have the same layout and are 8 bytes total
         let expected_bytes = expected_raw.to_le_bytes(); // bytestruct uses LE natively on LE systems. Wait, bitstruct is host endian.

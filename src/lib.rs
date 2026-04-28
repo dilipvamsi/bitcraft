@@ -552,14 +552,24 @@ impl ValidField for u64 {
 impl ValidField for u128 {
     const ASSERT_VALID: () = ();
 }
-// Signed primitives natively handle two's complement evaluation and sign-extension 
+// Signed primitives natively handle two's complement evaluation and sign-extension
 // safely via mathematical shifting across underlying base boundaries. These primitives
 // represent the external API surface mapped securely into the bitfields.
-impl ValidField for i8 { const ASSERT_VALID: () = (); }
-impl ValidField for i16 { const ASSERT_VALID: () = (); }
-impl ValidField for i32 { const ASSERT_VALID: () = (); }
-impl ValidField for i64 { const ASSERT_VALID: () = (); }
-impl ValidField for i128 { const ASSERT_VALID: () = (); }
+impl ValidField for i8 {
+    const ASSERT_VALID: () = ();
+}
+impl ValidField for i16 {
+    const ASSERT_VALID: () = ();
+}
+impl ValidField for i32 {
+    const ASSERT_VALID: () = ();
+}
+impl ValidField for i64 {
+    const ASSERT_VALID: () = ();
+}
+impl ValidField for i128 {
+    const ASSERT_VALID: () = ();
+}
 
 /// **Internal Function**: Reads bit-ranges from a byte array. Optimized via const-generics and alignment-aware fast paths.
 ///
@@ -1191,7 +1201,7 @@ macro_rules! bitstruct {
             #[allow(dead_code)]
             #[doc = concat!("Inline mutation to apply the bounded `", stringify!($field_type), "` enumeration to the `", stringify!($field_name), "` property.")]
             $field_vis fn [<set_ $field_name>](&mut self, val: $field_type) {
-                debug_assert!((val.to_bits() as $base_type) <= Self::[<$field_name:upper _MASK>], "Enum variant overflows allocated {} bits", $bits);
+                const _: () = assert!(<$field_type>::BITS <= $bits, "Enum bit width exceeds allocated field width");
                 // Cast the enum's inner value up to the bitfield's base storage type before shifting
                 let val_masked = (val.to_bits() as $base_type) & Self::[<$field_name:upper _MASK>];
                 self.0 = (self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]);
@@ -1200,7 +1210,7 @@ macro_rules! bitstruct {
             #[allow(dead_code)]
             #[doc = concat!("Returns a cloned copy of the bitfield bounded by the `", stringify!($field_type), "` enumeration supplied to `", stringify!($field_name), "`.")]
             $field_vis const fn [<with_ $field_name>](self, val: $field_type) -> Self {
-                debug_assert!((val.to_bits() as $base_type) <= Self::[<$field_name:upper _MASK>], "Enum variant overflows allocated bits");
+                const _: () = assert!(<$field_type>::BITS <= $bits, "Enum bit width exceeds allocated field width");
                 // Cast the enum's inner value up to the bitfield's base storage type before shifting
                 let val_masked = (val.to_bits() as $base_type) & Self::[<$field_name:upper _MASK>];
                 Self((self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]))
@@ -1209,22 +1219,14 @@ macro_rules! bitstruct {
             #[allow(dead_code)]
             #[doc = concat!("Strict inline mutation to apply the bounded `", stringify!($field_type), "` enumeration to the `", stringify!($field_name), "` property. Returns a `BitstructError` if the value overflows ", stringify!($bits), " bits.")]
             $field_vis fn [<try_set_ $field_name>](&mut self, val: $field_type) -> Result<(), $crate::BitstructError> {
-                if (val.to_bits() as $base_type) > Self::[<$field_name:upper _MASK>] {
-                    return Err($crate::BitstructError::Overflow { value: val.to_bits() as u128, allocated_bits: $bits });
-                }
-                let val_masked = (val.to_bits() as $base_type) & Self::[<$field_name:upper _MASK>];
-                self.0 = (self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]);
+                self.[<set_ $field_name>](val);
                 Ok(())
             }
 
             #[allow(dead_code)]
             #[doc = concat!("Strict cloned evaluation to apply the bounded `", stringify!($field_type), "` enumeration to the `", stringify!($field_name), "` property. Returns a `BitstructError` if the value overflows ", stringify!($bits), " bits.")]
             $field_vis const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
-                if (val.to_bits() as $base_type) > Self::[<$field_name:upper _MASK>] {
-                    return Err($crate::BitstructError::Overflow { value: val.to_bits() as u128, allocated_bits: $bits });
-                }
-                let val_masked = (val.to_bits() as $base_type) & Self::[<$field_name:upper _MASK>];
-                Ok(Self((self.0 & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>])))
+                Ok(self.[<with_ $field_name>](val))
             }
         }
 
@@ -1934,17 +1936,21 @@ macro_rules! bytestruct {
             #[allow(dead_code)]
             $field_vis const fn $field_name(self) -> $field_type { $field_type::from_bits($crate::bytestruct!(@read_typed_prim self.0, $unit, $prim, $shift, $bits) as _) }
             #[allow(dead_code)]
-            $field_vis fn [<set_ $field_name>](&mut self, val: $field_type) { $crate::bytestruct!(@write_typed_prim self.0, $unit, $prim, $shift, $bits, val.to_bits() as $prim); }
+            $field_vis fn [<set_ $field_name>](&mut self, val: $field_type) {
+                const _: () = assert!(<$field_type>::BITS <= $bits, "Enum bit width exceeds allocated field width");
+                $crate::bytestruct!(@write_typed_prim self.0, $unit, $prim, $shift, $bits, val.to_bits() as $prim);
+            }
             #[allow(dead_code)]
-            $field_vis const fn [<with_ $field_name>](mut self, val: $field_type) -> Self { $crate::bytestruct!(@write_typed_prim self.0, $unit, $prim, $shift, $bits, val.to_bits() as $prim); self }
+            $field_vis const fn [<with_ $field_name>](mut self, val: $field_type) -> Self {
+                const _: () = assert!(<$field_type>::BITS <= $bits, "Enum bit width exceeds allocated field width");
+                $crate::bytestruct!(@write_typed_prim self.0, $unit, $prim, $shift, $bits, val.to_bits() as $prim); self
+            }
             #[allow(dead_code)]
             $field_vis fn [<try_set_ $field_name>](&mut self, val: $field_type) -> Result<(), $crate::BitstructError> {
-                 if (val.to_bits() as u128) > Self::[<$field_name:upper _MASK>] as u128 { return Err($crate::BitstructError::Overflow { value: val.to_bits() as u128, allocated_bits: $bits }); }
                  self.[<set_ $field_name>](val); Ok(())
             }
             #[allow(dead_code)]
             $field_vis const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
-                 if (val.to_bits() as u128) > Self::[<$field_name:upper _MASK>] as u128 { return Err($crate::BitstructError::Overflow { value: val.to_bits() as u128, allocated_bits: $bits }); }
                  Ok(self.[<with_ $field_name>](val))
             }
         }
@@ -2175,15 +2181,14 @@ macro_rules! bytestruct {
             #[allow(dead_code)]
             #[doc = concat!("Inline mutation to apply the bounded `", stringify!($field_type), "` enumeration to the `", stringify!($field_name), "` property.")]
             $field_vis fn [<set_ $field_name>](&mut self, val: $field_type) {
-                let raw = val.to_bits() as u128;
-                debug_assert!(raw <= Self::[<$field_name:upper _MASK>], "Enum variant overflows allocated bits");
-                $crate::bytestruct!(@write_localized_prim self.0, $shift, $bits, raw);
+                const _: () = assert!(<$field_type>::BITS <= $bits, "Enum bit width exceeds allocated field width");
+                $crate::bytestruct!(@write_localized_prim self.0, $shift, $bits, val.to_bits() as u128);
             }
 
             #[allow(dead_code)]
             #[doc = concat!("Returns a cloned copy of the bytestruct bounded by the `", stringify!($field_type), "` enumeration supplied to `", stringify!($field_name), "`.")]
             $field_vis const fn [<with_ $field_name>](mut self, val: $field_type) -> Self {
-                debug_assert!((val.to_bits() as u128) <= Self::[<$field_name:upper _MASK>], "Enum variant overflows allocated bits");
+                const _: () = assert!(<$field_type>::BITS <= $bits, "Enum bit width exceeds allocated field width");
                 $crate::bytestruct!(@write_localized_prim self.0, $shift, $bits, val.to_bits() as u128);
                 self
             }
@@ -2191,9 +2196,6 @@ macro_rules! bytestruct {
             #[allow(dead_code)]
             #[doc = concat!("Strict inline mutation to apply the bounded `", stringify!($field_type), "` enumeration to the `", stringify!($field_name), "` property. Returns a `BitstructError` if the value overflows ", stringify!($bits), " bits.")]
             $field_vis fn [<try_set_ $field_name>](&mut self, val: $field_type) -> Result<(), $crate::BitstructError> {
-                 if (val.to_bits() as u128) > Self::[<$field_name:upper _MASK>] {
-                     return Err($crate::BitstructError::Overflow { value: val.to_bits() as u128, allocated_bits: $bits });
-                 }
                  self.[<set_ $field_name>](val);
                  Ok(())
             }
@@ -2201,9 +2203,6 @@ macro_rules! bytestruct {
             #[allow(dead_code)]
             #[doc = concat!("Strict cloned evaluation to apply the bounded `", stringify!($field_type), "` enumeration to the `", stringify!($field_name), "` property. Returns a `BitstructError` if the value overflows ", stringify!($bits), " bits.")]
             $field_vis const fn [<try_with_ $field_name>](self, val: $field_type) -> Result<Self, $crate::BitstructError> {
-                 if (val.to_bits() as u128) > Self::[<$field_name:upper _MASK>] {
-                     return Err($crate::BitstructError::Overflow { value: val.to_bits() as u128, allocated_bits: $bits });
-                 }
                  Ok(self.[<with_ $field_name>](val))
             }
         }
@@ -2316,6 +2315,39 @@ impl_bits!(
     127, 128
 );
 
+/// A hidden trait used to resolve the narrowest signed primitive type for a given bit-width.
+#[doc(hidden)]
+pub trait SignedBitenumType {
+    /// The narrowest CPU signed primitive capable of holding $Bits$ bits.
+    type Prim: Copy + Clone + PartialEq + Eq + core::fmt::Debug + Default;
+}
+
+macro_rules! impl_signed_bits {
+    ($prim:ty, $($n:literal),+) => {
+        $(
+            impl SignedBitenumType for Bits<$n> {
+                type Prim = $prim;
+            }
+        )+
+    };
+}
+
+impl_signed_bits!(i8, 1, 2, 3, 4, 5, 6, 7, 8);
+impl_signed_bits!(i16, 9, 10, 11, 12, 13, 14, 15, 16);
+impl_signed_bits!(
+    i32, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32
+);
+impl_signed_bits!(
+    i64, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
+    55, 56, 57, 58, 59, 60, 61, 62, 63, 64
+);
+impl_signed_bits!(
+    i128, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86,
+    87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107,
+    108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126,
+    127, 128
+);
+
 /// A declarative macro for generating zero-cost bitenums.
 ///
 /// This generates a `#[repr(transparent)]` struct with associated constants, simulating an enum.
@@ -2341,9 +2373,63 @@ impl_bits!(
 /// ```
 #[macro_export]
 macro_rules! bitenum {
+    // Explicit Unsigned Enum
+    (
+        $(#[$meta:meta])*
+        $vis:vis enum $enum_name:ident (u $bits:expr) {
+            $(
+                $variant:ident = $val:expr
+            ),* $(,)?
+        }
+    ) => {
+        $crate::bitenum! {
+            @impl_unsigned_enum
+            [ $($meta)* ]
+            $vis $enum_name $bits,
+            { $($variant = $val),* }
+        }
+    };
+
+    // Explicit Signed Enum
+    (
+        $(#[$meta:meta])*
+        $vis:vis enum $enum_name:ident (i $bits:expr) {
+            $(
+                $variant:ident = $val:expr
+            ),* $(,)?
+        }
+    ) => {
+        $crate::bitenum! {
+            @impl_signed_enum
+            [ $($meta)* ]
+            $vis $enum_name $bits,
+            { $($variant = $val),* }
+        }
+    };
+
+    // Legacy Fallback (defaults to unsigned)
     (
         $(#[$meta:meta])*
         $vis:vis enum $enum_name:ident ($bits:expr) {
+            $(
+                $variant:ident = $val:expr
+            ),* $(,)?
+        }
+    ) => {
+        $crate::bitenum! {
+            @impl_unsigned_enum
+            [ $($meta)* ]
+            $vis $enum_name $bits,
+            { $($variant = $val),* }
+        }
+    };
+
+    // Internal implementation for unsigned enums
+    (
+        @impl_unsigned_enum
+        [ $($meta:meta)* ]
+        $vis:vis $enum_name:ident $bits:expr,
+        {
             $(
                 $variant:ident = $val:expr
             ),* $(,)?
@@ -2443,6 +2529,117 @@ macro_rules! bitenum {
                 assert!(
                     ($val as Prim) <= ((!0 as Prim) >> (<Prim as $crate::BitLength>::BITS - $bits)),
                     "Enum variant exceeds the maximum value for the allocated bit width"
+                );
+            )*
+        };
+    };
+
+    // Internal implementation for signed enums
+    (
+        @impl_signed_enum
+        [ $($meta:meta)* ]
+        $vis:vis $enum_name:ident $bits:expr,
+        {
+            $(
+                $variant:ident = $val:expr
+            ),* $(,)?
+        }
+    ) => {
+        $(#[$meta])*
+        #[derive(Copy, Clone, PartialEq, Eq, Default)]
+        #[derive($crate::bytemuck::Pod, $crate::bytemuck::Zeroable)]
+        #[repr(transparent)]
+        $vis struct $enum_name(pub <$crate::Bits<$bits> as $crate::SignedBitenumType>::Prim);
+
+        impl core::fmt::Debug for $enum_name {
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                let s = match self.0 {
+                    $(
+                        $val => stringify!($variant),
+                    )*
+                    _ => "UNKNOWN",
+                };
+                write!(f, "{}({})::{}", stringify!($enum_name), self.0, s)
+            }
+        }
+
+        impl $enum_name {
+            $(
+                #[allow(non_upper_case_globals, dead_code)]
+                #[doc = concat!("Enumeration variant for `", stringify!($variant), "` with raw value `", stringify!($val), "`.")]
+                pub const $variant: Self = Self($val);
+            )*
+
+            #[allow(dead_code)]
+            /// The number of bits allocated for this enumeration in memory.
+            pub const BITS: usize = $bits;
+
+            #[allow(dead_code)]
+            /// The minimum value allowed for this enumeration variant based on the allocated $bits bits.
+            pub const MIN: <$crate::Bits<$bits> as $crate::SignedBitenumType>::Prim = (!0 as <$crate::Bits<$bits> as $crate::SignedBitenumType>::Prim) << ($bits - 1);
+
+            #[allow(dead_code)]
+            /// The maximum value allowed for this enumeration variant based on the allocated $bits bits.
+            pub const MAX: <$crate::Bits<$bits> as $crate::SignedBitenumType>::Prim = !Self::MIN;
+
+            /// Returns true if the raw value corresponds to a defined enumeration variant.
+            ///
+            /// This is a zero-cost check that compiles to a simple comparison or a small jump table.
+            #[inline(always)]
+            #[allow(dead_code)]
+            pub const fn is_defined(self) -> bool {
+                match self.0 {
+                    $( $val => true, )*
+                    _ => false,
+                }
+            }
+
+            /// Returns the raw integer value of the enumeration variant.
+            #[inline(always)]
+            #[allow(dead_code)]
+            pub const fn to_bits(self) -> <$crate::Bits<$bits> as $crate::SignedBitenumType>::Prim { self.0 }
+
+            /// Creates an enumeration variant from a raw integer value.
+            ///
+            /// # Panics
+            /// In debug mode, this will panic if the value exceeds the allocated bit width.
+            #[inline(always)]
+            #[allow(dead_code)]
+            pub const fn from_bits(mut val: <$crate::Bits<$bits> as $crate::SignedBitenumType>::Prim) -> Self {
+                const SHIFT_UP: usize = <<$crate::Bits<$bits> as $crate::SignedBitenumType>::Prim as $crate::BitLength>::BITS - $bits;
+                val = (val << SHIFT_UP) >> SHIFT_UP;
+                debug_assert!(val >= Self::MIN && val <= Self::MAX, "Value overflows allocated bit width for this signed enumeration");
+                Self(val)
+            }
+
+            /// Creates an enumeration variant from a raw integer value, returning an error if it is invalid.
+            ///
+            /// This returns `Ok(Self)` if the value corresponds to a defined variant,
+            /// or `Err(BitstructError::InvalidVariant)` if it does not.
+            #[inline(always)]
+            #[allow(dead_code)]
+            pub const fn try_from_bits(mut val: <$crate::Bits<$bits> as $crate::SignedBitenumType>::Prim) -> Result<Self, $crate::BitstructError> {
+                const SHIFT_UP: usize = <<$crate::Bits<$bits> as $crate::SignedBitenumType>::Prim as $crate::BitLength>::BITS - $bits;
+                val = (val << SHIFT_UP) >> SHIFT_UP;
+                let s = Self(val);
+                if s.is_defined() {
+                    Ok(s)
+                } else {
+                    Err($crate::BitstructError::InvalidVariant { value: (val as i128) as u128, enum_name: stringify!($enum_name) })
+                }
+            }
+        }
+
+        impl $crate::ValidField for $enum_name {
+            const ASSERT_VALID: () = ();
+        }
+
+        const _: () = {
+            type Prim = <$crate::Bits<$bits> as $crate::SignedBitenumType>::Prim;
+            $(
+                assert!(
+                    ($val as Prim) >= ((!0 as Prim) << ($bits - 1)) && ($val as Prim) <= !((!0 as Prim) << ($bits - 1)),
+                    "Enum variant exceeds the maximum bounds for the allocated signed bit width"
                 );
             )*
         };
@@ -3019,19 +3216,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Enum variant overflows allocated 2 bits")]
-    fn test_bitenum_overflow_panic() {
-        bitenum! { enum Oversized(3) { A = 0, B = 7 } } // B requires 3 bits
-        bitstruct! {
-            pub struct EnumOverflowCheck(u8) {
-                pub val: Oversized = 2, // Only allocates 2 bits
-            }
-        }
-        let mut x = EnumOverflowCheck::default();
-        x.set_val(Oversized::B); // 7 into 2 bits, should panic
-    }
-
-    #[test]
     #[should_panic(expected = "Value 258 overflows allocated 8 bits")]
     fn test_bytestruct_overflow_panic() {
         bytestruct! {
@@ -3178,6 +3362,16 @@ mod tests {
 /// --- NEGATIVE COMPILATION TESTS ---
 /// These remain in the codebase as `compile_fail` doc-tests to verify and document
 /// that invalid configurations (like overflowing boundaries or negative widths) are caught at compile-time.
+///
+/// ### Enforcing Enum Field Bit Bounds
+/// Enumerations used as fields cannot request fewer bits than the enum inherently requires.
+/// ```compile_fail
+/// use bitcraft::{bitstruct, bitenum};
+/// bitenum! { enum Oversized(3) { A = 0, B = 7 } } // Enum is 3 bits
+/// bitstruct! {
+///     struct SmallField(u8) { val: Oversized = 2 } // Field is 2 bits
+/// }
+/// ```
 ///
 /// ### Enforcing Signed Base Type Bit Limits
 /// Signed base types enforce that the sign bit is reserved, meaning an `i32` base can only store up to 31 bits.

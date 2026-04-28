@@ -181,8 +181,8 @@ The `bitcraft` crate provides four specialized tools. Choosing the right one det
   - **When:** You need a single integer value that has an "awkward" byte width (e.g., a **24-bit** (`[u8; 3]`) audio sample, or a **40-bit** (`[u8; 5]`) network ID).
   - **Why:** It generates a zero-cost NewType wrapper around the byte array but gives you native `to_u32()`, `to_u64()`, and `from_u32()` methods so it behaves like a normal number in code, without wasting the 8 or 24 padding bits a true `u32`/`u64` would consume in an array of thousands.
 
-- **Use `bitenum!`** `(Base: N Bits mapped to u8-u128)`
-  - **When:** You need a strongly-typed, memory-safe enumeration to represent a variant parameter inside one of the above structs.
+- **Use `bitenum!`** `(Base: N Bits mapped to u8-u128, or i8-i128)`
+  - **When:** You need a strongly-typed, memory-safe enumeration to represent a variant parameter inside one of the above structs. Use `(i $bits)` for signed variants (e.g., `-1`).
   - **Why:** Pure, safe "Total Types". Writing illegal byte values over a network packet will securely return an error dynamically generated bounds-checking, while guaranteeing 0-bit overhead inside the struct.
 
 ---
@@ -369,10 +369,27 @@ bitenum! {
 }
 ```
 
+**Signed Enumerations:**
+
+You can define **signed enumerations** that can represent negative values (using Two's Complement representation) by using the `(i $bits)` syntax. The macro dynamically manages sign extension at zero cost when extracting the variant from a wider byte array.
+
+```rust
+bitenum! {
+    /// A 3-bit signed status.
+    pub enum Status(i 3) {
+        MIN = -4,
+        FAULT = -1,
+        OK = 0,
+        MAX = 3,
+    }
+}
+```
+
 **Memory Layout:**
 
-- Automatically maps to the narrowest CPU primitive (`u8`-`u128`) capable of holding the specified bits.
+- Automatically maps to the narrowest CPU primitive (`u8`-`u128` or `i8`-`i128`) capable of holding the specified bits.
 - Example `(2)` bits: Consumes `u8` in physical memory. Natively utilizes bits `[ 1 0 ]`, while bits `[ 7 .. 2 ]` remain zeroed.
+- Example `(i 3)` bits: Consumes `i8` in physical memory. Automatically sign-extends values like `...111` into `-1`.
 - **Strict Validation**: Providing raw values like `4` or `5` to `try_from_bits` will return an error, preventing invalid state propagation.
 
 ### 2. `bitstruct!`

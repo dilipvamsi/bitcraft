@@ -9,6 +9,16 @@ bitenum! {
     }
 }
 
+bitenum! {
+    /// A sample signed enumeration using the (i bits) syntax.
+    pub enum SignedStatus(i 2) {
+        OFF = 0,
+        ON = 1,
+        FAULT = -1,
+        ERROR = -2,
+    }
+}
+
 bitstruct! {
     /// A sample 16-bit packed configuration.
     pub struct Config(u16) {
@@ -71,6 +81,7 @@ bitstruct! {
         pub temperature: i8 = 8, // -128 to 127
         pub altitude: i16 = 16,  // -32768 to 32767
         pub offset_x: i32 = 20,  // -524288 to 524287
+        pub status: SignedStatus = 2,
     }
 }
 
