@@ -14,6 +14,7 @@ normal:
 	cargo test --lib
 	cargo test --doc
 	cargo test --test byte_tests
+	cargo test --test atomic_tests
 	cargo test --test example_control_register_test
 	cargo test --test example_protocol_header_test
 	cargo test --test debug_verify

@@ -173,6 +173,10 @@ The `bitcraft` crate provides four specialized tools. Choosing the right one det
   - **When:** You need to pack multiple small fields (booleans, 3-bit ints, 4-bit enums) into a single, standard CPU register (up to 128 bits). For signed bases, the macro restricts usage to size - 1 bits to keep the sign bit safe.
   - **Why:** Fastest execution. The CPU loads the entire struct in a single instruction, manipulates the bits in registers, and writes them back. Perfect for protocol headers or status registers.
 
+- **Use `atomic_bitstruct!`** `(Base: AtomicU8 - AtomicU64, AtomicI8 - AtomicI64)`
+  - **When:** You need thread-safe, lock-free concurrent mutation of individual bit-packed fields within a shared memory location.
+  - **Why:** Safely mutate disjoint bit-fields concurrently across multiple threads without taking heavy locks. Offers a high-performance CAS loop transaction API (`.update_or_abort()`) to resolve race conditions and enforce business logic cleanly.
+
 - **Use `bytestruct!`** `(Base: [u8/u16/u32...; N])`
   - **When:** Your data structure logically exceeds 16 bytes (128 bits) but must still remain perfectly dense without padding, or when the data is intrinsically an array (like a generic payload buffer with flags at the end).
   - **Why:** Allows dense packing up to 128 bits while still utilizing the widest available CPU registers (like `u64` or `u128`) behind the scenes to modify localized chunks of the array efficiently.

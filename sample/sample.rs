@@ -1,4 +1,5 @@
-use bitcraft::{bitenum, bitstruct, bytestruct, byteval};
+use bitcraft::{atomic_bitstruct, bitenum, bitstruct, bytestruct, byteval};
+use core::sync::atomic::{AtomicU32, Ordering};
 
 bitenum! {
     /// A sample enumeration for status tracking.
@@ -149,6 +150,15 @@ byteval! {
     pub struct DualId128(2, u64);
 }
 
+atomic_bitstruct! {
+    /// A lock-free atomic connection pool tracker.
+    pub struct AtomicPoolTracker(AtomicU32) {
+        pub is_active: bool = 1,
+        pub active_connections: u16 = 15,
+        pub status: Status = 2,
+    }
+}
+
 fn main() {
     let config = Config::default()
         .with_enabled(true)
@@ -180,23 +190,28 @@ fn main() {
         .with_sensor_b(0x12345)
         .with_alert(true)
         .with_status(Status::FAULT)
-        .with_counter(0x1FFF);
+        .with_counter(999);
 
-    println!("\nTelemetry (56-bit): {:?}", telemetry);
+    println!("\nTelemetry: {:?}", telemetry);
     println!("Sensor A: 0x{:X}", telemetry.sensor_a());
     println!("Sensor B: 0x{:X}", telemetry.sensor_b());
     println!("Alert: {}", telemetry.alert());
     println!("Status: {:?}", telemetry.status());
-    println!("Counter: 0x{:X}", telemetry.counter());
-    println!("Bits: {}", Telemetry::BITS);
+    println!("Counter: {}", telemetry.counter());
 
-    let u16_packet = U16Packet::from_u64(0x112233445566);
-    println!("\nU16Packet (48-bit, u16 units): {:?}", u16_packet);
+    let u16_packet = U16Packet::default()
+        .with_field_a(0x123456)
+        .with_field_b(0x654321);
+
+    println!("\nU16Packet: {:?}", u16_packet);
     println!("Field A: 0x{:X}", u16_packet.field_a());
     println!("Field B: 0x{:X}", u16_packet.field_b());
 
-    let u32_packet = U32Packet::from_u64(0xDEADBEEFCAFEBABE);
-    println!("\nU32Packet (64-bit, u32 units): {:?}", u32_packet);
+    let u32_packet = U32Packet::default()
+        .with_header(0xAB)
+        .with_body(0x1234567890ABCDE);
+
+    println!("\nU32Packet: {:?}", u32_packet);
     println!("Header: 0x{:X}", u32_packet.header());
     println!("Body: 0x{:X}", u32_packet.body());
 
@@ -206,14 +221,12 @@ fn main() {
     let id16 = Id16::from_u16(0xABCD);
     println!("Id16: {:?} (Bits: {})", id16, Id16::BITS);
 
-    // 2. Demonstration of safe setters for byteval (New Feature)
+    // 2. Demonstration of safe setters for byteval
     println!("\nTesting safe setters for PackedId (24-bit)...");
     let mut id = PackedId::from_u32(0x123456);
-    // This should succeed
     if id.try_set_value(0x654321).is_ok() {
         println!("  Successfully set value to 0x654321");
     }
-    // This should fail (24 bits = max 0xFFFFFF)
     if let Err(e) = id.try_set_value(0x1000000) {
         println!("  Correctly failed to set value 0x1000000: {:?}", e);
     }
@@ -260,11 +273,39 @@ fn main() {
     println!("Altitude: {}", signed_cfg.altitude());
     println!("Offset X: {}", signed_cfg.offset_x());
 
-    let signed_coord = SignedCoordinate::default()
-        .with_x(-1234)
-        .with_y(5678);
+    let signed_coord = SignedCoordinate::default().with_x(-1234).with_y(5678);
 
     println!("\nSignedCoordinate: {:?}", signed_coord);
     println!("X: {}, Y: {}", signed_coord.x(), signed_coord.y());
-}
 
+    // 4. Demonstration of atomic_bitstruct
+    println!("\nTesting atomic_bitstruct lock-free transactions...");
+    let atomic_pool = AtomicPoolTracker::new(0);
+    atomic_pool.set_is_active(true, Ordering::Release);
+
+    // Simulate taking a connection conditionally
+    let res = atomic_pool.update_or_abort(Ordering::SeqCst, Ordering::Relaxed, |v| {
+        let current = v.active_connections();
+        if current >= 50 {
+            return None; // Abort if pool is heavily loaded!
+        }
+        v.set_active_connections(current + 1);
+        v.set_status(Status::ON);
+        Some(())
+    });
+
+    if res.is_ok() {
+        println!(
+            "  Successfully took connection! Total active: {}",
+            atomic_pool.active_connections(Ordering::Acquire)
+        );
+    }
+
+    // Fetch snapshot
+    let snapshot = atomic_pool.get(Ordering::Acquire);
+    println!(
+        "  Atomic Snapshot -> Active: {}, Status: {:?}",
+        snapshot.is_active(),
+        snapshot.status()
+    );
+}

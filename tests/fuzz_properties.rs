@@ -1,5 +1,16 @@
-use bitcraft::{bitenum, bitstruct, bytestruct, byteval};
+use bitcraft::{atomic_bitstruct, bitenum, bitstruct, bytestruct, byteval};
 use proptest::prelude::*;
+
+use core::sync::atomic::AtomicU64;
+atomic_bitstruct! {
+    struct FuzzAtomicStruct(AtomicU64) {
+        a: bool = 1,
+        b: u8 = 7,
+        c: u32 = 24,
+        d: FuzzEnum = 2,
+        e: u32 = 30, // 1+7+24+2+30 = 64
+    }
+}
 
 bitenum! {
     enum FuzzEnum(2) {
@@ -846,5 +857,54 @@ proptest! {
         let mut s40 = FuzzSignedId40::default();
         s40.set_value(id40);
         prop_assert_eq!(s40.value(), id40);
+    }
+
+    #[test]
+    fn test_atomic_bitstruct_fuzz(
+        a in any::<bool>(),
+        b in 0u8..=127,
+        c in 0u32..=16777215,
+        d in 0u8..=2, // FuzzEnum
+        e in 0u32..=1073741823,
+    ) {
+        let bs = FuzzAtomicStruct::new(0);
+
+        let enum_d = match d {
+            0 => FuzzEnum::A,
+            1 => FuzzEnum::B,
+            _ => FuzzEnum::C,
+        };
+
+        // Update single fields
+        prop_assert!(bs.try_set_a(a, core::sync::atomic::Ordering::SeqCst).is_ok());
+        prop_assert!(bs.try_set_b(b, core::sync::atomic::Ordering::SeqCst).is_ok());
+        prop_assert!(bs.try_set_c(c, core::sync::atomic::Ordering::SeqCst).is_ok());
+        prop_assert!(bs.try_set_d(enum_d, core::sync::atomic::Ordering::SeqCst).is_ok());
+        prop_assert!(bs.try_set_e(e, core::sync::atomic::Ordering::SeqCst).is_ok());
+
+        prop_assert_eq!(bs.a(core::sync::atomic::Ordering::Relaxed), a);
+        prop_assert_eq!(bs.b(core::sync::atomic::Ordering::Relaxed), b);
+        prop_assert_eq!(bs.c(core::sync::atomic::Ordering::Relaxed), c);
+        prop_assert_eq!(bs.d(core::sync::atomic::Ordering::Relaxed), enum_d);
+        prop_assert_eq!(bs.e(core::sync::atomic::Ordering::Relaxed), e);
+
+        // Update via batch
+        bs.update(core::sync::atomic::Ordering::SeqCst, core::sync::atomic::Ordering::Relaxed, |v| {
+            v.set_a(!a);
+            v.set_b(127 - b);
+        });
+
+        prop_assert_eq!(bs.a(core::sync::atomic::Ordering::Relaxed), !a);
+        prop_assert_eq!(bs.b(core::sync::atomic::Ordering::Relaxed), 127 - b);
+        prop_assert_eq!(bs.c(core::sync::atomic::Ordering::Relaxed), c);
+
+        // Test update_or_abort aborting
+        let abort_res = bs.update_or_abort(core::sync::atomic::Ordering::SeqCst, core::sync::atomic::Ordering::Relaxed, |v| {
+            v.set_c(0);
+            None
+        });
+
+        prop_assert!(abort_res.is_err());
+        prop_assert_eq!(bs.c(core::sync::atomic::Ordering::Relaxed), c); // C should remain unchanged!
     }
 }

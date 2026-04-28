@@ -392,6 +392,89 @@ impl SignedId24 {
 
 ---
 
+## 5. `atomic_bitstruct!` (Lock-Free Concurrency)
+
+Generates a thread-safe bitstruct backed by a `core::sync::atomic` type, providing lock-free getters, setters, and transaction-safe CAS loop closures.
+
+### **Usage**
+
+```rust
+atomic_bitstruct! {
+    pub struct AtomicPoolTracker(AtomicU32) {
+        pub is_active: bool = 1,
+        pub active_connections: u16 = 15,
+    }
+}
+```
+
+### **Generated "Struct Equivalent"**
+
+The macro generates two things: the Atomic outer struct and its non-atomic `Value` companion snapshot struct.
+
+```rust
+// The Companion Non-Atomic Snapshot Struct (Generated via standard bitstruct!)
+#[derive(Copy, Clone, PartialEq, Eq, Default)]
+#[repr(transparent)]
+pub struct AtomicPoolTrackerValue(pub u32);
+
+impl AtomicPoolTrackerValue {
+    // ... standard bitstruct! methods (set_is_active, active_connections, etc.) ...
+}
+
+// The Outer Atomic Struct
+#[repr(transparent)]
+pub struct AtomicPoolTracker(pub core::sync::atomic::AtomicU32);
+
+impl AtomicPoolTracker {
+    #[inline(always)]
+    pub const fn new(val: u32) -> Self {
+        Self(core::sync::atomic::AtomicU32::new(val))
+    }
+
+    #[inline(always)]
+    pub fn is_active(&self, order: core::sync::atomic::Ordering) -> bool {
+        AtomicPoolTrackerValue::from_bits(self.0.load(order)).is_active()
+    }
+
+    #[inline(always)]
+    pub fn set_is_active(&self, val: bool, order: core::sync::atomic::Ordering) {
+        let mut raw = self.0.load(core::sync::atomic::Ordering::Relaxed);
+        loop {
+            let mut snap = AtomicPoolTrackerValue::from_bits(raw);
+            snap.set_is_active(val);
+            match self.0.compare_exchange_weak(raw, snap.to_bits(), order, core::sync::atomic::Ordering::Relaxed) {
+                Ok(_) => break,
+                Err(x) => raw = x,
+            }
+        }
+    }
+
+    #[inline]
+    pub fn get(&self, order: core::sync::atomic::Ordering) -> AtomicPoolTrackerValue {
+        AtomicPoolTrackerValue::from_bits(self.0.load(order))
+    }
+
+    #[inline]
+    pub fn set(&self, val: AtomicPoolTrackerValue, order: core::sync::atomic::Ordering) {
+        self.0.store(val.to_bits(), order);
+    }
+
+    #[inline]
+    pub fn update_or_abort<F>(&self, set_order: core::sync::atomic::Ordering, fetch_order: core::sync::atomic::Ordering, mut f: F) -> Result<AtomicPoolTrackerValue, AtomicPoolTrackerValue>
+    where
+        F: FnMut(&mut AtomicPoolTrackerValue) -> Option<()>
+    {
+        self.0.fetch_update(set_order, fetch_order, |raw| {
+            let mut snap = AtomicPoolTrackerValue::from_bits(raw);
+            f(&mut snap).map(|_| snap.to_bits())
+        }).map(|raw| AtomicPoolTrackerValue::from_bits(raw))
+        .map_err(|raw| AtomicPoolTrackerValue::from_bits(raw))
+    }
+}
+```
+
+---
+
 ## 🔍 Visibility and Inspection
 
 To see the real, machine-generated expansion for any macro in your project, install the `cargo-expand` tool:

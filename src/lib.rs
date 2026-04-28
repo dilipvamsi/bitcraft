@@ -816,6 +816,7 @@ pub const fn write_le_bits<
     }
 }
 
+mod atomic_bitstruct;
 mod bitenum;
 mod bitstruct;
 mod bytestruct;

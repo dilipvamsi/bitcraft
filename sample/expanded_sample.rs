@@ -8835,3 +8835,553 @@ impl DualId128 {
     }
 }
 
+#[repr(transparent)]
+pub struct AtomicPoolTracker(pub core::sync::atomic::AtomicU32);
+
+impl core::fmt::Debug for AtomicPoolTracker {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("AtomicPoolTracker")
+            .field("raw", &self.0.load(core::sync::atomic::Ordering::Relaxed))
+            .field("is_active", &self.is_active(core::sync::atomic::Ordering::Relaxed))
+            .field(
+                "active_connections",
+                &self.active_connections(core::sync::atomic::Ordering::Relaxed),
+            )
+            .field("status", &self.status(core::sync::atomic::Ordering::Relaxed))
+            .finish()
+    }
+}
+
+impl Default for AtomicPoolTracker {
+    fn default() -> Self {
+        Self::new(0)
+    }
+}
+
+impl AtomicPoolTracker {
+    #[allow(dead_code)]
+    pub const BITS: usize = <u32 as ::bitcraft::BitLength>::BITS;
+    /// Creates a new instance from a raw integer value.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn new(val: u32) -> Self {
+        Self(<core::sync::atomic::AtomicU32>::new(val))
+    }
+    /// Returns the raw interior integer value via `load`.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub fn load(&self, order: core::sync::atomic::Ordering) -> u32 {
+        self.0.load(order)
+    }
+    /// Stores a raw integer value via `store`.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub fn store(&self, val: u32, order: core::sync::atomic::Ordering) {
+        self.0.store(val, order)
+    }
+    pub const IS_ACTIVE_OFFSET: usize = 0;
+    pub const IS_ACTIVE_BITS: usize = 1;
+    #[doc(hidden)]
+    const IS_ACTIVE_MASK: u32 = ((!0 as <u32 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u32 as ::bitcraft::BitLength>::BITS - Self::IS_ACTIVE_BITS)) as u32;
+    #[allow(dead_code)]
+    #[inline]
+    pub fn is_active(&self, order: core::sync::atomic::Ordering) -> bool {
+        ((self.0.load(order) >> Self::IS_ACTIVE_OFFSET) & Self::IS_ACTIVE_MASK) != 0
+    }
+    #[allow(dead_code)]
+    #[inline]
+    pub fn set_is_active(&self, val: bool, order: core::sync::atomic::Ordering) {
+        let val_masked = val as u32;
+        self.0
+            .fetch_update(
+                order,
+                core::sync::atomic::Ordering::Relaxed,
+                |raw| {
+                    Some(
+                        (raw & !(Self::IS_ACTIVE_MASK << Self::IS_ACTIVE_OFFSET))
+                            | (val_masked << Self::IS_ACTIVE_OFFSET),
+                    )
+                },
+            )
+            .unwrap();
+    }
+    #[allow(dead_code)]
+    pub fn try_set_is_active(
+        &self,
+        val: bool,
+        order: core::sync::atomic::Ordering,
+    ) -> Result<(), ::bitcraft::BitstructError> {
+        self.set_is_active(val, order);
+        Ok(())
+    }
+    pub const ACTIVE_CONNECTIONS_OFFSET: usize = 0 + 1;
+    pub const ACTIVE_CONNECTIONS_BITS: usize = 15;
+    #[doc(hidden)]
+    const ACTIVE_CONNECTIONS_MASK: u32 = ((!0
+        as <u32 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u32 as ::bitcraft::BitLength>::BITS - Self::ACTIVE_CONNECTIONS_BITS))
+        as u32;
+    #[allow(dead_code)]
+    #[inline]
+    pub fn active_connections(&self, order: core::sync::atomic::Ordering) -> u16 {
+        ((self.0.load(order) >> Self::ACTIVE_CONNECTIONS_OFFSET)
+            & Self::ACTIVE_CONNECTIONS_MASK) as u16
+    }
+    #[allow(dead_code)]
+    #[inline]
+    pub fn set_active_connections(&self, val: u16, order: core::sync::atomic::Ordering) {
+        if true {
+            if !((val as u32) <= Self::ACTIVE_CONNECTIONS_MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value {0} overflows allocated {1} bits", val, 15),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as u32) & Self::ACTIVE_CONNECTIONS_MASK;
+        self.0
+            .fetch_update(
+                order,
+                core::sync::atomic::Ordering::Relaxed,
+                |raw| {
+                    Some(
+                        (raw
+                            & !(Self::ACTIVE_CONNECTIONS_MASK
+                                << Self::ACTIVE_CONNECTIONS_OFFSET))
+                            | (val_masked << Self::ACTIVE_CONNECTIONS_OFFSET),
+                    )
+                },
+            )
+            .unwrap();
+    }
+    #[allow(dead_code)]
+    pub fn try_set_active_connections(
+        &self,
+        val: u16,
+        order: core::sync::atomic::Ordering,
+    ) -> Result<(), ::bitcraft::BitstructError> {
+        if (val as u32) > Self::ACTIVE_CONNECTIONS_MASK {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: (val as u32) as u128,
+                allocated_bits: 15,
+            });
+        }
+        let val_masked = (val as u32) & Self::ACTIVE_CONNECTIONS_MASK;
+        self.0
+            .fetch_update(
+                order,
+                core::sync::atomic::Ordering::Relaxed,
+                |raw| {
+                    Some(
+                        (raw
+                            & !(Self::ACTIVE_CONNECTIONS_MASK
+                                << Self::ACTIVE_CONNECTIONS_OFFSET))
+                            | (val_masked << Self::ACTIVE_CONNECTIONS_OFFSET),
+                    )
+                },
+            )
+            .unwrap();
+        Ok(())
+    }
+    pub const STATUS_OFFSET: usize = 0 + 1 + 15;
+    pub const STATUS_BITS: usize = 2;
+    #[doc(hidden)]
+    const STATUS_MASK: u32 = ((!0 as <u32 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u32 as ::bitcraft::BitLength>::BITS - Self::STATUS_BITS)) as u32;
+    #[allow(dead_code)]
+    #[inline]
+    pub fn status(&self, order: core::sync::atomic::Ordering) -> Status {
+        Status::from_bits(
+            ((self.0.load(order) >> Self::STATUS_OFFSET) & Self::STATUS_MASK) as _,
+        )
+    }
+    #[allow(dead_code)]
+    #[inline]
+    pub fn set_status(&self, val: Status, order: core::sync::atomic::Ordering) {
+        const _: () = if !(<Status>::BITS <= 2) {
+            {
+                ::core::panicking::panic_fmt(
+                    format_args!("Enum bit width exceeds allocated field width"),
+                );
+            }
+        };
+        let val_masked = (val.to_bits() as u32) & Self::STATUS_MASK;
+        self.0
+            .fetch_update(
+                order,
+                core::sync::atomic::Ordering::Relaxed,
+                |raw| {
+                    Some(
+                        (raw & !(Self::STATUS_MASK << Self::STATUS_OFFSET))
+                            | (val_masked << Self::STATUS_OFFSET),
+                    )
+                },
+            )
+            .unwrap();
+    }
+    #[allow(dead_code)]
+    pub fn try_set_status(
+        &self,
+        val: Status,
+        order: core::sync::atomic::Ordering,
+    ) -> Result<(), ::bitcraft::BitstructError> {
+        self.set_status(val, order);
+        Ok(())
+    }
+}
+
+#[repr(transparent)]
+pub struct AtomicPoolTrackerValue(pub u32);
+
+#[automatically_derived]
+impl ::core::marker::Copy for AtomicPoolTrackerValue {}
+
+#[automatically_derived]
+#[doc(hidden)]
+unsafe impl ::core::clone::TrivialClone for AtomicPoolTrackerValue {}
+
+#[automatically_derived]
+impl ::core::clone::Clone for AtomicPoolTrackerValue {
+    #[inline]
+    fn clone(&self) -> AtomicPoolTrackerValue {
+        let _: ::core::clone::AssertParamIsClone<u32>;
+        *self
+    }
+}
+
+#[automatically_derived]
+impl ::core::marker::StructuralPartialEq for AtomicPoolTrackerValue {}
+
+#[automatically_derived]
+impl ::core::cmp::PartialEq for AtomicPoolTrackerValue {
+    #[inline]
+    fn eq(&self, other: &AtomicPoolTrackerValue) -> bool {
+        self.0 == other.0
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Eq for AtomicPoolTrackerValue {
+    #[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    fn assert_receiver_is_total_eq(&self) -> () {
+        let _: ::core::cmp::AssertParamIsEq<u32>;
+    }
+}
+
+#[automatically_derived]
+impl ::core::default::Default for AtomicPoolTrackerValue {
+    #[inline]
+    fn default() -> AtomicPoolTrackerValue {
+        AtomicPoolTrackerValue(::core::default::Default::default())
+    }
+}
+
+impl core::fmt::Debug for AtomicPoolTrackerValue {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("AtomicPoolTrackerValue")
+            .field("raw", &self.0)
+            .field("is_active", &self.is_active())
+            .field("active_connections", &self.active_connections())
+            .field("status", &self.status())
+            .finish()
+    }
+}
+
+impl AtomicPoolTrackerValue {
+    #[allow(dead_code)]
+    pub const BITS: usize = <u32 as ::bitcraft::BitLength>::BITS;
+    /// The bit-offset of the `$field_name` property within the underlying storage.
+    pub const IS_ACTIVE_OFFSET: usize = 0;
+    /// The number of bits allocated for the `$field_name` property.
+    pub const IS_ACTIVE_BITS: usize = 1;
+    #[doc(hidden)]
+    const IS_ACTIVE_MASK: u32 = ((!0 as <u32 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u32 as ::bitcraft::BitLength>::BITS - Self::IS_ACTIVE_BITS)) as u32;
+    #[allow(dead_code)]
+    #[inline]
+    ///Returns the boolean value mapping to the `is_active` flag.
+    pub const fn is_active(self) -> bool {
+        ((self.0 >> Self::IS_ACTIVE_OFFSET) & Self::IS_ACTIVE_MASK) != 0
+    }
+    #[allow(dead_code)]
+    #[inline]
+    ///Inline mutation to set the `is_active` flag.
+    pub fn set_is_active(&mut self, val: bool) {
+        let val_masked = val as u32;
+        self.0 = (self.0 & !(Self::IS_ACTIVE_MASK << Self::IS_ACTIVE_OFFSET))
+            | (val_masked << Self::IS_ACTIVE_OFFSET);
+    }
+    #[allow(dead_code)]
+    ///Returns a cloned copy of the bitfield with the `is_active` flag specified.
+    pub const fn with_is_active(self, val: bool) -> Self {
+        let val_masked = val as u32;
+        Self(
+            (self.0 & !(Self::IS_ACTIVE_MASK << Self::IS_ACTIVE_OFFSET))
+                | (val_masked << Self::IS_ACTIVE_OFFSET),
+        )
+    }
+    #[allow(dead_code)]
+    ///Inline mutation to set the `is_active` flag. Returns `Ok(())` since booleans cannot overflow.
+    pub fn try_set_is_active(
+        &mut self,
+        val: bool,
+    ) -> Result<(), ::bitcraft::BitstructError> {
+        self.set_is_active(val);
+        Ok(())
+    }
+    #[allow(dead_code)]
+    ///Returns a cloned copy of the bitfield with the `is_active` flag specified. Returns `Ok(Self)` since booleans cannot overflow.
+    pub const fn try_with_is_active(
+        self,
+        val: bool,
+    ) -> Result<Self, ::bitcraft::BitstructError> {
+        Ok(self.with_is_active(val))
+    }
+    /// The bit-offset of the `$field_name` property within the underlying storage.
+    pub const ACTIVE_CONNECTIONS_OFFSET: usize = 0 + 1;
+    /// The number of bits allocated for the `$field_name` property.
+    pub const ACTIVE_CONNECTIONS_BITS: usize = 15;
+    #[doc(hidden)]
+    const ACTIVE_CONNECTIONS_MASK: u32 = ((!0
+        as <u32 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u32 as ::bitcraft::BitLength>::BITS - Self::ACTIVE_CONNECTIONS_BITS))
+        as u32;
+    #[allow(dead_code)]
+    #[inline]
+    ///Returns the `active_connections` property as a `u16`.
+    pub const fn active_connections(self) -> u16 {
+        ((self.0 >> Self::ACTIVE_CONNECTIONS_OFFSET) & Self::ACTIVE_CONNECTIONS_MASK)
+            as u16
+    }
+    #[allow(dead_code)]
+    #[inline]
+    ///Inline mutation to apply the `active_connections` property. Masks inputs over 15 bits.
+    pub fn set_active_connections(&mut self, val: u16) {
+        if true {
+            if !((val as u32) <= Self::ACTIVE_CONNECTIONS_MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value {0} overflows allocated {1} bits", val, 15),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as u32) & Self::ACTIVE_CONNECTIONS_MASK;
+        self.0 = (self.0
+            & !(Self::ACTIVE_CONNECTIONS_MASK << Self::ACTIVE_CONNECTIONS_OFFSET))
+            | (val_masked << Self::ACTIVE_CONNECTIONS_OFFSET);
+    }
+    #[allow(dead_code)]
+    ///Returns a cloned copy of the bitfield with the `active_connections` property mapped. Masks inputs over 15 bits.
+    pub const fn with_active_connections(self, val: u16) -> Self {
+        if true {
+            if !((val as u32) <= Self::ACTIVE_CONNECTIONS_MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value overflows allocated bits"),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as u32) & Self::ACTIVE_CONNECTIONS_MASK;
+        Self(
+            (self.0
+                & !(Self::ACTIVE_CONNECTIONS_MASK << Self::ACTIVE_CONNECTIONS_OFFSET))
+                | (val_masked << Self::ACTIVE_CONNECTIONS_OFFSET),
+        )
+    }
+    #[allow(dead_code)]
+    ///Strict inline mutation to apply the `active_connections` property. Returns a `BitstructError` if the value overflows 15 bits.
+    pub fn try_set_active_connections(
+        &mut self,
+        val: u16,
+    ) -> Result<(), ::bitcraft::BitstructError> {
+        if (val as u32) > Self::ACTIVE_CONNECTIONS_MASK {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: (val as u32) as u128,
+                allocated_bits: 15,
+            });
+        }
+        let val_masked = (val as u32) & Self::ACTIVE_CONNECTIONS_MASK;
+        self.0 = (self.0
+            & !(Self::ACTIVE_CONNECTIONS_MASK << Self::ACTIVE_CONNECTIONS_OFFSET))
+            | (val_masked << Self::ACTIVE_CONNECTIONS_OFFSET);
+        Ok(())
+    }
+    #[allow(dead_code)]
+    ///Strict cloned evaluation to apply the `active_connections` property. Returns a `BitstructError` if the value overflows 15 bits.
+    pub const fn try_with_active_connections(
+        self,
+        val: u16,
+    ) -> Result<Self, ::bitcraft::BitstructError> {
+        if (val as u32) > Self::ACTIVE_CONNECTIONS_MASK {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: (val as u32) as u128,
+                allocated_bits: 15,
+            });
+        }
+        let val_masked = (val as u32) & Self::ACTIVE_CONNECTIONS_MASK;
+        Ok(
+            Self(
+                (self.0
+                    & !(Self::ACTIVE_CONNECTIONS_MASK
+                        << Self::ACTIVE_CONNECTIONS_OFFSET))
+                    | (val_masked << Self::ACTIVE_CONNECTIONS_OFFSET),
+            ),
+        )
+    }
+    /// The bit-offset of the `$field_name` property within the underlying storage.
+    pub const STATUS_OFFSET: usize = 0 + 1 + 15;
+    /// The number of bits allocated for the `$field_name` property.
+    pub const STATUS_BITS: usize = 2;
+    #[doc(hidden)]
+    const STATUS_MASK: u32 = ((!0 as <u32 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u32 as ::bitcraft::BitLength>::BITS - Self::STATUS_BITS)) as u32;
+    #[allow(dead_code)]
+    ///Returns the `status` variant strictly typed to the `Status` enumeration.
+    pub const fn status(self) -> Status {
+        Status::from_bits(((self.0 >> Self::STATUS_OFFSET) & Self::STATUS_MASK) as _)
+    }
+    #[allow(dead_code)]
+    ///Inline mutation to apply the bounded `Status` enumeration to the `status` property.
+    pub fn set_status(&mut self, val: Status) {
+        const _: () = if !(<Status>::BITS <= 2) {
+            {
+                ::core::panicking::panic_fmt(
+                    format_args!("Enum bit width exceeds allocated field width"),
+                );
+            }
+        };
+        let val_masked = (val.to_bits() as u32) & Self::STATUS_MASK;
+        self.0 = (self.0 & !(Self::STATUS_MASK << Self::STATUS_OFFSET))
+            | (val_masked << Self::STATUS_OFFSET);
+    }
+    #[allow(dead_code)]
+    ///Returns a cloned copy of the bitfield bounded by the `Status` enumeration supplied to `status`.
+    pub const fn with_status(self, val: Status) -> Self {
+        const _: () = if !(<Status>::BITS <= 2) {
+            {
+                ::core::panicking::panic_fmt(
+                    format_args!("Enum bit width exceeds allocated field width"),
+                );
+            }
+        };
+        let val_masked = (val.to_bits() as u32) & Self::STATUS_MASK;
+        Self(
+            (self.0 & !(Self::STATUS_MASK << Self::STATUS_OFFSET))
+                | (val_masked << Self::STATUS_OFFSET),
+        )
+    }
+    #[allow(dead_code)]
+    ///Strict inline mutation to apply the bounded `Status` enumeration to the `status` property. Returns a `BitstructError` if the value overflows 2 bits.
+    pub fn try_set_status(
+        &mut self,
+        val: Status,
+    ) -> Result<(), ::bitcraft::BitstructError> {
+        self.set_status(val);
+        Ok(())
+    }
+    #[allow(dead_code)]
+    ///Strict cloned evaluation to apply the bounded `Status` enumeration to the `status` property. Returns a `BitstructError` if the value overflows 2 bits.
+    pub const fn try_with_status(
+        self,
+        val: Status,
+    ) -> Result<Self, ::bitcraft::BitstructError> {
+        Ok(self.with_status(val))
+    }
+    /// Returns the raw interior integer value.
+    ///
+    /// This is useful for serializing the struct or passing it to external APIs.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn to_bits(self) -> u32 {
+        self.0
+    }
+    /// Creates a new instance from a raw integer value.
+    ///
+    /// # Safety
+    /// While this method is safe, providing values with bits set outside
+    /// the defined field ranges may result in those bits being preserved
+    /// (padded) or ignored depending on the getters used.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn from_bits(val: u32) -> Self {
+        Self(val)
+    }
+}
+
+impl AtomicPoolTracker {
+    /// Returns a non-atomic snapshot of the current state as a `Value` struct.
+    #[inline]
+    pub fn get(&self, order: core::sync::atomic::Ordering) -> AtomicPoolTrackerValue {
+        AtomicPoolTrackerValue::from_bits(self.0.load(order))
+    }
+    /// Completely overwrites the entire atomic state with the given `Value`.
+    /// This is a direct atomic `store` operation and does not perform a CAS loop.
+    #[inline]
+    pub fn set(&self, val: AtomicPoolTrackerValue, order: core::sync::atomic::Ordering) {
+        self.0.store(val.to_bits(), order);
+    }
+    /// Atomically updates multiple fields using a Compare-And-Swap (CAS) loop.
+    ///
+    /// The provided closure is called with a mutable `Value` representing the current state.
+    /// Modify the value, and the changes will be applied atomically.
+    ///
+    /// Unlike `set`, this method guarantees that fields you do not modify within the closure
+    /// will retain any concurrent updates made by other threads between the load and the store.
+    #[inline]
+    pub fn update<F>(
+        &self,
+        set_order: core::sync::atomic::Ordering,
+        fetch_order: core::sync::atomic::Ordering,
+        mut f: F,
+    ) -> AtomicPoolTrackerValue
+    where
+        F: FnMut(&mut AtomicPoolTrackerValue),
+    {
+        let raw_prev = self
+            .0
+            .fetch_update(
+                set_order,
+                fetch_order,
+                |raw| {
+                    let mut snap = AtomicPoolTrackerValue::from_bits(raw);
+                    f(&mut snap);
+                    Some(snap.to_bits())
+                },
+            )
+            .unwrap();
+        AtomicPoolTrackerValue::from_bits(raw_prev)
+    }
+    /// Conditionally updates multiple fields using a Compare-And-Swap (CAS) loop.
+    ///
+    /// The provided closure must return `Some(())` to commit the new state, or `None` to abort the loop.
+    /// If `None` is returned, the CAS loop is aborted and `Err(Value)` containing the un-modified state is returned.
+    #[inline]
+    pub fn update_or_abort<F>(
+        &self,
+        set_order: core::sync::atomic::Ordering,
+        fetch_order: core::sync::atomic::Ordering,
+        mut f: F,
+    ) -> Result<AtomicPoolTrackerValue, AtomicPoolTrackerValue>
+    where
+        F: FnMut(&mut AtomicPoolTrackerValue) -> Option<()>,
+    {
+        self.0
+            .fetch_update(
+                set_order,
+                fetch_order,
+                |raw| {
+                    let mut snap = AtomicPoolTrackerValue::from_bits(raw);
+                    f(&mut snap).map(|_| snap.to_bits())
+                },
+            )
+            .map(|raw| AtomicPoolTrackerValue::from_bits(raw))
+            .map_err(|raw| AtomicPoolTrackerValue::from_bits(raw))
+    }
+}
+
