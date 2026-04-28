@@ -309,14 +309,16 @@ We evaluated 1,000,000,000 (1B) iterations of complex read/write operations on a
 | **Execution Latency** | `bitstruct!` | `u16` | **0.96x (Faster!)** | **2.00x Higher** |
 | **Execution Latency** | `bytestruct!` | `[u8; 2]` | **1.05x (Near Parity!)** | **3.20x Higher** |
 
-### 🔄 Atomic Concurrency (Contended, 8 Threads)
+### 🔄 Atomic Concurrency (Contended, 32 Threads)
 
-When shared across 8 threads performing 1M updates each, `bitcraft` atomics outperform traditional `Mutex` synchronization by eliminating lock acquisition overhead.
+When shared across 32 threads performing 1M updates each, `bitcraft` atomics outperform traditional `Mutex` synchronization by eliminating lock acquisition overhead.
 
 | Metric | Macro Type | Advantage | Physical Density |
 | :--- | :--- | :--- | :--- |
-| **Contention Latency** | `atomic_bitenum!` | **18.8x Faster** | Single-Instruction Update |
-| **Contention Latency** | `atomic_bitstruct!` | **1.11x Faster** | Lock-Free CAS Transaction |
+| **Contention Latency** | `atomic_bitenum!` | **24.0x Faster** | Single-Instruction Update |
+| **Contention Latency** | `atomic_bitstruct!` | **1.14x Faster** | Lock-Free CAS Transaction |
+| **Conditional Transition** | `compare_exchange` | **2.75x Faster** | Atomic State Machine Swap |
+| **Parallel Throughput** | `atomic_bitstruct!` | **2.11x Faster** | Zero-Lock Uncontended Path |
 
 ### Zero-Copy Casting (`bytemuck`)
 
