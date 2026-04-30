@@ -910,36 +910,36 @@ proptest! {
         };
 
         // Update single fields
-        prop_assert!(bs.try_set_a(a, core::sync::atomic::Ordering::SeqCst).is_ok());
-        prop_assert!(bs.try_set_b(b, core::sync::atomic::Ordering::SeqCst).is_ok());
-        prop_assert!(bs.try_set_c(c, core::sync::atomic::Ordering::SeqCst).is_ok());
-        prop_assert!(bs.try_set_d(enum_d, core::sync::atomic::Ordering::SeqCst).is_ok());
-        prop_assert!(bs.try_set_e(e, core::sync::atomic::Ordering::SeqCst).is_ok());
+        prop_assert!(bs.try_set_a(a, bitcraft::Ordering::SeqCst).is_ok());
+        prop_assert!(bs.try_set_b(b, bitcraft::Ordering::SeqCst).is_ok());
+        prop_assert!(bs.try_set_c(c, bitcraft::Ordering::SeqCst).is_ok());
+        prop_assert!(bs.try_set_d(enum_d, bitcraft::Ordering::SeqCst).is_ok());
+        prop_assert!(bs.try_set_e(e, bitcraft::Ordering::SeqCst).is_ok());
 
-        prop_assert_eq!(bs.a(core::sync::atomic::Ordering::Relaxed), a);
-        prop_assert_eq!(bs.b(core::sync::atomic::Ordering::Relaxed), b);
-        prop_assert_eq!(bs.c(core::sync::atomic::Ordering::Relaxed), c);
-        prop_assert_eq!(bs.d(core::sync::atomic::Ordering::Relaxed), enum_d);
-        prop_assert_eq!(bs.e(core::sync::atomic::Ordering::Relaxed), e);
+        prop_assert_eq!(bs.a(bitcraft::Ordering::Relaxed), a);
+        prop_assert_eq!(bs.b(bitcraft::Ordering::Relaxed), b);
+        prop_assert_eq!(bs.c(bitcraft::Ordering::Relaxed), c);
+        prop_assert_eq!(bs.d(bitcraft::Ordering::Relaxed), enum_d);
+        prop_assert_eq!(bs.e(bitcraft::Ordering::Relaxed), e);
 
         // Update via batch
-        bs.update(core::sync::atomic::Ordering::SeqCst, core::sync::atomic::Ordering::Relaxed, |v| {
+        bs.update(bitcraft::Ordering::SeqCst, bitcraft::Ordering::Relaxed, |v| {
             v.set_a(!a);
             v.set_b(127 - b);
         });
 
-        prop_assert_eq!(bs.a(core::sync::atomic::Ordering::Relaxed), !a);
-        prop_assert_eq!(bs.b(core::sync::atomic::Ordering::Relaxed), 127 - b);
-        prop_assert_eq!(bs.c(core::sync::atomic::Ordering::Relaxed), c);
+        prop_assert_eq!(bs.a(bitcraft::Ordering::Relaxed), !a);
+        prop_assert_eq!(bs.b(bitcraft::Ordering::Relaxed), 127 - b);
+        prop_assert_eq!(bs.c(bitcraft::Ordering::Relaxed), c);
 
         // Test update_or_abort aborting
-        let abort_res = bs.update_or_abort(core::sync::atomic::Ordering::SeqCst, core::sync::atomic::Ordering::Relaxed, |v| {
+        let abort_res = bs.update_or_abort(bitcraft::Ordering::SeqCst, bitcraft::Ordering::Relaxed, |v| {
             v.set_c(0);
             None
         });
 
         prop_assert!(abort_res.is_err());
-        prop_assert_eq!(bs.c(core::sync::atomic::Ordering::Relaxed), c); // C should remain unchanged!
+        prop_assert_eq!(bs.c(bitcraft::Ordering::Relaxed), c); // C should remain unchanged!
     }
 
     #[test]
@@ -952,13 +952,13 @@ proptest! {
         let target_val = variants[target as usize];
 
         let ae = FuzzAtomicEnum::new(initial_val);
-        prop_assert_eq!(ae.load(core::sync::atomic::Ordering::Relaxed), initial_val);
+        prop_assert_eq!(ae.load(bitcraft::Ordering::Relaxed), initial_val);
 
-        ae.store(target_val, core::sync::atomic::Ordering::SeqCst);
-        prop_assert_eq!(ae.load(core::sync::atomic::Ordering::Relaxed), target_val);
+        ae.store(target_val, bitcraft::Ordering::SeqCst);
+        prop_assert_eq!(ae.load(bitcraft::Ordering::Relaxed), target_val);
 
         // Update via CAS loop
-        ae.update(core::sync::atomic::Ordering::SeqCst, core::sync::atomic::Ordering::Relaxed, |v| {
+        ae.update(bitcraft::Ordering::SeqCst, bitcraft::Ordering::Relaxed, |v| {
             if v == target_val {
                 initial_val
             } else {
@@ -966,10 +966,10 @@ proptest! {
             }
         });
 
-        prop_assert_eq!(ae.load(core::sync::atomic::Ordering::Relaxed), initial_val);
+        prop_assert_eq!(ae.load(bitcraft::Ordering::Relaxed), initial_val);
 
         // test update_or_abort
-        let res = ae.update_or_abort(core::sync::atomic::Ordering::SeqCst, core::sync::atomic::Ordering::Relaxed, |v| {
+        let res = ae.update_or_abort(bitcraft::Ordering::SeqCst, bitcraft::Ordering::Relaxed, |v| {
             if v == initial_val {
                 Some(target_val)
             } else {
@@ -977,7 +977,7 @@ proptest! {
             }
         });
         prop_assert!(res.is_ok());
-        prop_assert_eq!(ae.load(core::sync::atomic::Ordering::Relaxed), target_val);
+        prop_assert_eq!(ae.load(bitcraft::Ordering::Relaxed), target_val);
     }
 }
 
@@ -1062,5 +1062,68 @@ proptest! {
         for (i, &val) in values.iter().enumerate() {
             prop_assert_eq!(arr.get(i), val);
         }
+    }
+}
+
+atomic_bitstruct! {
+    struct FuzzAtomicStruct128(AtomicU128) {
+        a: bool = 1,
+        b: u64 = 64,
+        c: u64 = 63, // 1+64+63 = 128
+    }
+}
+
+proptest! {
+    #[test]
+    fn test_atomic_u128_fuzz(a: bool, b: u64, c: u64) {
+        let f = FuzzAtomicStruct128::new(0);
+        f.set_a(a, bitcraft::Ordering::SeqCst);
+        f.set_b(b, bitcraft::Ordering::SeqCst);
+
+        let c_masked = c & ((1u64 << 63) - 1);
+        f.set_c(c_masked, bitcraft::Ordering::SeqCst);
+
+        prop_assert_eq!(f.a(bitcraft::Ordering::Relaxed), a);
+        prop_assert_eq!(f.b(bitcraft::Ordering::Relaxed), b);
+        prop_assert_eq!(f.c(bitcraft::Ordering::Relaxed), c_masked);
+
+        f.update(bitcraft::Ordering::SeqCst, bitcraft::Ordering::Relaxed, |v| {
+            v.set_a(!a);
+            v.set_b(b.wrapping_add(1));
+        });
+
+        prop_assert_eq!(f.a(bitcraft::Ordering::Relaxed), !a);
+        prop_assert_eq!(f.b(bitcraft::Ordering::Relaxed), b.wrapping_add(1));
+    }
+}
+
+atomic_bitstruct! {
+    struct FuzzAtomicSignedStruct128(AtomicI128) {
+        a: bool = 1,
+        b: i64 = 64,
+        c: i64 = 62, // 1+64+62 = 127
+    }
+}
+
+proptest! {
+    #[test]
+    fn test_atomic_i128_fuzz(a: bool, b: i64, c: i64) {
+        let f = FuzzAtomicSignedStruct128::new(0);
+        f.set_a(a, bitcraft::Ordering::SeqCst);
+        f.set_b(b, bitcraft::Ordering::SeqCst);
+
+        // mask to 62 bits
+        let c_raw = (c as u64) & ((1u64 << 62) - 1);
+        let c_final = if (c_raw & (1u64 << 61)) != 0 {
+            (c_raw | !((1u64 << 62) - 1)) as i64
+        } else {
+            c_raw as i64
+        };
+
+        f.set_c(c_final, bitcraft::Ordering::SeqCst);
+
+        prop_assert_eq!(f.a(bitcraft::Ordering::Relaxed), a);
+        prop_assert_eq!(f.b(bitcraft::Ordering::Relaxed), b);
+        prop_assert_eq!(f.c(bitcraft::Ordering::Relaxed), c_final);
     }
 }

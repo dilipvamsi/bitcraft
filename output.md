@@ -394,7 +394,7 @@ impl SignedId24 {
 
 ## 5. `atomic_bitstruct!` (Lock-Free Concurrency)
 
-Generates a thread-safe bitstruct backed by a `core::sync::atomic` type, providing lock-free getters, setters, and transaction-safe CAS loop closures.
+Generates a thread-safe bitstruct backed by a `portable_atomic` type, providing lock-free getters, setters, and transaction-safe CAS loop closures.
 
 ### **Usage**
 
@@ -423,26 +423,26 @@ impl AtomicPoolTrackerValue {
 
 // The Outer Atomic Struct
 #[repr(transparent)]
-pub struct AtomicPoolTracker(pub core::sync::atomic::AtomicU32);
+pub struct AtomicPoolTracker(pub portable_atomic::AtomicU32);
 
 impl AtomicPoolTracker {
     #[inline(always)]
     pub const fn new(val: u32) -> Self {
-        Self(core::sync::atomic::AtomicU32::new(val))
+        Self(portable_atomic::AtomicU32::new(val))
     }
 
     #[inline(always)]
-    pub fn is_active(&self, order: core::sync::atomic::Ordering) -> bool {
+    pub fn is_active(&self, order: bitcraft::Ordering) -> bool {
         AtomicPoolTrackerValue::from_bits(self.0.load(order)).is_active()
     }
 
     #[inline(always)]
-    pub fn set_is_active(&self, val: bool, order: core::sync::atomic::Ordering) {
-        let mut raw = self.0.load(core::sync::atomic::Ordering::Relaxed);
+    pub fn set_is_active(&self, val: bool, order: bitcraft::Ordering) {
+        let mut raw = self.0.load(bitcraft::Ordering::Relaxed);
         loop {
             let mut snap = AtomicPoolTrackerValue::from_bits(raw);
             snap.set_is_active(val);
-            match self.0.compare_exchange_weak(raw, snap.to_bits(), order, core::sync::atomic::Ordering::Relaxed) {
+            match self.0.compare_exchange_weak(raw, snap.to_bits(), order, bitcraft::Ordering::Relaxed) {
                 Ok(_) => break,
                 Err(x) => raw = x,
             }
@@ -450,17 +450,17 @@ impl AtomicPoolTracker {
     }
 
     #[inline]
-    pub fn get(&self, order: core::sync::atomic::Ordering) -> AtomicPoolTrackerValue {
+    pub fn get(&self, order: bitcraft::Ordering) -> AtomicPoolTrackerValue {
         AtomicPoolTrackerValue::from_bits(self.0.load(order))
     }
 
     #[inline]
-    pub fn set(&self, val: AtomicPoolTrackerValue, order: core::sync::atomic::Ordering) {
+    pub fn set(&self, val: AtomicPoolTrackerValue, order: bitcraft::Ordering) {
         self.0.store(val.to_bits(), order);
     }
 
     #[inline]
-    pub fn update_or_abort<F>(&self, set_order: core::sync::atomic::Ordering, fetch_order: core::sync::atomic::Ordering, mut f: F) -> Result<AtomicPoolTrackerValue, AtomicPoolTrackerValue>
+    pub fn update_or_abort<F>(&self, set_order: bitcraft::Ordering, fetch_order: bitcraft::Ordering, mut f: F) -> Result<AtomicPoolTrackerValue, AtomicPoolTrackerValue>
     where
         F: FnMut(&mut AtomicPoolTrackerValue) -> Option<()>
     {
@@ -495,7 +495,7 @@ atomic_bitenum! {
 
 ```rust
 #[repr(transparent)]
-pub struct AtomicStatus(pub core::sync::atomic::AtomicU32);
+pub struct AtomicStatus(pub portable_atomic::AtomicU32);
 
 // Companion snapshot type generated via bitenum!
 #[repr(transparent)]

@@ -9,7 +9,7 @@
 ///
 /// ```rust
 /// use bitcraft::atomic_bitenum;
-/// use core::sync::atomic::Ordering;
+/// use portable_atomic::Ordering;
 ///
 /// atomic_bitenum! {
 ///     pub enum AtomicConnectionState(AtomicU8, 2) {
@@ -33,7 +33,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicU8, u8, u $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicU8, u8, u $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -43,7 +43,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicU8, u8, i $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicU8, u8, i $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -53,7 +53,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicU8, u8, u $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicU8, u8, u $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -63,7 +63,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicU16, u16, u $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicU16, u16, u $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -73,7 +73,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicU16, u16, i $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicU16, u16, i $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -83,7 +83,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicU16, u16, u $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicU16, u16, u $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -93,7 +93,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicU32, u32, u $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicU32, u32, u $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -103,7 +103,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicU32, u32, i $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicU32, u32, i $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -113,7 +113,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicU32, u32, u $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicU32, u32, u $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -123,7 +123,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicU64, u64, u $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicU64, u64, u $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -133,7 +133,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicU64, u64, i $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicU64, u64, i $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -143,7 +143,37 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicU64, u64, u $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicU64, u64, u $bits, { $($variant = $val),* });
+    };
+    (
+        $(#[$meta:meta])*
+        $vis:vis enum $enum_name:ident (AtomicU128, u $bits:expr) {
+            $(
+                $variant:ident = $val:expr
+            ),* $(,)?
+        }
+    ) => {
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicU128, u128, u $bits, { $($variant = $val),* });
+    };
+    (
+        $(#[$meta:meta])*
+        $vis:vis enum $enum_name:ident (AtomicU128, i $bits:expr) {
+            $(
+                $variant:ident = $val:expr
+            ),* $(,)?
+        }
+    ) => {
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicU128, u128, i $bits, { $($variant = $val),* });
+    };
+    (
+        $(#[$meta:meta])*
+        $vis:vis enum $enum_name:ident (AtomicU128, $bits:expr) {
+            $(
+                $variant:ident = $val:expr
+            ),* $(,)?
+        }
+    ) => {
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicU128, u128, u $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -153,7 +183,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicI8, i8, u $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicI8, i8, u $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -163,7 +193,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicI8, i8, i $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicI8, i8, i $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -173,7 +203,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicI8, i8, u $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicI8, i8, u $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -183,7 +213,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicI16, i16, u $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicI16, i16, u $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -193,7 +223,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicI16, i16, i $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicI16, i16, i $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -203,7 +233,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicI16, i16, u $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicI16, i16, u $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -213,7 +243,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicI32, i32, u $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicI32, i32, u $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -223,7 +253,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicI32, i32, i $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicI32, i32, i $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -233,7 +263,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicI32, i32, u $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicI32, i32, u $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -243,7 +273,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicI64, i64, u $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicI64, i64, u $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -253,7 +283,7 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicI64, i64, i $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicI64, i64, i $bits, { $($variant = $val),* });
     };
     (
         $(#[$meta:meta])*
@@ -263,7 +293,37 @@ macro_rules! atomic_bitenum {
             ),* $(,)?
         }
     ) => {
-        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name core::sync::atomic::AtomicI64, i64, u $bits, { $($variant = $val),* });
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicI64, i64, u $bits, { $($variant = $val),* });
+    };
+    (
+        $(#[$meta:meta])*
+        $vis:vis enum $enum_name:ident (AtomicI128, u $bits:expr) {
+            $(
+                $variant:ident = $val:expr
+            ),* $(,)?
+        }
+    ) => {
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicI128, i128, u $bits, { $($variant = $val),* });
+    };
+    (
+        $(#[$meta:meta])*
+        $vis:vis enum $enum_name:ident (AtomicI128, i $bits:expr) {
+            $(
+                $variant:ident = $val:expr
+            ),* $(,)?
+        }
+    ) => {
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicI128, i128, i $bits, { $($variant = $val),* });
+    };
+    (
+        $(#[$meta:meta])*
+        $vis:vis enum $enum_name:ident (AtomicI128, $bits:expr) {
+            $(
+                $variant:ident = $val:expr
+            ),* $(,)?
+        }
+    ) => {
+        $crate::atomic_bitenum!(@impl $(#[$meta])* $vis $enum_name $crate::reexport::portable_atomic::AtomicI128, i128, u $bits, { $($variant = $val),* });
     };
 
     (@impl $(#[$meta:meta])* $vis:vis $enum_name:ident $atomic_ty:ty, $base_type:ty, $modifier:ident $bits:expr, { $($variant:ident = $val:expr),* }) => {
@@ -273,7 +333,7 @@ macro_rules! atomic_bitenum {
 
         impl core::fmt::Debug for $enum_name {
             fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                let raw = self.0.load(core::sync::atomic::Ordering::Relaxed);
+                let raw = self.0.load($crate::reexport::portable_atomic::Ordering::Relaxed);
                 $crate::paste::paste! {
                     let val = [<$enum_name Value>]::from_bits(raw as _);
                     f.debug_tuple(stringify!($enum_name)).field(&val).finish()
@@ -311,21 +371,21 @@ macro_rules! atomic_bitenum {
                 /// Returns the current variant via `load`.
                 #[inline(always)]
                 #[allow(dead_code)]
-                pub fn load(&self, order: core::sync::atomic::Ordering) -> [<$enum_name Value>] {
+                pub fn load(&self, order: $crate::reexport::portable_atomic::Ordering) -> [<$enum_name Value>] {
                     [<$enum_name Value>]::from_bits(self.0.load(order) as _)
                 }
 
                 /// Stores a new variant via `store`.
                 #[inline(always)]
                 #[allow(dead_code)]
-                pub fn store(&self, val: [<$enum_name Value>], order: core::sync::atomic::Ordering) {
+                pub fn store(&self, val: [<$enum_name Value>], order: $crate::reexport::portable_atomic::Ordering) {
                     self.0.store(val.to_bits() as _, order)
                 }
 
                 /// Atomically swaps the variant and returns the previous one.
                 #[inline(always)]
                 #[allow(dead_code)]
-                pub fn swap(&self, val: [<$enum_name Value>], order: core::sync::atomic::Ordering) -> [<$enum_name Value>] {
+                pub fn swap(&self, val: [<$enum_name Value>], order: $crate::reexport::portable_atomic::Ordering) -> [<$enum_name Value>] {
                     [<$enum_name Value>]::from_bits(self.0.swap(val.to_bits() as _, order) as _)
                 }
 
@@ -336,8 +396,8 @@ macro_rules! atomic_bitenum {
                     &self,
                     current: [<$enum_name Value>],
                     new: [<$enum_name Value>],
-                    success: core::sync::atomic::Ordering,
-                    failure: core::sync::atomic::Ordering,
+                    success: $crate::reexport::portable_atomic::Ordering,
+                    failure: $crate::reexport::portable_atomic::Ordering,
                 ) -> Result<[<$enum_name Value>], [<$enum_name Value>]> {
                     self.0.compare_exchange(current.to_bits() as _, new.to_bits() as _, success, failure)
                         .map(|raw| [<$enum_name Value>]::from_bits(raw as _))
@@ -351,8 +411,8 @@ macro_rules! atomic_bitenum {
                     &self,
                     current: [<$enum_name Value>],
                     new: [<$enum_name Value>],
-                    success: core::sync::atomic::Ordering,
-                    failure: core::sync::atomic::Ordering,
+                    success: $crate::reexport::portable_atomic::Ordering,
+                    failure: $crate::reexport::portable_atomic::Ordering,
                 ) -> Result<[<$enum_name Value>], [<$enum_name Value>]> {
                     self.0.compare_exchange_weak(current.to_bits() as _, new.to_bits() as _, success, failure)
                         .map(|raw| [<$enum_name Value>]::from_bits(raw as _))
@@ -365,8 +425,8 @@ macro_rules! atomic_bitenum {
                 #[allow(dead_code)]
                 pub fn update_or_abort<F>(
                     &self,
-                    set_order: core::sync::atomic::Ordering,
-                    fetch_order: core::sync::atomic::Ordering,
+                    set_order: $crate::reexport::portable_atomic::Ordering,
+                    fetch_order: $crate::reexport::portable_atomic::Ordering,
                     mut f: F,
                 ) -> Result<[<$enum_name Value>], [<$enum_name Value>]>
                 where
@@ -385,8 +445,8 @@ macro_rules! atomic_bitenum {
                 #[allow(dead_code)]
                 pub fn update<F>(
                     &self,
-                    set_order: core::sync::atomic::Ordering,
-                    fetch_order: core::sync::atomic::Ordering,
+                    set_order: $crate::reexport::portable_atomic::Ordering,
+                    fetch_order: $crate::reexport::portable_atomic::Ordering,
                     mut f: F,
                 ) -> [<$enum_name Value>]
                 where

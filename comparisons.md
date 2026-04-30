@@ -102,7 +102,7 @@ If you are interfacing with C firmware or legacy network protocols, layout predi
 Most bit manipulation libraries completely ignore concurrency. If you need to share a bitfield across threads, you typically have to wrap it in a heavy synchronization primitive.
 
 * **The Locking Tax**: A `Mutex<T>` or `RwLock<T>` requires entering the kernel to put a thread to sleep if there is contention. Even without contention, it involves expensive memory bus locking.
-* **Lock-Free with `bitcraft`**: `atomic_bitstruct!` and `atomic_bitenum!` wrap standard `core::sync::atomic` types. They provide a **lock-free** API where threads never sleep.
+* **Lock-Free with `bitcraft`**: `atomic_bitstruct!` and `atomic_bitenum!` wrap standard `portable_atomic` types. They provide a **lock-free** API where threads never sleep.
 * **Transactional CAS Loops**: Instead of locking the whole struct, `bitcraft` uses **Compare-And-Swap (CAS)** loops. The `.update_or_abort()` method allows you to define complex state transitions that are resolved at the hardware level. This is significantly faster in high-throughput kernels or network drivers where thousands of threads might be hitting the same status word simultaneously.
 * **No Deadlocks**: Since there are no locks, there are no deadlocks. This simplifies concurrent system design significantly.
 
@@ -132,7 +132,7 @@ Most bitfield libraries in the Rust ecosystem (`modular-bitfield`, `packed_struc
 ### 🔄 Atomic Concurrency (`atomic_bitstruct!` & `atomic_bitenum!`)
 
 Most bitfield libraries completely ignore concurrency. If you want to share a bitfield across threads, you have to wrap it in a heavy `Mutex` or `RwLock`.
-`bitcraft` provides `atomic_bitstruct!` and `atomic_bitenum!` which wrap standard `core::sync::atomic` types, generating a fully lock-free API. They provide a highly ergonomic `.update_or_abort()` closure pattern for building transaction-safe CAS loops that resolve concurrent mutations on disjoint bit-fields or state variants automatically, without taking any locks. This is critical for building high-throughput kernels, network stacks, and shared-memory applications.
+`bitcraft` provides `atomic_bitstruct!` and `atomic_bitenum!` which wrap standard `portable_atomic` types, generating a fully lock-free API. They provide a highly ergonomic `.update_or_abort()` closure pattern for building transaction-safe CAS loops that resolve concurrent mutations on disjoint bit-fields or state variants automatically, without taking any locks. This is critical for building high-throughput kernels, network stacks, and shared-memory applications.
 
 ### 🛡️ Compile-Time Bounds Checking (Zero Runtime Panic)
 

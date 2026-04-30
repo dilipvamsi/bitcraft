@@ -173,6 +173,13 @@ pub use bytemuck;
 #[doc(hidden)]
 pub use paste;
 
+#[doc(hidden)]
+pub mod reexport {
+    pub use portable_atomic;
+}
+
+pub use portable_atomic::Ordering;
+
 /// Error types returned by strict data structures when encountering invalid operations.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BitstructError {

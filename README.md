@@ -2,7 +2,7 @@
 
 **The zero-cost, hardware-aligned bitfield and enumeration engine for Rust.**
 
-`bitcraft` is a high-performance declarative macro library designed for systems where every bit counts. Engineered for **Mechanical Sympathy**, it allows developers to define data structures that align perfectly with CPU cache lines and memory bus widths, eliminating the silent performance tax of implicit padding.
+`bitcraft` is a high-performance, strictly **`#![no_std]`** declarative macro library designed for systems where every bit counts. Engineered for **Mechanical Sympathy**, it allows developers to define data structures that align perfectly with CPU cache lines and memory bus widths, eliminating the silent performance tax of implicit padding.
 
 > [!NOTE]
 > **Type Safety**: `bitcraft` natively supports both **unsigned** (`u8` through `u128`) and **signed** (`i8` through `i128`) base integers for underlying storage. When using a signed base, the macro enforces a strict boundary (e.g. 15 bits for `i16`) to guarantee the sign bit is never compromised. It also includes full support for interpreting the *fields themselves* as signed integers (two's complement) through a zero-cost shift-based sign extension.
@@ -180,7 +180,8 @@ Standard Rust doesn't prevent you from defining a struct that is "too big" for a
 | **Padding** | Implicit (inserted by rustc) | **None** (Explicit control) |
 | **Instruction Count** | Multiple loads/stores | **Atomic** (Register-wide) |
 | **Alignment** | Compiler-enforced | **Hardware-aligned** (LSB-First) |
-| **Safety** | UB-risk on invalid patterns | **UB-Free** (Total Types) & Bounds Checked |
+| **Std / No-Std** | Native `std` | **Strict `#![no_std]`** |
+| **Atomics** | native-only | **Portable (8 - 128 bit)** |
 | **FFI / C-ABI** | Manual `#[repr(C)]` | **Transparent** (Automatic) |
 | **Const Eval** | Limited in enums | **Full `const fn`** support |
 
@@ -194,13 +195,13 @@ The `bitcraft` crate provides four specialized tools. Choosing the right one det
   - **When:** You need to pack multiple small fields (booleans, 3-bit ints, 4-bit enums) into a single, standard CPU register (up to 128 bits). For signed bases, the macro restricts usage to size - 1 bits to keep the sign bit safe.
   - **Why:** Fastest execution. The CPU loads the entire struct in a single instruction, manipulates the bits in registers, and writes them back. Perfect for protocol headers or status registers.
 
-- **Use `atomic_bitstruct!`** `(Base: AtomicU8 - AtomicU64, AtomicI8 - AtomicI64)`
+- **Use `atomic_bitstruct!`** `(Base: AtomicU8 - AtomicU128, AtomicI8 - AtomicI128)`
   - **When:** You need thread-safe, lock-free concurrent mutation of individual bit-packed fields within a shared memory location.
-  - **Why:** Safely mutate disjoint bit-fields concurrently across multiple threads without taking heavy locks. Offers a high-performance CAS loop transaction API (`.update_or_abort()`) to resolve race conditions and enforce business logic cleanly.
+  - **Why:** Safely mutate disjoint bit-fields concurrently across multiple threads without taking heavy locks. Utilizes `portable-atomic` for guaranteed cross-platform compatibility (even for 128-bit fields) and provides a high-performance CAS loop transaction API (`.update_or_abort()`) using the ergonomic `bitcraft::Ordering`.
 
-- **Use `atomic_bitenum!`** `(Base: AtomicU8 - AtomicU64, AtomicI8 - AtomicI64)`
+- **Use `atomic_bitenum!`** `(Base: AtomicU8 - AtomicU128, AtomicI8 - AtomicI128)`
   - **When:** You need to manage high-level state machine transitions (e.g., `WorkerStatus`, `PoolMode`) atomically.
-  - **Why:** Provides a type-safe, variant-based CAS API. Allows atomic transitions like `IDLE -> BUSY` using a single hardware instruction, with built-in retry logic for concurrent updates.
+  - **Why:** Provides a type-safe, variant-based CAS API. Allows atomic transitions like `IDLE -> BUSY` using a single hardware instruction, with built-in retry logic for concurrent updates. Works seamlessly across `no_std` targets.
 
 - **Use `bytestruct!`** `(Base: [u8/u16/u32...; N])`
   - **When:** Your data structure logically exceeds 16 bytes (128 bits) but must still remain perfectly dense without padding, or when the data is intrinsically an array (like a generic payload buffer with flags at the end).
@@ -302,9 +303,9 @@ bitstruct! {
 | Macro | Storage Basis | Range | Primary Use Case |
 | :--- | :--- | :--- | :--- |
 | [**`bitenum!`**](#1-bitenum) | `u8` .. `u128` | 1 - 128 Bits | Type-safe variants inside packed fields |
-| [**`atomic_bitenum!`**](atomics-implementation.md) | **Atomic Primitives** | **1 - 64 Bits** | **Unique**: Lock-free atomic state machine transitions |
+| [**`atomic_bitenum!`**](atomics-implementation.md) | **Portable Atomics** | **1 - 128 Bits** | **Unique**: Lock-free atomic state machine transitions |
 | [**`bitstruct!`**](#2-bitstruct) | Primitives | 1 - 128 Bits | Word-aligned "Hot Path" CPU optimization |
-| [**`atomic_bitstruct!`**](atomics-implementation.md) | **Atomic Primitives** | **1 - 64 Bits** | **Unique**: Lock-free bit-packed concurrent fields |
+| [**`atomic_bitstruct!`**](atomics-implementation.md) | **Portable Atomics** | **1 - 128 Bits** | **Unique**: Lock-free bit-packed concurrent fields |
 | [**`bytestruct!`**](#3-bytestruct) | **`[u8-u128; N]`** | **2 - 16 Bytes** | **Unique**: Array-backed dense buffers with register-speed |
 | [**`byteval!`**](#4-byteval) | **`[u8-u128; N]`** | **3 - 16 Bytes** | **Unique**: Packed IDs (24-bit, 40-bit) as first-class numbers |
 
@@ -358,7 +359,8 @@ let my_struct: MyBytestruct = bytemuck::cast(raw_bytes);
 - [x] **Property-Based Testing**: Comprehensive fuzzing of bit-packing logic via `proptest`.
 - [x] **Safe Mutators**: `try_set` and `try_with` methods for guaranteed boundary safety.
 - [x] **Atomic State Machines**: Full support for `atomic_bitenum!` with CAS-based transitions.
-- [x] **Atomic Bit-Packing**: Full support for `atomic_bitstruct!` for multi-field concurrent updates.
+- [x] **Atomic Bit-Packing**: Full support for `atomic_bitstruct!` for multi-field concurrent updates up to 128 bits.
+- [x] **Portable Atomics**: Migration to `portable-atomic` for unified `no_std` and cross-platform compatibility.
 
 ## 🔬 Technical Deep Dive: The Engineering Behind the Speed
 
@@ -389,7 +391,17 @@ When you manually manipulate byte arrays (e.g., `[u8; 3]`), you often introduce 
 
 In micro-benchmarks, `bitstruct!` and `bytestruct!` may show a negligible ~1.2x overhead compared to standard structs. This is expected: standard structs use memory offsets, while bitfields use **Shifts, Masks, and Read-Modify-Write cycles**.
 
-However, in real-world applications, this latency is a illusion. The **10x - 100x performance penalty** of a CPU Cache Miss dominates all other metrics. By doubling or quadrupling your physical data density, `bitcraft` ensures your data stays in the **L1/L2 Cache**, providing a massive net gain in system throughput that standard "offset-based" types cannot match.
+However, in real-world applications, this latency is an illusion. The **10x - 100x performance penalty** of a CPU Cache Miss dominates all other metrics. By doubling or quadrupling your physical data density, `bitcraft` ensures your data stays in the **L1/L2 Cache**, providing a massive net gain in system throughput that standard "offset-based" types cannot match.
+
+### 5. Portable Atomic Tiering & 128-bit Fusing
+
+Atomic operations on 128-bit fields present a unique challenge: most 64-bit CPUs do not support native 128-bit atomic loads or stores, though some (like x86_64) provide 128-bit Compare-and-Swap (`cmpxchg16b`).
+
+`bitcraft` handles this via **Portable Atomic Tiering**:
+
+- **Native Hardware Path**: On supported platforms, `atomic_bitstruct!` expands to native 128-bit instructions. This allows multi-field updates across a 128-bit span to be resolved by the hardware cache-coherency engine in a single transactional step.
+- **Lock-Free Fallbacks**: On platforms lacking native 128-bit instructions, `bitcraft` utilizes `portable-atomic`'s fallback mechanisms (such as critical sections or internal spinlocks). 
+- **Deterministic Ergonomics**: Regardless of the underlying hardware capability, your code remains identical. You get a unified `update_or_abort` API that behaves like a high-level transaction, ensuring that concurrent mutations to disjoint bit-fields are resolved safely without the developer needing to manage platform-specific feature flags.
 
 ---
 

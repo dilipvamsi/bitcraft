@@ -1,7 +1,7 @@
 use bitcraft::{
     atomic_bitenum, atomic_bitstruct, bitarray, bitenum, bitstruct, bytearray, bytestruct, byteval,
 };
-use core::sync::atomic::{AtomicU32, Ordering};
+use bitcraft::Ordering;
 
 bitenum! {
     /// A sample enumeration for status tracking.
@@ -167,6 +167,26 @@ atomic_bitenum! {
         OFF = 0,
         ON = 1,
         FAULT = 2,
+    }
+}
+
+atomic_bitstruct! {
+    /// A large 128-bit atomic metadata tracker.
+    pub struct LargeAtomicTracker(AtomicU128) {
+        pub is_active: bool = 1,
+        pub user_id: u64 = 64,
+        pub session_id: u32 = 32,
+        pub flags: u32 = 31,
+    }
+}
+
+atomic_bitenum! {
+    /// A huge 128-bit atomic state.
+    pub enum LargeAtomicState(AtomicU128, 128) {
+        INITIAL = 0,
+        READY = 1,
+        ACTIVE = 2,
+        TERMINATED = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
     }
 }
 
@@ -356,7 +376,28 @@ fn main() {
         atomic_status.load(Ordering::SeqCst)
     );
 
-    // 6. Demonstration of bitarray!
+    // 6. Demonstration of 128-bit atomics
+    println!("\nTesting 128-bit atomics...");
+    let large_tracker = LargeAtomicTracker::new(0);
+    large_tracker.set_user_id(0xDEADBEEFCAFEBABE, Ordering::SeqCst);
+    large_tracker.set_session_id(0x12345678, Ordering::SeqCst);
+    large_tracker.set_is_active(true, Ordering::SeqCst);
+
+    println!(
+        "  LargeAtomicTracker -> UserID: 0x{:X}, SessionID: 0x{:X}, Active: {}",
+        large_tracker.user_id(Ordering::Acquire),
+        large_tracker.session_id(Ordering::Acquire),
+        large_tracker.is_active(Ordering::Acquire)
+    );
+
+    let large_state = LargeAtomicState::new(LargeAtomicStateValue::INITIAL);
+    large_state.store(LargeAtomicStateValue::TERMINATED, Ordering::SeqCst);
+    println!(
+        "  LargeAtomicState: {:?}",
+        large_state.load(Ordering::SeqCst)
+    );
+
+    // 7. Demonstration of bitarray!
     println!("\n--- bitarray! ---");
 
     let mut palette = NibblePalette::default();

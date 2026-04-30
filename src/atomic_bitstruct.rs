@@ -9,7 +9,7 @@
 ///
 /// ```rust
 /// use bitcraft::atomic_bitstruct;
-/// use core::sync::atomic::Ordering;
+/// use portable_atomic::Ordering;
 ///
 /// atomic_bitstruct! {
 ///     pub struct ConcurrentFlags(AtomicU32) {
@@ -29,92 +29,114 @@
 #[macro_export]
 macro_rules! atomic_bitstruct {
     (
-        $(#[$meta:meta])*
-        $vis:vis struct $struct_name:ident (AtomicU8) {
-            $(
-                $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
-            ),* $(,)?
-        }
-    ) => {
-        $crate::atomic_bitstruct!(@impl $(#[$meta])* $vis $struct_name core::sync::atomic::AtomicU8, u8, { $( $field_vis $field_name: $field_type = $bits ),* }, $($field_vis $field_name $field_type $bits)*);
-    };
+    $(#[$meta:meta])*
+    $vis:vis struct $struct_name:ident (AtomicU8) {
+        $(
+            $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
+        ),* $(,)?
+    }
+) => {
+    $crate::atomic_bitstruct!(@impl $(#[$meta])* $vis $struct_name $crate::reexport::portable_atomic::AtomicU8, u8, { $( $field_vis $field_name: $field_type = $bits ),* }, $($field_vis $field_name $field_type $bits)*);
+};
 
-    (
-        $(#[$meta:meta])*
-        $vis:vis struct $struct_name:ident (AtomicU16) {
-            $(
-                $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
-            ),* $(,)?
-        }
-    ) => {
-        $crate::atomic_bitstruct!(@impl $(#[$meta])* $vis $struct_name core::sync::atomic::AtomicU16, u16, { $( $field_vis $field_name: $field_type = $bits ),* }, $($field_vis $field_name $field_type $bits)*);
-    };
+(
+    $(#[$meta:meta])*
+    $vis:vis struct $struct_name:ident (AtomicU16) {
+        $(
+            $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
+        ),* $(,)?
+    }
+) => {
+    $crate::atomic_bitstruct!(@impl $(#[$meta])* $vis $struct_name $crate::reexport::portable_atomic::AtomicU16, u16, { $( $field_vis $field_name: $field_type = $bits ),* }, $($field_vis $field_name $field_type $bits)*);
+};
 
-    (
-        $(#[$meta:meta])*
-        $vis:vis struct $struct_name:ident (AtomicU32) {
-            $(
-                $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
-            ),* $(,)?
-        }
-    ) => {
-        $crate::atomic_bitstruct!(@impl $(#[$meta])* $vis $struct_name core::sync::atomic::AtomicU32, u32, { $( $field_vis $field_name: $field_type = $bits ),* }, $($field_vis $field_name $field_type $bits)*);
-    };
+(
+    $(#[$meta:meta])*
+    $vis:vis struct $struct_name:ident (AtomicU32) {
+        $(
+            $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
+        ),* $(,)?
+    }
+) => {
+    $crate::atomic_bitstruct!(@impl $(#[$meta])* $vis $struct_name $crate::reexport::portable_atomic::AtomicU32, u32, { $( $field_vis $field_name: $field_type = $bits ),* }, $($field_vis $field_name $field_type $bits)*);
+};
 
-    (
-        $(#[$meta:meta])*
-        $vis:vis struct $struct_name:ident (AtomicU64) {
-            $(
-                $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
-            ),* $(,)?
-        }
-    ) => {
-        $crate::atomic_bitstruct!(@impl $(#[$meta])* $vis $struct_name core::sync::atomic::AtomicU64, u64, { $( $field_vis $field_name: $field_type = $bits ),* }, $($field_vis $field_name $field_type $bits)*);
-    };
+(
+    $(#[$meta:meta])*
+    $vis:vis struct $struct_name:ident (AtomicU64) {
+        $(
+            $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
+        ),* $(,)?
+    }
+) => {
+    $crate::atomic_bitstruct!(@impl $(#[$meta])* $vis $struct_name $crate::reexport::portable_atomic::AtomicU64, u64, { $( $field_vis $field_name: $field_type = $bits ),* }, $($field_vis $field_name $field_type $bits)*);
+};
 
-    (
-        $(#[$meta:meta])*
-        $vis:vis struct $struct_name:ident (AtomicI8) {
-            $(
-                $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
-            ),* $(,)?
-        }
-    ) => {
-        $crate::atomic_bitstruct!(@impl $(#[$meta])* $vis $struct_name core::sync::atomic::AtomicI8, i8, { $( $field_vis $field_name: $field_type = $bits ),* }, $($field_vis $field_name $field_type $bits)*);
-    };
+(
+    $(#[$meta:meta])*
+    $vis:vis struct $struct_name:ident (AtomicU128) {
+        $(
+            $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
+        ),* $(,)?
+    }
+) => {
+    $crate::atomic_bitstruct!(@impl $(#[$meta])* $vis $struct_name $crate::reexport::portable_atomic::AtomicU128, u128, { $( $field_vis $field_name: $field_type = $bits ),* }, $($field_vis $field_name $field_type $bits)*);
+};
 
-    (
-        $(#[$meta:meta])*
-        $vis:vis struct $struct_name:ident (AtomicI16) {
-            $(
-                $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
-            ),* $(,)?
-        }
-    ) => {
-        $crate::atomic_bitstruct!(@impl $(#[$meta])* $vis $struct_name core::sync::atomic::AtomicI16, i16, { $( $field_vis $field_name: $field_type = $bits ),* }, $($field_vis $field_name $field_type $bits)*);
-    };
+(
+    $(#[$meta:meta])*
+    $vis:vis struct $struct_name:ident (AtomicI8) {
+        $(
+            $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
+        ),* $(,)?
+    }
+) => {
+    $crate::atomic_bitstruct!(@impl $(#[$meta])* $vis $struct_name $crate::reexport::portable_atomic::AtomicI8, i8, { $( $field_vis $field_name: $field_type = $bits ),* }, $($field_vis $field_name $field_type $bits)*);
+};
 
-    (
-        $(#[$meta:meta])*
-        $vis:vis struct $struct_name:ident (AtomicI32) {
-            $(
-                $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
-            ),* $(,)?
-        }
-    ) => {
-        $crate::atomic_bitstruct!(@impl $(#[$meta])* $vis $struct_name core::sync::atomic::AtomicI32, i32, { $( $field_vis $field_name: $field_type = $bits ),* }, $($field_vis $field_name $field_type $bits)*);
-    };
+(
+    $(#[$meta:meta])*
+    $vis:vis struct $struct_name:ident (AtomicI16) {
+        $(
+            $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
+        ),* $(,)?
+    }
+) => {
+    $crate::atomic_bitstruct!(@impl $(#[$meta])* $vis $struct_name $crate::reexport::portable_atomic::AtomicI16, i16, { $( $field_vis $field_name: $field_type = $bits ),* }, $($field_vis $field_name $field_type $bits)*);
+};
 
-    (
-        $(#[$meta:meta])*
-        $vis:vis struct $struct_name:ident (AtomicI64) {
-            $(
-                $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
-            ),* $(,)?
-        }
-    ) => {
-        $crate::atomic_bitstruct!(@impl $(#[$meta])* $vis $struct_name core::sync::atomic::AtomicI64, i64, { $( $field_vis $field_name: $field_type = $bits ),* }, $($field_vis $field_name $field_type $bits)*);
-    };
+(
+    $(#[$meta:meta])*
+    $vis:vis struct $struct_name:ident (AtomicI32) {
+        $(
+            $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
+        ),* $(,)?
+    }
+) => {
+    $crate::atomic_bitstruct!(@impl $(#[$meta])* $vis $struct_name $crate::reexport::portable_atomic::AtomicI32, i32, { $( $field_vis $field_name: $field_type = $bits ),* }, $($field_vis $field_name $field_type $bits)*);
+};
+
+(
+    $(#[$meta:meta])*
+    $vis:vis struct $struct_name:ident (AtomicI64) {
+        $(
+            $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
+        ),* $(,)?
+    }
+) => {
+    $crate::atomic_bitstruct!(@impl $(#[$meta])* $vis $struct_name $crate::reexport::portable_atomic::AtomicI64, i64, { $( $field_vis $field_name: $field_type = $bits ),* }, $($field_vis $field_name $field_type $bits)*);
+};
+
+(
+    $(#[$meta:meta])*
+    $vis:vis struct $struct_name:ident (AtomicI128) {
+        $(
+            $field_vis:vis $field_name:ident: $field_type:tt = $bits:tt
+        ),* $(,)?
+    }
+) => {
+    $crate::atomic_bitstruct!(@impl $(#[$meta])* $vis $struct_name $crate::reexport::portable_atomic::AtomicI128, i128, { $( $field_vis $field_name: $field_type = $bits ),* }, $($field_vis $field_name $field_type $bits)*);
+};
 
     (@impl $(#[$meta:meta])* $vis:vis $struct_name:ident $atomic_ty:ty, $base_type:ty, { $($field_vis_struct:vis $field_name_struct:ident: $field_type_struct:tt = $bits_struct:tt),* }, $($field_vis:vis $field_name:ident $field_type:tt $bits:tt)*) => {
         $(#[$meta])*
@@ -124,9 +146,9 @@ macro_rules! atomic_bitstruct {
         impl core::fmt::Debug for $struct_name {
             fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                 f.debug_struct(stringify!($struct_name))
-                    .field("raw", &self.0.load(core::sync::atomic::Ordering::Relaxed))
+                    .field("raw", &self.0.load($crate::reexport::portable_atomic::Ordering::Relaxed))
                     $(
-                        .field(stringify!($field_name), &self.$field_name(core::sync::atomic::Ordering::Relaxed))
+                        .field(stringify!($field_name), &self.$field_name($crate::reexport::portable_atomic::Ordering::Relaxed))
                     )*
                     .finish()
             }
@@ -161,14 +183,14 @@ macro_rules! atomic_bitstruct {
             /// Returns the raw interior integer value via `load`.
             #[inline(always)]
             #[allow(dead_code)]
-            pub fn load(&self, order: core::sync::atomic::Ordering) -> $base_type {
+            pub fn load(&self, order: $crate::reexport::portable_atomic::Ordering) -> $base_type {
                 self.0.load(order)
             }
 
             /// Stores a raw integer value via `store`.
             #[inline(always)]
             #[allow(dead_code)]
-            pub fn store(&self, val: $base_type, order: core::sync::atomic::Ordering) {
+            pub fn store(&self, val: $base_type, order: $crate::reexport::portable_atomic::Ordering) {
                 self.0.store(val, order)
             }
 
@@ -188,13 +210,13 @@ macro_rules! atomic_bitstruct {
             impl $struct_name {
                 /// Returns a non-atomic snapshot of the current state as a `Value` struct.
                 #[inline]
-                pub fn get(&self, order: core::sync::atomic::Ordering) -> [<$struct_name Value>] {
+                pub fn get(&self, order: $crate::reexport::portable_atomic::Ordering) -> [<$struct_name Value>] {
                     [<$struct_name Value>]::from_bits(self.0.load(order))
                 }
                 /// Completely overwrites the entire atomic state with the given `Value`.
                 /// This is a direct atomic `store` operation and does not perform a CAS loop.
                 #[inline]
-                pub fn set(&self, val: [<$struct_name Value>], order: core::sync::atomic::Ordering) {
+                pub fn set(&self, val: [<$struct_name Value>], order: $crate::reexport::portable_atomic::Ordering) {
                     self.0.store(val.to_bits(), order);
                 }
 
@@ -206,7 +228,7 @@ macro_rules! atomic_bitstruct {
                 /// Unlike `set`, this method guarantees that fields you do not modify within the closure
                 /// will retain any concurrent updates made by other threads between the load and the store.
                 #[inline]
-                pub fn update<F>(&self, set_order: core::sync::atomic::Ordering, fetch_order: core::sync::atomic::Ordering, mut f: F) -> [<$struct_name Value>]
+                pub fn update<F>(&self, set_order: $crate::reexport::portable_atomic::Ordering, fetch_order: $crate::reexport::portable_atomic::Ordering, mut f: F) -> [<$struct_name Value>]
                 where
                     F: FnMut(&mut [<$struct_name Value>])
                 {
@@ -223,7 +245,7 @@ macro_rules! atomic_bitstruct {
                 /// The provided closure must return `Some(())` to commit the new state, or `None` to abort the loop.
                 /// If `None` is returned, the CAS loop is aborted and `Err(Value)` containing the un-modified state is returned.
                 #[inline]
-                pub fn update_or_abort<F>(&self, set_order: core::sync::atomic::Ordering, fetch_order: core::sync::atomic::Ordering, mut f: F) -> Result<[<$struct_name Value>], [<$struct_name Value>]>
+                pub fn update_or_abort<F>(&self, set_order: $crate::reexport::portable_atomic::Ordering, fetch_order: $crate::reexport::portable_atomic::Ordering, mut f: F) -> Result<[<$struct_name Value>], [<$struct_name Value>]>
                 where
                     F: FnMut(&mut [<$struct_name Value>]) -> Option<()>
                 {
@@ -248,21 +270,21 @@ macro_rules! atomic_bitstruct {
 
             #[allow(dead_code)]
             #[inline]
-            $field_vis fn $field_name(&self, order: core::sync::atomic::Ordering) -> bool {
+            $field_vis fn $field_name(&self, order: $crate::reexport::portable_atomic::Ordering) -> bool {
                 ((self.0.load(order) >> Self::[<$field_name:upper _OFFSET>]) & Self::[<$field_name:upper _MASK>]) != 0
             }
 
             #[allow(dead_code)]
             #[inline]
-            $field_vis fn [<set_ $field_name>](&self, val: bool, order: core::sync::atomic::Ordering) {
+            $field_vis fn [<set_ $field_name>](&self, val: bool, order: $crate::reexport::portable_atomic::Ordering) {
                 let val_masked = val as $base_type;
-                self.0.fetch_update(order, core::sync::atomic::Ordering::Relaxed, |raw| {
+                self.0.fetch_update(order, $crate::reexport::portable_atomic::Ordering::Relaxed, |raw| {
                     Some((raw & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]))
                 }).unwrap();
             }
 
             #[allow(dead_code)]
-            $field_vis fn [<try_set_ $field_name>](&self, val: bool, order: core::sync::atomic::Ordering) -> Result<(), $crate::BitstructError> {
+            $field_vis fn [<try_set_ $field_name>](&self, val: bool, order: $crate::reexport::portable_atomic::Ordering) -> Result<(), $crate::BitstructError> {
                 self.[<set_ $field_name>](val, order);
                 Ok(())
             }
@@ -290,27 +312,27 @@ macro_rules! atomic_bitstruct {
 
             #[allow(dead_code)]
             #[inline]
-            $field_vis fn $field_name(&self, order: core::sync::atomic::Ordering) -> $field_type {
+            $field_vis fn $field_name(&self, order: $crate::reexport::portable_atomic::Ordering) -> $field_type {
                 ((self.0.load(order) >> Self::[<$field_name:upper _OFFSET>]) & Self::[<$field_name:upper _MASK>]) as $field_type
             }
 
             #[allow(dead_code)]
             #[inline]
-            $field_vis fn [<set_ $field_name>](&self, val: $field_type, order: core::sync::atomic::Ordering) {
+            $field_vis fn [<set_ $field_name>](&self, val: $field_type, order: $crate::reexport::portable_atomic::Ordering) {
                 debug_assert!((val as $base_type) <= Self::[<$field_name:upper _MASK>], "Value {} overflows allocated {} bits", val, $bits);
                 let val_masked = (val as $base_type) & Self::[<$field_name:upper _MASK>];
-                self.0.fetch_update(order, core::sync::atomic::Ordering::Relaxed, |raw| {
+                self.0.fetch_update(order, $crate::reexport::portable_atomic::Ordering::Relaxed, |raw| {
                     Some((raw & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]))
                 }).unwrap();
             }
 
             #[allow(dead_code)]
-            $field_vis fn [<try_set_ $field_name>](&self, val: $field_type, order: core::sync::atomic::Ordering) -> Result<(), $crate::BitstructError> {
+            $field_vis fn [<try_set_ $field_name>](&self, val: $field_type, order: $crate::reexport::portable_atomic::Ordering) -> Result<(), $crate::BitstructError> {
                 if (val as $base_type) > Self::[<$field_name:upper _MASK>] {
                     return Err($crate::BitstructError::Overflow { value: (val as $base_type) as u128, allocated_bits: $bits });
                 }
                 let val_masked = (val as $base_type) & Self::[<$field_name:upper _MASK>];
-                self.0.fetch_update(order, core::sync::atomic::Ordering::Relaxed, |raw| {
+                self.0.fetch_update(order, $crate::reexport::portable_atomic::Ordering::Relaxed, |raw| {
                     Some((raw & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]))
                 }).unwrap();
                 Ok(())
@@ -335,28 +357,28 @@ macro_rules! atomic_bitstruct {
 
             #[allow(dead_code)]
             #[inline]
-            $field_vis fn $field_name(&self, order: core::sync::atomic::Ordering) -> $field_type {
+            $field_vis fn $field_name(&self, order: $crate::reexport::portable_atomic::Ordering) -> $field_type {
                 let raw = ((self.0.load(order) >> Self::[<$field_name:upper _OFFSET>]) & Self::[<$field_name:upper _MASK>]) as $field_type;
                 (raw << Self::[<$field_name:upper _SHIFT_UP>]) >> Self::[<$field_name:upper _SHIFT_UP>]
             }
 
             #[allow(dead_code)]
             #[inline]
-            $field_vis fn [<set_ $field_name>](&self, val: $field_type, order: core::sync::atomic::Ordering) {
+            $field_vis fn [<set_ $field_name>](&self, val: $field_type, order: $crate::reexport::portable_atomic::Ordering) {
                 debug_assert!(val >= Self::[<$field_name:upper _MIN>] && val <= Self::[<$field_name:upper _MAX>], "Value {} out of bounds for {} bits", val, $bits);
                 let val_masked = (val as $base_type) & Self::[<$field_name:upper _MASK>];
-                self.0.fetch_update(order, core::sync::atomic::Ordering::Relaxed, |raw| {
+                self.0.fetch_update(order, $crate::reexport::portable_atomic::Ordering::Relaxed, |raw| {
                     Some((raw & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]))
                 }).unwrap();
             }
 
             #[allow(dead_code)]
-            $field_vis fn [<try_set_ $field_name>](&self, val: $field_type, order: core::sync::atomic::Ordering) -> Result<(), $crate::BitstructError> {
+            $field_vis fn [<try_set_ $field_name>](&self, val: $field_type, order: $crate::reexport::portable_atomic::Ordering) -> Result<(), $crate::BitstructError> {
                 if val < Self::[<$field_name:upper _MIN>] || val > Self::[<$field_name:upper _MAX>] {
                     return Err($crate::BitstructError::Overflow { value: val as i128 as u128, allocated_bits: $bits });
                 }
                 let val_masked = (val as $base_type) & Self::[<$field_name:upper _MASK>];
-                self.0.fetch_update(order, core::sync::atomic::Ordering::Relaxed, |raw| {
+                self.0.fetch_update(order, $crate::reexport::portable_atomic::Ordering::Relaxed, |raw| {
                     Some((raw & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]))
                 }).unwrap();
                 Ok(())
@@ -374,27 +396,27 @@ macro_rules! atomic_bitstruct {
 
             #[allow(dead_code)]
             #[inline]
-            $field_vis fn $field_name(&self, order: core::sync::atomic::Ordering) -> $field_type {
+            $field_vis fn $field_name(&self, order: $crate::reexport::portable_atomic::Ordering) -> $field_type {
                 ((self.0.load(order) >> Self::[<$field_name:upper _OFFSET>]) & Self::[<$field_name:upper _MASK>]) as $field_type
             }
 
             #[allow(dead_code)]
             #[inline]
-            $field_vis fn [<set_ $field_name>](&self, val: $field_type, order: core::sync::atomic::Ordering) {
+            $field_vis fn [<set_ $field_name>](&self, val: $field_type, order: $crate::reexport::portable_atomic::Ordering) {
                 debug_assert!((val as $base_type) <= Self::[<$field_name:upper _MASK>], "Value {} overflows allocated {} bits", val, $bits);
                 let val_masked = (val as $base_type) & Self::[<$field_name:upper _MASK>];
-                self.0.fetch_update(order, core::sync::atomic::Ordering::Relaxed, |raw| {
+                self.0.fetch_update(order, $crate::reexport::portable_atomic::Ordering::Relaxed, |raw| {
                     Some((raw & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]))
                 }).unwrap();
             }
 
             #[allow(dead_code)]
-            $field_vis fn [<try_set_ $field_name>](&self, val: $field_type, order: core::sync::atomic::Ordering) -> Result<(), $crate::BitstructError> {
+            $field_vis fn [<try_set_ $field_name>](&self, val: $field_type, order: $crate::reexport::portable_atomic::Ordering) -> Result<(), $crate::BitstructError> {
                 if (val as $base_type) > Self::[<$field_name:upper _MASK>] {
                     return Err($crate::BitstructError::Overflow { value: (val as $base_type) as u128, allocated_bits: $bits });
                 }
                 let val_masked = (val as $base_type) & Self::[<$field_name:upper _MASK>];
-                self.0.fetch_update(order, core::sync::atomic::Ordering::Relaxed, |raw| {
+                self.0.fetch_update(order, $crate::reexport::portable_atomic::Ordering::Relaxed, |raw| {
                     Some((raw & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]))
                 }).unwrap();
                 Ok(())
@@ -412,22 +434,22 @@ macro_rules! atomic_bitstruct {
 
             #[allow(dead_code)]
             #[inline]
-            $field_vis fn $field_name(&self, order: core::sync::atomic::Ordering) -> $field_type {
+            $field_vis fn $field_name(&self, order: $crate::reexport::portable_atomic::Ordering) -> $field_type {
                 $field_type::from_bits(((self.0.load(order) >> Self::[<$field_name:upper _OFFSET>]) & Self::[<$field_name:upper _MASK>]) as _)
             }
 
             #[allow(dead_code)]
             #[inline]
-            $field_vis fn [<set_ $field_name>](&self, val: $field_type, order: core::sync::atomic::Ordering) {
+            $field_vis fn [<set_ $field_name>](&self, val: $field_type, order: $crate::reexport::portable_atomic::Ordering) {
                 const _: () = assert!(<$field_type>::BITS <= $bits, "Enum bit width exceeds allocated field width");
                 let val_masked = (val.to_bits() as $base_type) & Self::[<$field_name:upper _MASK>];
-                self.0.fetch_update(order, core::sync::atomic::Ordering::Relaxed, |raw| {
+                self.0.fetch_update(order, $crate::reexport::portable_atomic::Ordering::Relaxed, |raw| {
                     Some((raw & !(Self::[<$field_name:upper _MASK>] << Self::[<$field_name:upper _OFFSET>])) | (val_masked << Self::[<$field_name:upper _OFFSET>]))
                 }).unwrap();
             }
 
             #[allow(dead_code)]
-            $field_vis fn [<try_set_ $field_name>](&self, val: $field_type, order: core::sync::atomic::Ordering) -> Result<(), $crate::BitstructError> {
+            $field_vis fn [<try_set_ $field_name>](&self, val: $field_type, order: $crate::reexport::portable_atomic::Ordering) -> Result<(), $crate::BitstructError> {
                 self.[<set_ $field_name>](val, order);
                 Ok(())
             }

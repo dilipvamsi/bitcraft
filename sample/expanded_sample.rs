@@ -8836,18 +8836,30 @@ impl DualId128 {
 }
 
 #[repr(transparent)]
-pub struct AtomicPoolTracker(pub core::sync::atomic::AtomicU32);
+pub struct AtomicPoolTracker(pub ::bitcraft::reexport::portable_atomic::AtomicU32);
 
 impl core::fmt::Debug for AtomicPoolTracker {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("AtomicPoolTracker")
-            .field("raw", &self.0.load(core::sync::atomic::Ordering::Relaxed))
-            .field("is_active", &self.is_active(core::sync::atomic::Ordering::Relaxed))
+            .field(
+                "raw",
+                &self.0.load(::bitcraft::reexport::portable_atomic::Ordering::Relaxed),
+            )
+            .field(
+                "is_active",
+                &self.is_active(::bitcraft::reexport::portable_atomic::Ordering::Relaxed),
+            )
             .field(
                 "active_connections",
-                &self.active_connections(core::sync::atomic::Ordering::Relaxed),
+                &self
+                    .active_connections(
+                        ::bitcraft::reexport::portable_atomic::Ordering::Relaxed,
+                    ),
             )
-            .field("status", &self.status(core::sync::atomic::Ordering::Relaxed))
+            .field(
+                "status",
+                &self.status(::bitcraft::reexport::portable_atomic::Ordering::Relaxed),
+            )
             .finish()
     }
 }
@@ -8865,18 +8877,22 @@ impl AtomicPoolTracker {
     #[inline(always)]
     #[allow(dead_code)]
     pub const fn new(val: u32) -> Self {
-        Self(<core::sync::atomic::AtomicU32>::new(val))
+        Self(<::bitcraft::reexport::portable_atomic::AtomicU32>::new(val))
     }
     /// Returns the raw interior integer value via `load`.
     #[inline(always)]
     #[allow(dead_code)]
-    pub fn load(&self, order: core::sync::atomic::Ordering) -> u32 {
+    pub fn load(&self, order: ::bitcraft::reexport::portable_atomic::Ordering) -> u32 {
         self.0.load(order)
     }
     /// Stores a raw integer value via `store`.
     #[inline(always)]
     #[allow(dead_code)]
-    pub fn store(&self, val: u32, order: core::sync::atomic::Ordering) {
+    pub fn store(
+        &self,
+        val: u32,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) {
         self.0.store(val, order)
     }
     pub const IS_ACTIVE_OFFSET: usize = 0;
@@ -8886,17 +8902,24 @@ impl AtomicPoolTracker {
         >> (<u32 as ::bitcraft::BitLength>::BITS - Self::IS_ACTIVE_BITS)) as u32;
     #[allow(dead_code)]
     #[inline]
-    pub fn is_active(&self, order: core::sync::atomic::Ordering) -> bool {
+    pub fn is_active(
+        &self,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) -> bool {
         ((self.0.load(order) >> Self::IS_ACTIVE_OFFSET) & Self::IS_ACTIVE_MASK) != 0
     }
     #[allow(dead_code)]
     #[inline]
-    pub fn set_is_active(&self, val: bool, order: core::sync::atomic::Ordering) {
+    pub fn set_is_active(
+        &self,
+        val: bool,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) {
         let val_masked = val as u32;
         self.0
             .fetch_update(
                 order,
-                core::sync::atomic::Ordering::Relaxed,
+                ::bitcraft::reexport::portable_atomic::Ordering::Relaxed,
                 |raw| {
                     Some(
                         (raw & !(Self::IS_ACTIVE_MASK << Self::IS_ACTIVE_OFFSET))
@@ -8910,7 +8933,7 @@ impl AtomicPoolTracker {
     pub fn try_set_is_active(
         &self,
         val: bool,
-        order: core::sync::atomic::Ordering,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
     ) -> Result<(), ::bitcraft::BitstructError> {
         self.set_is_active(val, order);
         Ok(())
@@ -8924,13 +8947,20 @@ impl AtomicPoolTracker {
         as u32;
     #[allow(dead_code)]
     #[inline]
-    pub fn active_connections(&self, order: core::sync::atomic::Ordering) -> u16 {
+    pub fn active_connections(
+        &self,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) -> u16 {
         ((self.0.load(order) >> Self::ACTIVE_CONNECTIONS_OFFSET)
             & Self::ACTIVE_CONNECTIONS_MASK) as u16
     }
     #[allow(dead_code)]
     #[inline]
-    pub fn set_active_connections(&self, val: u16, order: core::sync::atomic::Ordering) {
+    pub fn set_active_connections(
+        &self,
+        val: u16,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) {
         if true {
             if !((val as u32) <= Self::ACTIVE_CONNECTIONS_MASK) {
                 {
@@ -8944,7 +8974,7 @@ impl AtomicPoolTracker {
         self.0
             .fetch_update(
                 order,
-                core::sync::atomic::Ordering::Relaxed,
+                ::bitcraft::reexport::portable_atomic::Ordering::Relaxed,
                 |raw| {
                     Some(
                         (raw
@@ -8960,7 +8990,7 @@ impl AtomicPoolTracker {
     pub fn try_set_active_connections(
         &self,
         val: u16,
-        order: core::sync::atomic::Ordering,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
     ) -> Result<(), ::bitcraft::BitstructError> {
         if (val as u32) > Self::ACTIVE_CONNECTIONS_MASK {
             return Err(::bitcraft::BitstructError::Overflow {
@@ -8972,7 +9002,7 @@ impl AtomicPoolTracker {
         self.0
             .fetch_update(
                 order,
-                core::sync::atomic::Ordering::Relaxed,
+                ::bitcraft::reexport::portable_atomic::Ordering::Relaxed,
                 |raw| {
                     Some(
                         (raw
@@ -8992,14 +9022,21 @@ impl AtomicPoolTracker {
         >> (<u32 as ::bitcraft::BitLength>::BITS - Self::STATUS_BITS)) as u32;
     #[allow(dead_code)]
     #[inline]
-    pub fn status(&self, order: core::sync::atomic::Ordering) -> Status {
+    pub fn status(
+        &self,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) -> Status {
         Status::from_bits(
             ((self.0.load(order) >> Self::STATUS_OFFSET) & Self::STATUS_MASK) as _,
         )
     }
     #[allow(dead_code)]
     #[inline]
-    pub fn set_status(&self, val: Status, order: core::sync::atomic::Ordering) {
+    pub fn set_status(
+        &self,
+        val: Status,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) {
         const _: () = if !(<Status>::BITS <= 2) {
             {
                 ::core::panicking::panic_fmt(
@@ -9011,7 +9048,7 @@ impl AtomicPoolTracker {
         self.0
             .fetch_update(
                 order,
-                core::sync::atomic::Ordering::Relaxed,
+                ::bitcraft::reexport::portable_atomic::Ordering::Relaxed,
                 |raw| {
                     Some(
                         (raw & !(Self::STATUS_MASK << Self::STATUS_OFFSET))
@@ -9025,7 +9062,7 @@ impl AtomicPoolTracker {
     pub fn try_set_status(
         &self,
         val: Status,
-        order: core::sync::atomic::Ordering,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
     ) -> Result<(), ::bitcraft::BitstructError> {
         self.set_status(val, order);
         Ok(())
@@ -9317,13 +9354,20 @@ impl AtomicPoolTrackerValue {
 impl AtomicPoolTracker {
     /// Returns a non-atomic snapshot of the current state as a `Value` struct.
     #[inline]
-    pub fn get(&self, order: core::sync::atomic::Ordering) -> AtomicPoolTrackerValue {
+    pub fn get(
+        &self,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) -> AtomicPoolTrackerValue {
         AtomicPoolTrackerValue::from_bits(self.0.load(order))
     }
     /// Completely overwrites the entire atomic state with the given `Value`.
     /// This is a direct atomic `store` operation and does not perform a CAS loop.
     #[inline]
-    pub fn set(&self, val: AtomicPoolTrackerValue, order: core::sync::atomic::Ordering) {
+    pub fn set(
+        &self,
+        val: AtomicPoolTrackerValue,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) {
         self.0.store(val.to_bits(), order);
     }
     /// Atomically updates multiple fields using a Compare-And-Swap (CAS) loop.
@@ -9336,8 +9380,8 @@ impl AtomicPoolTracker {
     #[inline]
     pub fn update<F>(
         &self,
-        set_order: core::sync::atomic::Ordering,
-        fetch_order: core::sync::atomic::Ordering,
+        set_order: ::bitcraft::reexport::portable_atomic::Ordering,
+        fetch_order: ::bitcraft::reexport::portable_atomic::Ordering,
         mut f: F,
     ) -> AtomicPoolTrackerValue
     where
@@ -9364,8 +9408,8 @@ impl AtomicPoolTracker {
     #[inline]
     pub fn update_or_abort<F>(
         &self,
-        set_order: core::sync::atomic::Ordering,
-        fetch_order: core::sync::atomic::Ordering,
+        set_order: ::bitcraft::reexport::portable_atomic::Ordering,
+        fetch_order: ::bitcraft::reexport::portable_atomic::Ordering,
         mut f: F,
     ) -> Result<AtomicPoolTrackerValue, AtomicPoolTrackerValue>
     where
@@ -9386,11 +9430,11 @@ impl AtomicPoolTracker {
 }
 
 #[repr(transparent)]
-pub struct AtomicStatus(pub core::sync::atomic::AtomicU32);
+pub struct AtomicStatus(pub ::bitcraft::reexport::portable_atomic::AtomicU32);
 
 impl core::fmt::Debug for AtomicStatus {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let raw = self.0.load(core::sync::atomic::Ordering::Relaxed);
+        let raw = self.0.load(::bitcraft::reexport::portable_atomic::Ordering::Relaxed);
         let val = AtomicStatusValue::from_bits(raw as _);
         f.debug_tuple("AtomicStatus").field(&val).finish()
     }
@@ -9564,18 +9608,25 @@ impl AtomicStatus {
     #[inline(always)]
     #[allow(dead_code)]
     pub const fn new(val: AtomicStatusValue) -> Self {
-        Self(<core::sync::atomic::AtomicU32>::new(val.to_bits() as _))
+        Self(<::bitcraft::reexport::portable_atomic::AtomicU32>::new(val.to_bits() as _))
     }
     /// Returns the current variant via `load`.
     #[inline(always)]
     #[allow(dead_code)]
-    pub fn load(&self, order: core::sync::atomic::Ordering) -> AtomicStatusValue {
+    pub fn load(
+        &self,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) -> AtomicStatusValue {
         AtomicStatusValue::from_bits(self.0.load(order) as _)
     }
     /// Stores a new variant via `store`.
     #[inline(always)]
     #[allow(dead_code)]
-    pub fn store(&self, val: AtomicStatusValue, order: core::sync::atomic::Ordering) {
+    pub fn store(
+        &self,
+        val: AtomicStatusValue,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) {
         self.0.store(val.to_bits() as _, order)
     }
     /// Atomically swaps the variant and returns the previous one.
@@ -9584,7 +9635,7 @@ impl AtomicStatus {
     pub fn swap(
         &self,
         val: AtomicStatusValue,
-        order: core::sync::atomic::Ordering,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
     ) -> AtomicStatusValue {
         AtomicStatusValue::from_bits(self.0.swap(val.to_bits() as _, order) as _)
     }
@@ -9595,8 +9646,8 @@ impl AtomicStatus {
         &self,
         current: AtomicStatusValue,
         new: AtomicStatusValue,
-        success: core::sync::atomic::Ordering,
-        failure: core::sync::atomic::Ordering,
+        success: ::bitcraft::reexport::portable_atomic::Ordering,
+        failure: ::bitcraft::reexport::portable_atomic::Ordering,
     ) -> Result<AtomicStatusValue, AtomicStatusValue> {
         self.0
             .compare_exchange(
@@ -9615,8 +9666,8 @@ impl AtomicStatus {
         &self,
         current: AtomicStatusValue,
         new: AtomicStatusValue,
-        success: core::sync::atomic::Ordering,
-        failure: core::sync::atomic::Ordering,
+        success: ::bitcraft::reexport::portable_atomic::Ordering,
+        failure: ::bitcraft::reexport::portable_atomic::Ordering,
     ) -> Result<AtomicStatusValue, AtomicStatusValue> {
         self.0
             .compare_exchange_weak(
@@ -9634,8 +9685,8 @@ impl AtomicStatus {
     #[allow(dead_code)]
     pub fn update_or_abort<F>(
         &self,
-        set_order: core::sync::atomic::Ordering,
-        fetch_order: core::sync::atomic::Ordering,
+        set_order: ::bitcraft::reexport::portable_atomic::Ordering,
+        fetch_order: ::bitcraft::reexport::portable_atomic::Ordering,
         mut f: F,
     ) -> Result<AtomicStatusValue, AtomicStatusValue>
     where
@@ -9659,8 +9710,8 @@ impl AtomicStatus {
     #[allow(dead_code)]
     pub fn update<F>(
         &self,
-        set_order: core::sync::atomic::Ordering,
-        fetch_order: core::sync::atomic::Ordering,
+        set_order: ::bitcraft::reexport::portable_atomic::Ordering,
+        fetch_order: ::bitcraft::reexport::portable_atomic::Ordering,
         mut f: F,
     ) -> AtomicStatusValue
     where
@@ -9678,6 +9729,1093 @@ impl AtomicStatus {
             )
             .unwrap();
         AtomicStatusValue::from_bits(raw_prev as _)
+    }
+}
+
+#[repr(transparent)]
+pub struct LargeAtomicTracker(pub ::bitcraft::reexport::portable_atomic::AtomicU128);
+
+impl core::fmt::Debug for LargeAtomicTracker {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("LargeAtomicTracker")
+            .field(
+                "raw",
+                &self.0.load(::bitcraft::reexport::portable_atomic::Ordering::Relaxed),
+            )
+            .field(
+                "is_active",
+                &self.is_active(::bitcraft::reexport::portable_atomic::Ordering::Relaxed),
+            )
+            .field(
+                "user_id",
+                &self.user_id(::bitcraft::reexport::portable_atomic::Ordering::Relaxed),
+            )
+            .field(
+                "session_id",
+                &self
+                    .session_id(::bitcraft::reexport::portable_atomic::Ordering::Relaxed),
+            )
+            .field(
+                "flags",
+                &self.flags(::bitcraft::reexport::portable_atomic::Ordering::Relaxed),
+            )
+            .finish()
+    }
+}
+
+impl Default for LargeAtomicTracker {
+    fn default() -> Self {
+        Self::new(0)
+    }
+}
+
+impl LargeAtomicTracker {
+    #[allow(dead_code)]
+    pub const BITS: usize = <u128 as ::bitcraft::BitLength>::BITS;
+    /// Creates a new instance from a raw integer value.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn new(val: u128) -> Self {
+        Self(<::bitcraft::reexport::portable_atomic::AtomicU128>::new(val))
+    }
+    /// Returns the raw interior integer value via `load`.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub fn load(&self, order: ::bitcraft::reexport::portable_atomic::Ordering) -> u128 {
+        self.0.load(order)
+    }
+    /// Stores a raw integer value via `store`.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub fn store(
+        &self,
+        val: u128,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) {
+        self.0.store(val, order)
+    }
+    pub const IS_ACTIVE_OFFSET: usize = 0;
+    pub const IS_ACTIVE_BITS: usize = 1;
+    #[doc(hidden)]
+    const IS_ACTIVE_MASK: u128 = ((!0 as <u128 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u128 as ::bitcraft::BitLength>::BITS - Self::IS_ACTIVE_BITS)) as u128;
+    #[allow(dead_code)]
+    #[inline]
+    pub fn is_active(
+        &self,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) -> bool {
+        ((self.0.load(order) >> Self::IS_ACTIVE_OFFSET) & Self::IS_ACTIVE_MASK) != 0
+    }
+    #[allow(dead_code)]
+    #[inline]
+    pub fn set_is_active(
+        &self,
+        val: bool,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) {
+        let val_masked = val as u128;
+        self.0
+            .fetch_update(
+                order,
+                ::bitcraft::reexport::portable_atomic::Ordering::Relaxed,
+                |raw| {
+                    Some(
+                        (raw & !(Self::IS_ACTIVE_MASK << Self::IS_ACTIVE_OFFSET))
+                            | (val_masked << Self::IS_ACTIVE_OFFSET),
+                    )
+                },
+            )
+            .unwrap();
+    }
+    #[allow(dead_code)]
+    pub fn try_set_is_active(
+        &self,
+        val: bool,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) -> Result<(), ::bitcraft::BitstructError> {
+        self.set_is_active(val, order);
+        Ok(())
+    }
+    pub const USER_ID_OFFSET: usize = 0 + 1;
+    pub const USER_ID_BITS: usize = 64;
+    #[doc(hidden)]
+    const USER_ID_MASK: u128 = ((!0 as <u128 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u128 as ::bitcraft::BitLength>::BITS - Self::USER_ID_BITS)) as u128;
+    #[allow(dead_code)]
+    #[inline]
+    pub fn user_id(
+        &self,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) -> u64 {
+        ((self.0.load(order) >> Self::USER_ID_OFFSET) & Self::USER_ID_MASK) as u64
+    }
+    #[allow(dead_code)]
+    #[inline]
+    pub fn set_user_id(
+        &self,
+        val: u64,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) {
+        if true {
+            if !((val as u128) <= Self::USER_ID_MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value {0} overflows allocated {1} bits", val, 64),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as u128) & Self::USER_ID_MASK;
+        self.0
+            .fetch_update(
+                order,
+                ::bitcraft::reexport::portable_atomic::Ordering::Relaxed,
+                |raw| {
+                    Some(
+                        (raw & !(Self::USER_ID_MASK << Self::USER_ID_OFFSET))
+                            | (val_masked << Self::USER_ID_OFFSET),
+                    )
+                },
+            )
+            .unwrap();
+    }
+    #[allow(dead_code)]
+    pub fn try_set_user_id(
+        &self,
+        val: u64,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) -> Result<(), ::bitcraft::BitstructError> {
+        if (val as u128) > Self::USER_ID_MASK {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: (val as u128) as u128,
+                allocated_bits: 64,
+            });
+        }
+        let val_masked = (val as u128) & Self::USER_ID_MASK;
+        self.0
+            .fetch_update(
+                order,
+                ::bitcraft::reexport::portable_atomic::Ordering::Relaxed,
+                |raw| {
+                    Some(
+                        (raw & !(Self::USER_ID_MASK << Self::USER_ID_OFFSET))
+                            | (val_masked << Self::USER_ID_OFFSET),
+                    )
+                },
+            )
+            .unwrap();
+        Ok(())
+    }
+    pub const SESSION_ID_OFFSET: usize = 0 + 1 + 64;
+    pub const SESSION_ID_BITS: usize = 32;
+    #[doc(hidden)]
+    const SESSION_ID_MASK: u128 = ((!0 as <u128 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u128 as ::bitcraft::BitLength>::BITS - Self::SESSION_ID_BITS)) as u128;
+    #[allow(dead_code)]
+    #[inline]
+    pub fn session_id(
+        &self,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) -> u32 {
+        ((self.0.load(order) >> Self::SESSION_ID_OFFSET) & Self::SESSION_ID_MASK) as u32
+    }
+    #[allow(dead_code)]
+    #[inline]
+    pub fn set_session_id(
+        &self,
+        val: u32,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) {
+        if true {
+            if !((val as u128) <= Self::SESSION_ID_MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value {0} overflows allocated {1} bits", val, 32),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as u128) & Self::SESSION_ID_MASK;
+        self.0
+            .fetch_update(
+                order,
+                ::bitcraft::reexport::portable_atomic::Ordering::Relaxed,
+                |raw| {
+                    Some(
+                        (raw & !(Self::SESSION_ID_MASK << Self::SESSION_ID_OFFSET))
+                            | (val_masked << Self::SESSION_ID_OFFSET),
+                    )
+                },
+            )
+            .unwrap();
+    }
+    #[allow(dead_code)]
+    pub fn try_set_session_id(
+        &self,
+        val: u32,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) -> Result<(), ::bitcraft::BitstructError> {
+        if (val as u128) > Self::SESSION_ID_MASK {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: (val as u128) as u128,
+                allocated_bits: 32,
+            });
+        }
+        let val_masked = (val as u128) & Self::SESSION_ID_MASK;
+        self.0
+            .fetch_update(
+                order,
+                ::bitcraft::reexport::portable_atomic::Ordering::Relaxed,
+                |raw| {
+                    Some(
+                        (raw & !(Self::SESSION_ID_MASK << Self::SESSION_ID_OFFSET))
+                            | (val_masked << Self::SESSION_ID_OFFSET),
+                    )
+                },
+            )
+            .unwrap();
+        Ok(())
+    }
+    pub const FLAGS_OFFSET: usize = 0 + 1 + 64 + 32;
+    pub const FLAGS_BITS: usize = 31;
+    #[doc(hidden)]
+    const FLAGS_MASK: u128 = ((!0 as <u128 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u128 as ::bitcraft::BitLength>::BITS - Self::FLAGS_BITS)) as u128;
+    #[allow(dead_code)]
+    #[inline]
+    pub fn flags(&self, order: ::bitcraft::reexport::portable_atomic::Ordering) -> u32 {
+        ((self.0.load(order) >> Self::FLAGS_OFFSET) & Self::FLAGS_MASK) as u32
+    }
+    #[allow(dead_code)]
+    #[inline]
+    pub fn set_flags(
+        &self,
+        val: u32,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) {
+        if true {
+            if !((val as u128) <= Self::FLAGS_MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value {0} overflows allocated {1} bits", val, 31),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as u128) & Self::FLAGS_MASK;
+        self.0
+            .fetch_update(
+                order,
+                ::bitcraft::reexport::portable_atomic::Ordering::Relaxed,
+                |raw| {
+                    Some(
+                        (raw & !(Self::FLAGS_MASK << Self::FLAGS_OFFSET))
+                            | (val_masked << Self::FLAGS_OFFSET),
+                    )
+                },
+            )
+            .unwrap();
+    }
+    #[allow(dead_code)]
+    pub fn try_set_flags(
+        &self,
+        val: u32,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) -> Result<(), ::bitcraft::BitstructError> {
+        if (val as u128) > Self::FLAGS_MASK {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: (val as u128) as u128,
+                allocated_bits: 31,
+            });
+        }
+        let val_masked = (val as u128) & Self::FLAGS_MASK;
+        self.0
+            .fetch_update(
+                order,
+                ::bitcraft::reexport::portable_atomic::Ordering::Relaxed,
+                |raw| {
+                    Some(
+                        (raw & !(Self::FLAGS_MASK << Self::FLAGS_OFFSET))
+                            | (val_masked << Self::FLAGS_OFFSET),
+                    )
+                },
+            )
+            .unwrap();
+        Ok(())
+    }
+}
+
+#[repr(transparent)]
+pub struct LargeAtomicTrackerValue(pub u128);
+
+#[automatically_derived]
+impl ::core::marker::Copy for LargeAtomicTrackerValue {}
+
+#[automatically_derived]
+#[doc(hidden)]
+unsafe impl ::core::clone::TrivialClone for LargeAtomicTrackerValue {}
+
+#[automatically_derived]
+impl ::core::clone::Clone for LargeAtomicTrackerValue {
+    #[inline]
+    fn clone(&self) -> LargeAtomicTrackerValue {
+        let _: ::core::clone::AssertParamIsClone<u128>;
+        *self
+    }
+}
+
+#[automatically_derived]
+impl ::core::marker::StructuralPartialEq for LargeAtomicTrackerValue {}
+
+#[automatically_derived]
+impl ::core::cmp::PartialEq for LargeAtomicTrackerValue {
+    #[inline]
+    fn eq(&self, other: &LargeAtomicTrackerValue) -> bool {
+        self.0 == other.0
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Eq for LargeAtomicTrackerValue {
+    #[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    fn assert_receiver_is_total_eq(&self) -> () {
+        let _: ::core::cmp::AssertParamIsEq<u128>;
+    }
+}
+
+#[automatically_derived]
+impl ::core::default::Default for LargeAtomicTrackerValue {
+    #[inline]
+    fn default() -> LargeAtomicTrackerValue {
+        LargeAtomicTrackerValue(::core::default::Default::default())
+    }
+}
+
+impl core::fmt::Debug for LargeAtomicTrackerValue {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("LargeAtomicTrackerValue")
+            .field("raw", &self.0)
+            .field("is_active", &self.is_active())
+            .field("user_id", &self.user_id())
+            .field("session_id", &self.session_id())
+            .field("flags", &self.flags())
+            .finish()
+    }
+}
+
+impl LargeAtomicTrackerValue {
+    #[allow(dead_code)]
+    pub const BITS: usize = <u128 as ::bitcraft::BitLength>::BITS;
+    /// The bit-offset of the `$field_name` property within the underlying storage.
+    pub const IS_ACTIVE_OFFSET: usize = 0;
+    /// The number of bits allocated for the `$field_name` property.
+    pub const IS_ACTIVE_BITS: usize = 1;
+    #[doc(hidden)]
+    const IS_ACTIVE_MASK: u128 = ((!0 as <u128 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u128 as ::bitcraft::BitLength>::BITS - Self::IS_ACTIVE_BITS)) as u128;
+    #[allow(dead_code)]
+    #[inline]
+    ///Returns the boolean value mapping to the `is_active` flag.
+    pub const fn is_active(self) -> bool {
+        ((self.0 >> Self::IS_ACTIVE_OFFSET) & Self::IS_ACTIVE_MASK) != 0
+    }
+    #[allow(dead_code)]
+    #[inline]
+    ///Inline mutation to set the `is_active` flag.
+    pub fn set_is_active(&mut self, val: bool) {
+        let val_masked = val as u128;
+        self.0 = (self.0 & !(Self::IS_ACTIVE_MASK << Self::IS_ACTIVE_OFFSET))
+            | (val_masked << Self::IS_ACTIVE_OFFSET);
+    }
+    #[allow(dead_code)]
+    ///Returns a cloned copy of the bitfield with the `is_active` flag specified.
+    pub const fn with_is_active(self, val: bool) -> Self {
+        let val_masked = val as u128;
+        Self(
+            (self.0 & !(Self::IS_ACTIVE_MASK << Self::IS_ACTIVE_OFFSET))
+                | (val_masked << Self::IS_ACTIVE_OFFSET),
+        )
+    }
+    #[allow(dead_code)]
+    ///Inline mutation to set the `is_active` flag. Returns `Ok(())` since booleans cannot overflow.
+    pub fn try_set_is_active(
+        &mut self,
+        val: bool,
+    ) -> Result<(), ::bitcraft::BitstructError> {
+        self.set_is_active(val);
+        Ok(())
+    }
+    #[allow(dead_code)]
+    ///Returns a cloned copy of the bitfield with the `is_active` flag specified. Returns `Ok(Self)` since booleans cannot overflow.
+    pub const fn try_with_is_active(
+        self,
+        val: bool,
+    ) -> Result<Self, ::bitcraft::BitstructError> {
+        Ok(self.with_is_active(val))
+    }
+    /// The bit-offset of the `$field_name` property within the underlying storage.
+    pub const USER_ID_OFFSET: usize = 0 + 1;
+    /// The number of bits allocated for the `$field_name` property.
+    pub const USER_ID_BITS: usize = 64;
+    #[doc(hidden)]
+    const USER_ID_MASK: u128 = ((!0 as <u128 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u128 as ::bitcraft::BitLength>::BITS - Self::USER_ID_BITS)) as u128;
+    #[allow(dead_code)]
+    #[inline]
+    ///Returns the `user_id` property as a `u64`.
+    pub const fn user_id(self) -> u64 {
+        ((self.0 >> Self::USER_ID_OFFSET) & Self::USER_ID_MASK) as u64
+    }
+    #[allow(dead_code)]
+    #[inline]
+    ///Inline mutation to apply the `user_id` property. Masks inputs over 64 bits.
+    pub fn set_user_id(&mut self, val: u64) {
+        if true {
+            if !((val as u128) <= Self::USER_ID_MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value {0} overflows allocated {1} bits", val, 64),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as u128) & Self::USER_ID_MASK;
+        self.0 = (self.0 & !(Self::USER_ID_MASK << Self::USER_ID_OFFSET))
+            | (val_masked << Self::USER_ID_OFFSET);
+    }
+    #[allow(dead_code)]
+    ///Returns a cloned copy of the bitfield with the `user_id` property mapped. Masks inputs over 64 bits.
+    pub const fn with_user_id(self, val: u64) -> Self {
+        if true {
+            if !((val as u128) <= Self::USER_ID_MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value overflows allocated bits"),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as u128) & Self::USER_ID_MASK;
+        Self(
+            (self.0 & !(Self::USER_ID_MASK << Self::USER_ID_OFFSET))
+                | (val_masked << Self::USER_ID_OFFSET),
+        )
+    }
+    #[allow(dead_code)]
+    ///Strict inline mutation to apply the `user_id` property. Returns a `BitstructError` if the value overflows 64 bits.
+    pub fn try_set_user_id(
+        &mut self,
+        val: u64,
+    ) -> Result<(), ::bitcraft::BitstructError> {
+        if (val as u128) > Self::USER_ID_MASK {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: (val as u128) as u128,
+                allocated_bits: 64,
+            });
+        }
+        let val_masked = (val as u128) & Self::USER_ID_MASK;
+        self.0 = (self.0 & !(Self::USER_ID_MASK << Self::USER_ID_OFFSET))
+            | (val_masked << Self::USER_ID_OFFSET);
+        Ok(())
+    }
+    #[allow(dead_code)]
+    ///Strict cloned evaluation to apply the `user_id` property. Returns a `BitstructError` if the value overflows 64 bits.
+    pub const fn try_with_user_id(
+        self,
+        val: u64,
+    ) -> Result<Self, ::bitcraft::BitstructError> {
+        if (val as u128) > Self::USER_ID_MASK {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: (val as u128) as u128,
+                allocated_bits: 64,
+            });
+        }
+        let val_masked = (val as u128) & Self::USER_ID_MASK;
+        Ok(
+            Self(
+                (self.0 & !(Self::USER_ID_MASK << Self::USER_ID_OFFSET))
+                    | (val_masked << Self::USER_ID_OFFSET),
+            ),
+        )
+    }
+    /// The bit-offset of the `$field_name` property within the underlying storage.
+    pub const SESSION_ID_OFFSET: usize = 0 + 1 + 64;
+    /// The number of bits allocated for the `$field_name` property.
+    pub const SESSION_ID_BITS: usize = 32;
+    #[doc(hidden)]
+    const SESSION_ID_MASK: u128 = ((!0 as <u128 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u128 as ::bitcraft::BitLength>::BITS - Self::SESSION_ID_BITS)) as u128;
+    #[allow(dead_code)]
+    #[inline]
+    ///Returns the `session_id` property as a `u32`.
+    pub const fn session_id(self) -> u32 {
+        ((self.0 >> Self::SESSION_ID_OFFSET) & Self::SESSION_ID_MASK) as u32
+    }
+    #[allow(dead_code)]
+    #[inline]
+    ///Inline mutation to apply the `session_id` property. Masks inputs over 32 bits.
+    pub fn set_session_id(&mut self, val: u32) {
+        if true {
+            if !((val as u128) <= Self::SESSION_ID_MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value {0} overflows allocated {1} bits", val, 32),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as u128) & Self::SESSION_ID_MASK;
+        self.0 = (self.0 & !(Self::SESSION_ID_MASK << Self::SESSION_ID_OFFSET))
+            | (val_masked << Self::SESSION_ID_OFFSET);
+    }
+    #[allow(dead_code)]
+    ///Returns a cloned copy of the bitfield with the `session_id` property mapped. Masks inputs over 32 bits.
+    pub const fn with_session_id(self, val: u32) -> Self {
+        if true {
+            if !((val as u128) <= Self::SESSION_ID_MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value overflows allocated bits"),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as u128) & Self::SESSION_ID_MASK;
+        Self(
+            (self.0 & !(Self::SESSION_ID_MASK << Self::SESSION_ID_OFFSET))
+                | (val_masked << Self::SESSION_ID_OFFSET),
+        )
+    }
+    #[allow(dead_code)]
+    ///Strict inline mutation to apply the `session_id` property. Returns a `BitstructError` if the value overflows 32 bits.
+    pub fn try_set_session_id(
+        &mut self,
+        val: u32,
+    ) -> Result<(), ::bitcraft::BitstructError> {
+        if (val as u128) > Self::SESSION_ID_MASK {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: (val as u128) as u128,
+                allocated_bits: 32,
+            });
+        }
+        let val_masked = (val as u128) & Self::SESSION_ID_MASK;
+        self.0 = (self.0 & !(Self::SESSION_ID_MASK << Self::SESSION_ID_OFFSET))
+            | (val_masked << Self::SESSION_ID_OFFSET);
+        Ok(())
+    }
+    #[allow(dead_code)]
+    ///Strict cloned evaluation to apply the `session_id` property. Returns a `BitstructError` if the value overflows 32 bits.
+    pub const fn try_with_session_id(
+        self,
+        val: u32,
+    ) -> Result<Self, ::bitcraft::BitstructError> {
+        if (val as u128) > Self::SESSION_ID_MASK {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: (val as u128) as u128,
+                allocated_bits: 32,
+            });
+        }
+        let val_masked = (val as u128) & Self::SESSION_ID_MASK;
+        Ok(
+            Self(
+                (self.0 & !(Self::SESSION_ID_MASK << Self::SESSION_ID_OFFSET))
+                    | (val_masked << Self::SESSION_ID_OFFSET),
+            ),
+        )
+    }
+    /// The bit-offset of the `$field_name` property within the underlying storage.
+    pub const FLAGS_OFFSET: usize = 0 + 1 + 64 + 32;
+    /// The number of bits allocated for the `$field_name` property.
+    pub const FLAGS_BITS: usize = 31;
+    #[doc(hidden)]
+    const FLAGS_MASK: u128 = ((!0 as <u128 as ::bitcraft::IsValidBaseInt>::Unsigned)
+        >> (<u128 as ::bitcraft::BitLength>::BITS - Self::FLAGS_BITS)) as u128;
+    #[allow(dead_code)]
+    #[inline]
+    ///Returns the `flags` property as a `u32`.
+    pub const fn flags(self) -> u32 {
+        ((self.0 >> Self::FLAGS_OFFSET) & Self::FLAGS_MASK) as u32
+    }
+    #[allow(dead_code)]
+    #[inline]
+    ///Inline mutation to apply the `flags` property. Masks inputs over 31 bits.
+    pub fn set_flags(&mut self, val: u32) {
+        if true {
+            if !((val as u128) <= Self::FLAGS_MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value {0} overflows allocated {1} bits", val, 31),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as u128) & Self::FLAGS_MASK;
+        self.0 = (self.0 & !(Self::FLAGS_MASK << Self::FLAGS_OFFSET))
+            | (val_masked << Self::FLAGS_OFFSET);
+    }
+    #[allow(dead_code)]
+    ///Returns a cloned copy of the bitfield with the `flags` property mapped. Masks inputs over 31 bits.
+    pub const fn with_flags(self, val: u32) -> Self {
+        if true {
+            if !((val as u128) <= Self::FLAGS_MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("Value overflows allocated bits"),
+                    );
+                }
+            }
+        }
+        let val_masked = (val as u128) & Self::FLAGS_MASK;
+        Self(
+            (self.0 & !(Self::FLAGS_MASK << Self::FLAGS_OFFSET))
+                | (val_masked << Self::FLAGS_OFFSET),
+        )
+    }
+    #[allow(dead_code)]
+    ///Strict inline mutation to apply the `flags` property. Returns a `BitstructError` if the value overflows 31 bits.
+    pub fn try_set_flags(&mut self, val: u32) -> Result<(), ::bitcraft::BitstructError> {
+        if (val as u128) > Self::FLAGS_MASK {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: (val as u128) as u128,
+                allocated_bits: 31,
+            });
+        }
+        let val_masked = (val as u128) & Self::FLAGS_MASK;
+        self.0 = (self.0 & !(Self::FLAGS_MASK << Self::FLAGS_OFFSET))
+            | (val_masked << Self::FLAGS_OFFSET);
+        Ok(())
+    }
+    #[allow(dead_code)]
+    ///Strict cloned evaluation to apply the `flags` property. Returns a `BitstructError` if the value overflows 31 bits.
+    pub const fn try_with_flags(
+        self,
+        val: u32,
+    ) -> Result<Self, ::bitcraft::BitstructError> {
+        if (val as u128) > Self::FLAGS_MASK {
+            return Err(::bitcraft::BitstructError::Overflow {
+                value: (val as u128) as u128,
+                allocated_bits: 31,
+            });
+        }
+        let val_masked = (val as u128) & Self::FLAGS_MASK;
+        Ok(
+            Self(
+                (self.0 & !(Self::FLAGS_MASK << Self::FLAGS_OFFSET))
+                    | (val_masked << Self::FLAGS_OFFSET),
+            ),
+        )
+    }
+    /// Returns the raw interior integer value.
+    ///
+    /// This is useful for serializing the struct or passing it to external APIs.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn to_bits(self) -> u128 {
+        self.0
+    }
+    /// Creates a new instance from a raw integer value.
+    ///
+    /// # Safety
+    /// While this method is safe, providing values with bits set outside
+    /// the defined field ranges may result in those bits being preserved
+    /// (padded) or ignored depending on the getters used.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn from_bits(val: u128) -> Self {
+        Self(val)
+    }
+}
+
+impl LargeAtomicTracker {
+    /// Returns a non-atomic snapshot of the current state as a `Value` struct.
+    #[inline]
+    pub fn get(
+        &self,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) -> LargeAtomicTrackerValue {
+        LargeAtomicTrackerValue::from_bits(self.0.load(order))
+    }
+    /// Completely overwrites the entire atomic state with the given `Value`.
+    /// This is a direct atomic `store` operation and does not perform a CAS loop.
+    #[inline]
+    pub fn set(
+        &self,
+        val: LargeAtomicTrackerValue,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) {
+        self.0.store(val.to_bits(), order);
+    }
+    /// Atomically updates multiple fields using a Compare-And-Swap (CAS) loop.
+    ///
+    /// The provided closure is called with a mutable `Value` representing the current state.
+    /// Modify the value, and the changes will be applied atomically.
+    ///
+    /// Unlike `set`, this method guarantees that fields you do not modify within the closure
+    /// will retain any concurrent updates made by other threads between the load and the store.
+    #[inline]
+    pub fn update<F>(
+        &self,
+        set_order: ::bitcraft::reexport::portable_atomic::Ordering,
+        fetch_order: ::bitcraft::reexport::portable_atomic::Ordering,
+        mut f: F,
+    ) -> LargeAtomicTrackerValue
+    where
+        F: FnMut(&mut LargeAtomicTrackerValue),
+    {
+        let raw_prev = self
+            .0
+            .fetch_update(
+                set_order,
+                fetch_order,
+                |raw| {
+                    let mut snap = LargeAtomicTrackerValue::from_bits(raw);
+                    f(&mut snap);
+                    Some(snap.to_bits())
+                },
+            )
+            .unwrap();
+        LargeAtomicTrackerValue::from_bits(raw_prev)
+    }
+    /// Conditionally updates multiple fields using a Compare-And-Swap (CAS) loop.
+    ///
+    /// The provided closure must return `Some(())` to commit the new state, or `None` to abort the loop.
+    /// If `None` is returned, the CAS loop is aborted and `Err(Value)` containing the un-modified state is returned.
+    #[inline]
+    pub fn update_or_abort<F>(
+        &self,
+        set_order: ::bitcraft::reexport::portable_atomic::Ordering,
+        fetch_order: ::bitcraft::reexport::portable_atomic::Ordering,
+        mut f: F,
+    ) -> Result<LargeAtomicTrackerValue, LargeAtomicTrackerValue>
+    where
+        F: FnMut(&mut LargeAtomicTrackerValue) -> Option<()>,
+    {
+        self.0
+            .fetch_update(
+                set_order,
+                fetch_order,
+                |raw| {
+                    let mut snap = LargeAtomicTrackerValue::from_bits(raw);
+                    f(&mut snap).map(|_| snap.to_bits())
+                },
+            )
+            .map(|raw| LargeAtomicTrackerValue::from_bits(raw))
+            .map_err(|raw| LargeAtomicTrackerValue::from_bits(raw))
+    }
+}
+
+#[repr(transparent)]
+pub struct LargeAtomicState(pub ::bitcraft::reexport::portable_atomic::AtomicU128);
+
+impl core::fmt::Debug for LargeAtomicState {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let raw = self.0.load(::bitcraft::reexport::portable_atomic::Ordering::Relaxed);
+        let val = LargeAtomicStateValue::from_bits(raw as _);
+        f.debug_tuple("LargeAtomicState").field(&val).finish()
+    }
+}
+
+#[repr(transparent)]
+pub struct LargeAtomicStateValue(
+    pub <::bitcraft::Bits<128> as ::bitcraft::BitenumType>::Prim,
+);
+
+#[automatically_derived]
+impl ::core::marker::Copy for LargeAtomicStateValue {}
+
+#[automatically_derived]
+#[doc(hidden)]
+unsafe impl ::core::clone::TrivialClone for LargeAtomicStateValue {}
+
+#[automatically_derived]
+impl ::core::clone::Clone for LargeAtomicStateValue {
+    #[inline]
+    fn clone(&self) -> LargeAtomicStateValue {
+        let _: ::core::clone::AssertParamIsClone<
+            <::bitcraft::Bits<128> as ::bitcraft::BitenumType>::Prim,
+        >;
+        *self
+    }
+}
+
+#[automatically_derived]
+impl ::core::marker::StructuralPartialEq for LargeAtomicStateValue {}
+
+#[automatically_derived]
+impl ::core::cmp::PartialEq for LargeAtomicStateValue {
+    #[inline]
+    fn eq(&self, other: &LargeAtomicStateValue) -> bool {
+        self.0 == other.0
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Eq for LargeAtomicStateValue {
+    #[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    fn assert_receiver_is_total_eq(&self) -> () {
+        let _: ::core::cmp::AssertParamIsEq<
+            <::bitcraft::Bits<128> as ::bitcraft::BitenumType>::Prim,
+        >;
+    }
+}
+
+#[automatically_derived]
+impl ::core::default::Default for LargeAtomicStateValue {
+    #[inline]
+    fn default() -> LargeAtomicStateValue {
+        LargeAtomicStateValue(::core::default::Default::default())
+    }
+}
+
+impl core::fmt::Debug for LargeAtomicStateValue {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let s = match self.0 {
+            0 => "INITIAL",
+            1 => "READY",
+            2 => "ACTIVE",
+            0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF => "TERMINATED",
+            _ => "UNKNOWN",
+        };
+        f.write_fmt(format_args!("{0}({1})::{2}", "LargeAtomicStateValue", self.0, s))
+    }
+}
+
+impl LargeAtomicStateValue {
+    #[allow(non_upper_case_globals, dead_code)]
+    ///Enumeration variant for `INITIAL` with raw value `0`.
+    pub const INITIAL: Self = Self(0);
+    #[allow(non_upper_case_globals, dead_code)]
+    ///Enumeration variant for `READY` with raw value `1`.
+    pub const READY: Self = Self(1);
+    #[allow(non_upper_case_globals, dead_code)]
+    ///Enumeration variant for `ACTIVE` with raw value `2`.
+    pub const ACTIVE: Self = Self(2);
+    #[allow(non_upper_case_globals, dead_code)]
+    ///Enumeration variant for `TERMINATED` with raw value `0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF`.
+    pub const TERMINATED: Self = Self(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);
+    #[allow(dead_code)]
+    /// The number of bits allocated for this enumeration in memory.
+    pub const BITS: usize = 128;
+    #[allow(dead_code)]
+    /// The maximum value allowed for this enumeration variant based on the allocated $bits bits.
+    ///
+    /// Useful for manually validating raw input before conversion.
+    pub const MASK: <::bitcraft::Bits<128> as ::bitcraft::BitenumType>::Prim = {
+        type Prim = <::bitcraft::Bits<128> as ::bitcraft::BitenumType>::Prim;
+        #[allow(dead_code)]
+        const TOTAL_BITS: usize = <Prim as ::bitcraft::BitLength>::BITS;
+        (!0 as Prim) >> (TOTAL_BITS - 128)
+    };
+    /// Returns true if the raw value corresponds to a defined enumeration variant.
+    ///
+    /// This is a zero-cost check that compiles to a simple comparison or a small jump table.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn is_defined(self) -> bool {
+        match self.0 {
+            0 => true,
+            1 => true,
+            2 => true,
+            0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF => true,
+            _ => false,
+        }
+    }
+    /// Returns the raw integer value of the enumeration variant.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn to_bits(
+        self,
+    ) -> <::bitcraft::Bits<128> as ::bitcraft::BitenumType>::Prim {
+        self.0
+    }
+    /// Creates an enumeration variant from a raw integer value.
+    ///
+    /// # Panics
+    /// In debug mode, this will panic if the value exceeds the allocated bit width.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn from_bits(
+        val: <::bitcraft::Bits<128> as ::bitcraft::BitenumType>::Prim,
+    ) -> Self {
+        if true {
+            if !(val <= Self::MASK) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!(
+                            "Value overflows allocated bit width for this enumeration",
+                        ),
+                    );
+                }
+            }
+        }
+        Self(val)
+    }
+    /// Creates an enumeration variant from a raw integer value, returning an error if it is invalid.
+    ///
+    /// This returns `Ok(Self)` if the value corresponds to a defined variant,
+    /// or `Err(BitstructError::InvalidVariant)` if it does not.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn try_from_bits(
+        val: <::bitcraft::Bits<128> as ::bitcraft::BitenumType>::Prim,
+    ) -> Result<Self, ::bitcraft::BitstructError> {
+        let s = Self(val);
+        if s.is_defined() {
+            Ok(s)
+        } else {
+            Err(::bitcraft::BitstructError::InvalidVariant {
+                value: val as u128,
+                enum_name: "LargeAtomicStateValue",
+            })
+        }
+    }
+}
+
+impl ::bitcraft::ValidField for LargeAtomicStateValue {
+    const ASSERT_VALID: () = ();
+}
+
+impl Default for LargeAtomicState {
+    fn default() -> Self {
+        Self::new(LargeAtomicStateValue::default())
+    }
+}
+
+impl LargeAtomicState {
+    #[allow(dead_code)]
+    pub const BITS: usize = 128;
+    /// Creates a new atomic instance from an enum variant.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub const fn new(val: LargeAtomicStateValue) -> Self {
+        Self(
+            <::bitcraft::reexport::portable_atomic::AtomicU128>::new(val.to_bits() as _),
+        )
+    }
+    /// Returns the current variant via `load`.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub fn load(
+        &self,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) -> LargeAtomicStateValue {
+        LargeAtomicStateValue::from_bits(self.0.load(order) as _)
+    }
+    /// Stores a new variant via `store`.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub fn store(
+        &self,
+        val: LargeAtomicStateValue,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) {
+        self.0.store(val.to_bits() as _, order)
+    }
+    /// Atomically swaps the variant and returns the previous one.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub fn swap(
+        &self,
+        val: LargeAtomicStateValue,
+        order: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) -> LargeAtomicStateValue {
+        LargeAtomicStateValue::from_bits(self.0.swap(val.to_bits() as _, order) as _)
+    }
+    /// Compares and exchanges the variant.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub fn compare_exchange(
+        &self,
+        current: LargeAtomicStateValue,
+        new: LargeAtomicStateValue,
+        success: ::bitcraft::reexport::portable_atomic::Ordering,
+        failure: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) -> Result<LargeAtomicStateValue, LargeAtomicStateValue> {
+        self.0
+            .compare_exchange(
+                current.to_bits() as _,
+                new.to_bits() as _,
+                success,
+                failure,
+            )
+            .map(|raw| LargeAtomicStateValue::from_bits(raw as _))
+            .map_err(|raw| LargeAtomicStateValue::from_bits(raw as _))
+    }
+    /// Weakly compares and exchanges the variant.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub fn compare_exchange_weak(
+        &self,
+        current: LargeAtomicStateValue,
+        new: LargeAtomicStateValue,
+        success: ::bitcraft::reexport::portable_atomic::Ordering,
+        failure: ::bitcraft::reexport::portable_atomic::Ordering,
+    ) -> Result<LargeAtomicStateValue, LargeAtomicStateValue> {
+        self.0
+            .compare_exchange_weak(
+                current.to_bits() as _,
+                new.to_bits() as _,
+                success,
+                failure,
+            )
+            .map(|raw| LargeAtomicStateValue::from_bits(raw as _))
+            .map_err(|raw| LargeAtomicStateValue::from_bits(raw as _))
+    }
+    /// Fetches and updates the variant via a CAS loop closure.
+    /// The closure must return `Some(variant)` to commit, or `None` to abort.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub fn update_or_abort<F>(
+        &self,
+        set_order: ::bitcraft::reexport::portable_atomic::Ordering,
+        fetch_order: ::bitcraft::reexport::portable_atomic::Ordering,
+        mut f: F,
+    ) -> Result<LargeAtomicStateValue, LargeAtomicStateValue>
+    where
+        F: FnMut(LargeAtomicStateValue) -> Option<LargeAtomicStateValue>,
+    {
+        self.0
+            .fetch_update(
+                set_order,
+                fetch_order,
+                |raw| {
+                    let snap = LargeAtomicStateValue::from_bits(raw as _);
+                    f(snap).map(|v| v.to_bits() as _)
+                },
+            )
+            .map(|raw| LargeAtomicStateValue::from_bits(raw as _))
+            .map_err(|raw| LargeAtomicStateValue::from_bits(raw as _))
+    }
+    /// Fetches and updates the variant via a CAS loop closure.
+    /// The closure must return the new variant to commit.
+    #[inline(always)]
+    #[allow(dead_code)]
+    pub fn update<F>(
+        &self,
+        set_order: ::bitcraft::reexport::portable_atomic::Ordering,
+        fetch_order: ::bitcraft::reexport::portable_atomic::Ordering,
+        mut f: F,
+    ) -> LargeAtomicStateValue
+    where
+        F: FnMut(LargeAtomicStateValue) -> LargeAtomicStateValue,
+    {
+        let raw_prev = self
+            .0
+            .fetch_update(
+                set_order,
+                fetch_order,
+                |raw| {
+                    let snap = LargeAtomicStateValue::from_bits(raw as _);
+                    Some(f(snap).to_bits() as _)
+                },
+            )
+            .unwrap();
+        LargeAtomicStateValue::from_bits(raw_prev as _)
     }
 }
 

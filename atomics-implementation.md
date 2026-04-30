@@ -8,7 +8,7 @@ This architecture allows developers to define memory-efficient flags, counters, 
 
 ## 1. Supported Base & Field Types
 
-The macros natively map to `core::sync::atomic` types, giving you full control over the underlying memory footprint:
+The macros natively map to `portable_atomic` types, giving you full control over the underlying memory footprint:
 
 - **Unsigned Atomics**: `AtomicU8`, `AtomicU16`, `AtomicU32`, `AtomicU64`
 - **Signed Atomics**: `AtomicI8`, `AtomicI16`, `AtomicI32`, `AtomicI64`
@@ -31,7 +31,7 @@ The `atomic_bitenum!` macro generates a `#[repr(transparent)]` wrapper around an
 
 ```rust
 use bitcraft::atomic_bitenum;
-use core::sync::atomic::{AtomicU8, Ordering};
+use portable_atomic::{AtomicU8, Ordering};
 
 atomic_bitenum! {
     /// A lock-free atomic connection state tracker.
@@ -70,7 +70,7 @@ When you use the `atomic_bitstruct!` macro, it generates an outer **Atomic Struc
 
 ```rust
 use bitcraft::atomic_bitstruct;
-use core::sync::atomic::{AtomicU32, Ordering};
+use portable_atomic::{AtomicU32, Ordering};
 
 atomic_bitstruct! {
     /// A lock-free task scheduler state.
@@ -84,7 +84,7 @@ atomic_bitstruct! {
 
 ### Outer Atomic Methods (`AtomicTaskState`)
 
-These methods interact directly with the shared memory location. Every method requires an explicit `core::sync::atomic::Ordering`.
+These methods interact directly with the shared memory location. Every method requires an explicit `portable_atomic::Ordering`.
 
 - **Field Getters**: `state.is_running(Ordering::Acquire) -> bool`
 - **Field Setters**: `state.set_retries(5, Ordering::Release)` (Executes a targeted CAS loop)
@@ -119,7 +119,7 @@ When you call a generated setter method (e.g., `set_status`), the macro automati
 
 ```rust
 // Internally generated inside the macro:
-self.0.fetch_update(set_order, core::sync::atomic::Ordering::Relaxed, |raw| {
+self.0.fetch_update(set_order, portable_atomic::Ordering::Relaxed, |raw| {
     // 1. Mask out the old field value (clearing the bits)
     // 2. Shift and apply the new value
     Some((raw & !MASK) | (val_masked << OFFSET))
@@ -283,7 +283,7 @@ f.update_or_abort(Ordering::SeqCst, Ordering::Relaxed, |v| {
 
 ## 7. Mechanical Sympathy & Memory Orderings
 
-To provide "Mechanical Sympathy" with the underlying hardware, `atomic_bitstruct!` never hides synchronization costs. Every getter and setter explicitly requires a `core::sync::atomic::Ordering`.
+To provide "Mechanical Sympathy" with the underlying hardware, `atomic_bitstruct!` never hides synchronization costs. Every getter and setter explicitly requires a `portable_atomic::Ordering`.
 
 This enforces that developers actively dictate the CPU-level memory barriers emitted by the compiler:
 

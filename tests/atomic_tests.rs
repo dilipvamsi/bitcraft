@@ -1,5 +1,5 @@
 use bitcraft::{atomic_bitenum, atomic_bitstruct, bitenum};
-use core::sync::atomic::Ordering;
+use bitcraft::Ordering;
 
 bitenum! {
     pub enum State(2) {
@@ -236,4 +236,72 @@ fn test_atomic_bitenum() {
 
     let debug_str = format!("{:?}", mode);
     assert!(debug_str.contains("ConcurrentMode(ConcurrentModeValue(2)::ERROR)"));
+}
+
+atomic_bitstruct! {
+    pub struct ConcurrentTest128(AtomicU128) {
+        pub flag: bool = 1,
+        pub value: u64 = 64,
+        pub status: State = 2,
+        pub extra: u32 = 32,
+    }
+}
+
+#[test]
+fn test_atomic_u128_bitstruct() {
+    let f = ConcurrentTest128::new(0);
+    f.set_flag(true, Ordering::SeqCst);
+    f.set_value(0xDEADBEEFCAFEBABE, Ordering::SeqCst);
+    f.set_status(State::C, Ordering::SeqCst);
+    f.set_extra(0x12345678, Ordering::SeqCst);
+
+    assert_eq!(f.flag(Ordering::SeqCst), true);
+    assert_eq!(f.value(Ordering::SeqCst), 0xDEADBEEFCAFEBABE);
+    assert_eq!(f.status(Ordering::SeqCst), State::C);
+    assert_eq!(f.extra(Ordering::SeqCst), 0x12345678);
+
+    f.update(Ordering::SeqCst, Ordering::Relaxed, |v| {
+        v.set_value(0x1122334455667788);
+    });
+    assert_eq!(f.value(Ordering::SeqCst), 0x1122334455667788);
+}
+
+atomic_bitstruct! {
+    pub struct SignedConcurrentTest128(AtomicI128) {
+        pub flag: bool = 1,
+        pub value: i64 = 64,
+        pub extra: i32 = 32,
+    }
+}
+
+#[test]
+fn test_atomic_i128_bitstruct() {
+    let f = SignedConcurrentTest128::new(0);
+    f.set_value(-1234567890123456789, Ordering::SeqCst);
+    f.set_extra(-999999, Ordering::SeqCst);
+
+    assert_eq!(f.value(Ordering::SeqCst), -1234567890123456789);
+    assert_eq!(f.extra(Ordering::SeqCst), -999999);
+
+    f.update(Ordering::SeqCst, Ordering::Relaxed, |v| {
+        let current = v.value();
+        v.set_value(current + 1);
+    });
+    assert_eq!(f.value(Ordering::SeqCst), -1234567890123456788);
+}
+
+atomic_bitenum! {
+    pub enum ConcurrentMode128(AtomicU128, 128) {
+        MIN = 0,
+        MAX = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
+    }
+}
+
+#[test]
+fn test_atomic_u128_bitenum() {
+    let mode = ConcurrentMode128::new(ConcurrentMode128Value::MIN);
+    assert_eq!(mode.load(Ordering::SeqCst), ConcurrentMode128Value::MIN);
+
+    mode.store(ConcurrentMode128Value::MAX, Ordering::SeqCst);
+    assert_eq!(mode.load(Ordering::SeqCst), ConcurrentMode128Value::MAX);
 }
