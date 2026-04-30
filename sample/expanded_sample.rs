@@ -10908,7 +10908,7 @@ impl NibblePalette {
     pub const ELEMENT_WIDTH: usize = 4;
     pub const ELEMENT_COUNT: usize = 8;
     pub const TOTAL_BITS: usize = 4 * 8;
-    pub const MASK: u32 = if 4 == <u32 as ::bitcraft::BitLength>::BITS {
+    pub const MASK: u32 = if 4 >= <u32 as ::bitcraft::BitLength>::BITS {
         !0 as u32
     } else {
         ((1 as u32) << 4) - 1
@@ -11043,7 +11043,7 @@ impl SignedOffsets {
     pub const ELEMENT_WIDTH: usize = 3;
     pub const ELEMENT_COUNT: usize = 10;
     pub const TOTAL_BITS: usize = 3 * 10;
-    pub const MASK: u128 = if 3 == <u128 as ::bitcraft::BitLength>::BITS {
+    pub const MASK: u128 = if 3 >= <u128 as ::bitcraft::BitLength>::BITS {
         !0 as u128
     } else {
         ((1 as u128) << 3) - 1
@@ -11182,7 +11182,7 @@ impl StatusFlags {
     pub const ELEMENT_WIDTH: usize = 1;
     pub const ELEMENT_COUNT: usize = 32;
     pub const TOTAL_BITS: usize = 1 * 32;
-    pub const MASK: u32 = if 1 == <u32 as ::bitcraft::BitLength>::BITS {
+    pub const MASK: u32 = if 1 >= <u32 as ::bitcraft::BitLength>::BITS {
         !0 as u32
     } else {
         ((1 as u32) << 1) - 1
@@ -11317,7 +11317,7 @@ impl LargeBitFlags {
     pub const ELEMENT_WIDTH: usize = 1;
     pub const ELEMENT_COUNT: usize = 128;
     pub const TOTAL_BITS: usize = 1 * 128;
-    pub const MASK: u128 = if 1 == <u128 as ::bitcraft::BitLength>::BITS {
+    pub const MASK: u128 = if 1 >= <u128 as ::bitcraft::BitLength>::BITS {
         !0 as u128
     } else {
         ((1 as u128) << 1) - 1
@@ -11790,6 +11790,544 @@ impl ByteFlagArray {
                 self.0[byte_idx + i] |= byte_val;
             }
         }
+    }
+}
+
+#[repr(transparent)]
+pub struct AtomicNibbles(pub ::bitcraft::reexport::portable_atomic::AtomicU64);
+
+impl core::fmt::Debug for AtomicNibbles {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut list = f.debug_list();
+        for i in 0..16 {
+            list.entry(&self.get(i, ::bitcraft::Ordering::Relaxed));
+        }
+        list.finish()
+    }
+}
+
+impl AtomicNibbles {
+    pub const ELEMENT_WIDTH: usize = 4;
+    pub const ELEMENT_COUNT: usize = 16;
+    pub const TOTAL_BITS: usize = 4 * 16;
+    pub const MASK: u64 = if 4 >= <u64 as ::bitcraft::BitLength>::BITS {
+        !0 as u64
+    } else {
+        ((1 as u64) << 4) - 1
+    };
+    #[inline(always)]
+    pub const fn new(val: u64) -> Self {
+        Self(::bitcraft::reexport::portable_atomic::AtomicU64::new(val))
+    }
+    #[inline(always)]
+    pub fn load(&self, order: ::bitcraft::Ordering) -> u64 {
+        self.0.load(order)
+    }
+    #[inline(always)]
+    pub fn store(&self, val: u64, order: ::bitcraft::Ordering) {
+        self.0.store(val, order);
+    }
+    #[inline]
+    pub fn get(&self, index: usize, order: ::bitcraft::Ordering) -> u128 {
+        if true {
+            if !(index < 16) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("atomic_bitarray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let shift = index * 4;
+        let raw = (self.0.load(order) >> shift) & Self::MASK;
+        raw as u128
+    }
+    #[inline]
+    pub fn set(&self, index: usize, value: u128, order: ::bitcraft::Ordering) {
+        if true {
+            if !(index < 16) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("atomic_bitarray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let shift = index * 4;
+        let val_masked = (value as u64 & Self::MASK) << shift;
+        let mask = !(Self::MASK << shift);
+        self.0
+            .fetch_update(
+                order,
+                ::bitcraft::Ordering::Relaxed,
+                |raw| { Some((raw & mask) | val_masked) },
+            )
+            .unwrap();
+    }
+}
+
+#[repr(transparent)]
+pub struct AtomicNibblesValue(pub u64);
+
+#[automatically_derived]
+impl ::core::marker::Copy for AtomicNibblesValue {}
+
+#[automatically_derived]
+#[doc(hidden)]
+unsafe impl ::core::clone::TrivialClone for AtomicNibblesValue {}
+
+#[automatically_derived]
+impl ::core::clone::Clone for AtomicNibblesValue {
+    #[inline]
+    fn clone(&self) -> AtomicNibblesValue {
+        let _: ::core::clone::AssertParamIsClone<u64>;
+        *self
+    }
+}
+
+#[automatically_derived]
+impl ::core::default::Default for AtomicNibblesValue {
+    #[inline]
+    fn default() -> AtomicNibblesValue {
+        AtomicNibblesValue(::core::default::Default::default())
+    }
+}
+
+#[automatically_derived]
+impl ::core::marker::StructuralPartialEq for AtomicNibblesValue {}
+
+#[automatically_derived]
+impl ::core::cmp::PartialEq for AtomicNibblesValue {
+    #[inline]
+    fn eq(&self, other: &AtomicNibblesValue) -> bool {
+        self.0 == other.0
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Eq for AtomicNibblesValue {
+    #[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    fn assert_receiver_is_total_eq(&self) -> () {
+        let _: ::core::cmp::AssertParamIsEq<u64>;
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::PartialOrd for AtomicNibblesValue {
+    #[inline]
+    fn partial_cmp(
+        &self,
+        other: &AtomicNibblesValue,
+    ) -> ::core::option::Option<::core::cmp::Ordering> {
+        ::core::cmp::PartialOrd::partial_cmp(&self.0, &other.0)
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Ord for AtomicNibblesValue {
+    #[inline]
+    fn cmp(&self, other: &AtomicNibblesValue) -> ::core::cmp::Ordering {
+        ::core::cmp::Ord::cmp(&self.0, &other.0)
+    }
+}
+
+#[automatically_derived]
+impl ::core::hash::Hash for AtomicNibblesValue {
+    #[inline]
+    fn hash<__H: ::core::hash::Hasher>(&self, state: &mut __H) -> () {
+        ::core::hash::Hash::hash(&self.0, state)
+    }
+}
+
+impl core::fmt::Debug for AtomicNibblesValue {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut list = f.debug_list();
+        for i in 0..16 {
+            list.entry(&self.get(i));
+        }
+        list.finish()
+    }
+}
+
+impl AtomicNibblesValue {
+    pub const ELEMENT_WIDTH: usize = 4;
+    pub const ELEMENT_COUNT: usize = 16;
+    pub const TOTAL_BITS: usize = 4 * 16;
+    pub const MASK: u64 = if 4 >= <u64 as ::bitcraft::BitLength>::BITS {
+        !0 as u64
+    } else {
+        ((1 as u64) << 4) - 1
+    };
+    #[inline(always)]
+    pub const fn new(val: u64) -> Self {
+        Self(val)
+    }
+    #[inline(always)]
+    pub const fn to_bits(self) -> u64 {
+        self.0
+    }
+    #[inline]
+    pub fn get(&self, index: usize) -> u128 {
+        if true {
+            if !(index < 16) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("bitarray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let shift = index * 4;
+        let raw = (self.0 >> shift) & Self::MASK;
+        raw as u128
+    }
+    #[inline]
+    pub fn set(&mut self, index: usize, value: u128) {
+        if true {
+            if !(index < 16) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("bitarray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let shift = index * 4;
+        let val_masked = value as u64 & Self::MASK;
+        self.0 &= !(Self::MASK << shift);
+        self.0 |= val_masked << shift;
+    }
+}
+
+impl AtomicNibbles {
+    /// Returns a non-atomic snapshot of the current state.
+    #[inline]
+    pub fn get_snapshot(&self, order: ::bitcraft::Ordering) -> AtomicNibblesValue {
+        AtomicNibblesValue::new(self.0.load(order))
+    }
+    /// Completely overwrites the entire atomic state with the given snapshot.
+    #[inline]
+    pub fn set_snapshot(&self, val: AtomicNibblesValue, order: ::bitcraft::Ordering) {
+        self.0.store(val.to_bits(), order);
+    }
+    /// Atomically updates the array using a CAS loop.
+    #[inline]
+    pub fn update<F>(
+        &self,
+        set_order: ::bitcraft::Ordering,
+        fetch_order: ::bitcraft::Ordering,
+        mut f: F,
+    ) -> AtomicNibblesValue
+    where
+        F: FnMut(&mut AtomicNibblesValue),
+    {
+        let raw_prev = self
+            .0
+            .fetch_update(
+                set_order,
+                fetch_order,
+                |raw| {
+                    let mut snap = AtomicNibblesValue::new(raw);
+                    f(&mut snap);
+                    Some(snap.to_bits())
+                },
+            )
+            .unwrap();
+        AtomicNibblesValue::new(raw_prev)
+    }
+    /// Conditionally updates the array using a CAS loop.
+    #[inline]
+    pub fn update_or_abort<F>(
+        &self,
+        set_order: ::bitcraft::Ordering,
+        fetch_order: ::bitcraft::Ordering,
+        mut f: F,
+    ) -> Result<AtomicNibblesValue, AtomicNibblesValue>
+    where
+        F: FnMut(&mut AtomicNibblesValue) -> Option<()>,
+    {
+        self.0
+            .fetch_update(
+                set_order,
+                fetch_order,
+                |raw| {
+                    let mut snap = AtomicNibblesValue::new(raw);
+                    f(&mut snap).map(|_| snap.to_bits())
+                },
+            )
+            .map(|raw| AtomicNibblesValue::new(raw))
+            .map_err(|raw| AtomicNibblesValue::new(raw))
+    }
+}
+
+#[repr(transparent)]
+pub struct AtomicFlags128(pub ::bitcraft::reexport::portable_atomic::AtomicU128);
+
+impl core::fmt::Debug for AtomicFlags128 {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut list = f.debug_list();
+        for i in 0..128 {
+            list.entry(&self.get(i, ::bitcraft::Ordering::Relaxed));
+        }
+        list.finish()
+    }
+}
+
+impl AtomicFlags128 {
+    pub const ELEMENT_WIDTH: usize = 1;
+    pub const ELEMENT_COUNT: usize = 128;
+    pub const TOTAL_BITS: usize = 1 * 128;
+    pub const MASK: u128 = if 1 >= <u128 as ::bitcraft::BitLength>::BITS {
+        !0 as u128
+    } else {
+        ((1 as u128) << 1) - 1
+    };
+    #[inline(always)]
+    pub const fn new(val: u128) -> Self {
+        Self(::bitcraft::reexport::portable_atomic::AtomicU128::new(val))
+    }
+    #[inline(always)]
+    pub fn load(&self, order: ::bitcraft::Ordering) -> u128 {
+        self.0.load(order)
+    }
+    #[inline(always)]
+    pub fn store(&self, val: u128, order: ::bitcraft::Ordering) {
+        self.0.store(val, order);
+    }
+    #[inline]
+    pub fn get(&self, index: usize, order: ::bitcraft::Ordering) -> bool {
+        if true {
+            if !(index < 128) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("atomic_bitarray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let shift = index * 1;
+        let raw = (self.0.load(order) >> shift) & Self::MASK;
+        raw != 0
+    }
+    #[inline]
+    pub fn set(&self, index: usize, value: bool, order: ::bitcraft::Ordering) {
+        if true {
+            if !(index < 128) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("atomic_bitarray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let shift = index * 1;
+        let val_masked = (if value { 1 } else { 0 } & Self::MASK) << shift;
+        let mask = !(Self::MASK << shift);
+        self.0
+            .fetch_update(
+                order,
+                ::bitcraft::Ordering::Relaxed,
+                |raw| { Some((raw & mask) | val_masked) },
+            )
+            .unwrap();
+    }
+}
+
+#[repr(transparent)]
+pub struct AtomicFlags128Value(pub u128);
+
+#[automatically_derived]
+impl ::core::marker::Copy for AtomicFlags128Value {}
+
+#[automatically_derived]
+#[doc(hidden)]
+unsafe impl ::core::clone::TrivialClone for AtomicFlags128Value {}
+
+#[automatically_derived]
+impl ::core::clone::Clone for AtomicFlags128Value {
+    #[inline]
+    fn clone(&self) -> AtomicFlags128Value {
+        let _: ::core::clone::AssertParamIsClone<u128>;
+        *self
+    }
+}
+
+#[automatically_derived]
+impl ::core::default::Default for AtomicFlags128Value {
+    #[inline]
+    fn default() -> AtomicFlags128Value {
+        AtomicFlags128Value(::core::default::Default::default())
+    }
+}
+
+#[automatically_derived]
+impl ::core::marker::StructuralPartialEq for AtomicFlags128Value {}
+
+#[automatically_derived]
+impl ::core::cmp::PartialEq for AtomicFlags128Value {
+    #[inline]
+    fn eq(&self, other: &AtomicFlags128Value) -> bool {
+        self.0 == other.0
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Eq for AtomicFlags128Value {
+    #[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    fn assert_receiver_is_total_eq(&self) -> () {
+        let _: ::core::cmp::AssertParamIsEq<u128>;
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::PartialOrd for AtomicFlags128Value {
+    #[inline]
+    fn partial_cmp(
+        &self,
+        other: &AtomicFlags128Value,
+    ) -> ::core::option::Option<::core::cmp::Ordering> {
+        ::core::cmp::PartialOrd::partial_cmp(&self.0, &other.0)
+    }
+}
+
+#[automatically_derived]
+impl ::core::cmp::Ord for AtomicFlags128Value {
+    #[inline]
+    fn cmp(&self, other: &AtomicFlags128Value) -> ::core::cmp::Ordering {
+        ::core::cmp::Ord::cmp(&self.0, &other.0)
+    }
+}
+
+#[automatically_derived]
+impl ::core::hash::Hash for AtomicFlags128Value {
+    #[inline]
+    fn hash<__H: ::core::hash::Hasher>(&self, state: &mut __H) -> () {
+        ::core::hash::Hash::hash(&self.0, state)
+    }
+}
+
+impl core::fmt::Debug for AtomicFlags128Value {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut list = f.debug_list();
+        for i in 0..128 {
+            list.entry(&self.get(i));
+        }
+        list.finish()
+    }
+}
+
+impl AtomicFlags128Value {
+    pub const ELEMENT_WIDTH: usize = 1;
+    pub const ELEMENT_COUNT: usize = 128;
+    pub const TOTAL_BITS: usize = 1 * 128;
+    pub const MASK: u128 = if 1 >= <u128 as ::bitcraft::BitLength>::BITS {
+        !0 as u128
+    } else {
+        ((1 as u128) << 1) - 1
+    };
+    #[inline(always)]
+    pub const fn new(val: u128) -> Self {
+        Self(val)
+    }
+    #[inline(always)]
+    pub const fn to_bits(self) -> u128 {
+        self.0
+    }
+    #[inline]
+    pub fn get(&self, index: usize) -> bool {
+        if true {
+            if !(index < 128) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("bitarray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let shift = index * 1;
+        let raw = (self.0 >> shift) & Self::MASK;
+        raw != 0
+    }
+    #[inline]
+    pub fn set(&mut self, index: usize, value: bool) {
+        if true {
+            if !(index < 128) {
+                {
+                    ::core::panicking::panic_fmt(
+                        format_args!("bitarray index out of bounds"),
+                    );
+                }
+            }
+        }
+        let shift = index * 1;
+        let val_masked = if value { 1 } else { 0 } & Self::MASK;
+        self.0 &= !(Self::MASK << shift);
+        self.0 |= val_masked << shift;
+    }
+}
+
+impl AtomicFlags128 {
+    /// Returns a non-atomic snapshot of the current state.
+    #[inline]
+    pub fn get_snapshot(&self, order: ::bitcraft::Ordering) -> AtomicFlags128Value {
+        AtomicFlags128Value::new(self.0.load(order))
+    }
+    /// Completely overwrites the entire atomic state with the given snapshot.
+    #[inline]
+    pub fn set_snapshot(&self, val: AtomicFlags128Value, order: ::bitcraft::Ordering) {
+        self.0.store(val.to_bits(), order);
+    }
+    /// Atomically updates the array using a CAS loop.
+    #[inline]
+    pub fn update<F>(
+        &self,
+        set_order: ::bitcraft::Ordering,
+        fetch_order: ::bitcraft::Ordering,
+        mut f: F,
+    ) -> AtomicFlags128Value
+    where
+        F: FnMut(&mut AtomicFlags128Value),
+    {
+        let raw_prev = self
+            .0
+            .fetch_update(
+                set_order,
+                fetch_order,
+                |raw| {
+                    let mut snap = AtomicFlags128Value::new(raw);
+                    f(&mut snap);
+                    Some(snap.to_bits())
+                },
+            )
+            .unwrap();
+        AtomicFlags128Value::new(raw_prev)
+    }
+    /// Conditionally updates the array using a CAS loop.
+    #[inline]
+    pub fn update_or_abort<F>(
+        &self,
+        set_order: ::bitcraft::Ordering,
+        fetch_order: ::bitcraft::Ordering,
+        mut f: F,
+    ) -> Result<AtomicFlags128Value, AtomicFlags128Value>
+    where
+        F: FnMut(&mut AtomicFlags128Value) -> Option<()>,
+    {
+        self.0
+            .fetch_update(
+                set_order,
+                fetch_order,
+                |raw| {
+                    let mut snap = AtomicFlags128Value::new(raw);
+                    f(&mut snap).map(|_| snap.to_bits())
+                },
+            )
+            .map(|raw| AtomicFlags128Value::new(raw))
+            .map_err(|raw| AtomicFlags128Value::new(raw))
     }
 }
 

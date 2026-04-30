@@ -1,7 +1,16 @@
 use bitcraft::{
-    atomic_bitenum, atomic_bitstruct, bitarray, bitenum, bitstruct, bytearray, bytestruct, byteval,
+    atomic_bitarray, atomic_bitenum, atomic_bitstruct, bitarray, bitenum, bitstruct, bytearray,
+    bytestruct, byteval,
 };
 use proptest::prelude::*;
+
+atomic_bitarray! {
+    struct FuzzAtomicArray(u 4, 16); // 64 bits
+}
+
+atomic_bitarray! {
+    struct FuzzAtomicBoolArray(bool, 64);
+}
 
 atomic_bitstruct! {
     struct FuzzAtomicStruct(AtomicU64) {
@@ -1125,5 +1134,35 @@ proptest! {
         prop_assert_eq!(f.a(bitcraft::Ordering::Relaxed), a);
         prop_assert_eq!(f.b(bitcraft::Ordering::Relaxed), b);
         prop_assert_eq!(f.c(bitcraft::Ordering::Relaxed), c_final);
+    }
+
+    #[test]
+    fn test_atomic_bitarray_fuzz(vals in any::<[u8; 16]>()) {
+        let arr = FuzzAtomicArray::new(0);
+        for (i, &v) in vals.iter().enumerate() {
+            let masked = (v & 0xF) as u128;
+            arr.set(i, masked, bitcraft::Ordering::SeqCst);
+            prop_assert_eq!(arr.get(i, bitcraft::Ordering::Relaxed), masked);
+        }
+
+        let snap = arr.get_snapshot(bitcraft::Ordering::Relaxed);
+        for (i, &v) in vals.iter().enumerate() {
+            let masked = (v & 0xF) as u128;
+            prop_assert_eq!(snap.get(i), masked);
+        }
+    }
+
+    #[test]
+    fn test_atomic_bitarray_bool_fuzz(vals in any::<[bool; 64]>()) {
+        let arr = FuzzAtomicBoolArray::new(0);
+        for (i, &v) in vals.iter().enumerate() {
+            arr.set(i, v, bitcraft::Ordering::SeqCst);
+            prop_assert_eq!(arr.get(i, bitcraft::Ordering::Relaxed), v);
+        }
+
+        let snap = arr.get_snapshot(bitcraft::Ordering::Relaxed);
+        for (i, &v) in vals.iter().enumerate() {
+            prop_assert_eq!(snap.get(i), v);
+        }
     }
 }

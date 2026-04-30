@@ -1,5 +1,5 @@
-use bitcraft::{atomic_bitenum, atomic_bitstruct, bitenum};
 use bitcraft::Ordering;
+use bitcraft::{atomic_bitarray, atomic_bitenum, atomic_bitstruct, bitenum};
 
 bitenum! {
     pub enum State(2) {
@@ -232,7 +232,10 @@ fn test_atomic_bitenum() {
     assert_eq!(ConcurrentMode::BITS, 2);
 
     let def_mode = ConcurrentMode::default();
-    assert_eq!(def_mode.load(Ordering::SeqCst), ConcurrentModeValue::STANDBY);
+    assert_eq!(
+        def_mode.load(Ordering::SeqCst),
+        ConcurrentModeValue::STANDBY
+    );
 
     let debug_str = format!("{:?}", mode);
     assert!(debug_str.contains("ConcurrentMode(ConcurrentModeValue(2)::ERROR)"));
@@ -304,4 +307,169 @@ fn test_atomic_u128_bitenum() {
 
     mode.store(ConcurrentMode128Value::MAX, Ordering::SeqCst);
     assert_eq!(mode.load(Ordering::SeqCst), ConcurrentMode128Value::MAX);
+}
+
+atomic_bitarray! {
+    pub struct AtomicNibbles(u 4, 8); // 32 bits total
+}
+
+#[test]
+fn test_atomic_bitarray() {
+    let a = AtomicNibbles::new(0);
+    assert_eq!(a.get(0, Ordering::Relaxed), 0);
+
+    a.set(0, 15, Ordering::SeqCst);
+    a.set(7, 9, Ordering::SeqCst);
+
+    assert_eq!(a.get(0, Ordering::SeqCst), 15);
+    assert_eq!(a.get(7, Ordering::SeqCst), 9);
+    assert_eq!(a.get(3, Ordering::SeqCst), 0);
+
+    // Test update CAS loop
+    a.update(Ordering::SeqCst, Ordering::Relaxed, |snap| {
+        let val = snap.get(0);
+        snap.set(0, val - 1);
+        snap.set(1, 5);
+    });
+
+    assert_eq!(a.get(0, Ordering::SeqCst), 14);
+    assert_eq!(a.get(1, Ordering::SeqCst), 5);
+    assert_eq!(a.get(7, Ordering::SeqCst), 9);
+}
+
+atomic_bitarray! {
+    pub struct AtomicFlags128(bool, 128);
+}
+
+#[test]
+fn test_atomic_bitarray_128() {
+    let f = AtomicFlags128::new(0);
+    f.set(0, true, Ordering::SeqCst);
+    f.set(127, true, Ordering::SeqCst);
+
+    assert_eq!(f.get(0, Ordering::SeqCst), true);
+    assert_eq!(f.get(127, Ordering::SeqCst), true);
+    assert_eq!(f.get(64, Ordering::SeqCst), false);
+
+    let snap = f.get_snapshot(Ordering::SeqCst);
+    assert_eq!(snap.get(0), true);
+    assert_eq!(snap.get(127), true);
+}
+
+atomic_bitarray! {
+    pub struct AtomicSigned(i 4, 8); // 32 bits
+}
+
+#[test]
+fn test_atomic_bitarray_signed() {
+    let a = AtomicSigned::new(0);
+    a.set(0, -1, Ordering::SeqCst);
+    a.set(1, 7, Ordering::SeqCst);
+    a.set(2, -8, Ordering::SeqCst);
+
+    assert_eq!(a.get(0, Ordering::SeqCst), -1);
+    assert_eq!(a.get(1, Ordering::SeqCst), 7);
+    assert_eq!(a.get(2, Ordering::SeqCst), -8);
+}
+
+#[test]
+fn test_atomic_bitarray_update_abort() {
+    let a = AtomicNibbles::new(10);
+
+    // Abort if value is even
+    let res = a.update_or_abort(Ordering::SeqCst, Ordering::SeqCst, |snap| {
+        let val = snap.get(0);
+        if val % 2 == 0 {
+            None // Abort
+        } else {
+            snap.set(0, val + 1);
+            Some(())
+        }
+    });
+
+    assert!(res.is_err());
+    assert_eq!(a.get(0, Ordering::SeqCst), 10);
+
+    // Succeed if value is 10
+    let res = a.update_or_abort(Ordering::SeqCst, Ordering::SeqCst, |snap| {
+        let val = snap.get(0);
+        if val == 10 {
+            snap.set(0, 11);
+            Some(())
+        } else {
+            None
+        }
+    });
+
+    assert!(res.is_ok());
+    assert_eq!(a.get(0, Ordering::SeqCst), 11);
+}
+
+#[test]
+fn test_atomic_bitarray_debug() {
+    let a = AtomicNibbles::new(0);
+    a.set(0, 1, Ordering::Relaxed);
+    a.set(1, 2, Ordering::Relaxed);
+    let debug_str = format!("{:?}", a);
+    // Should look like a list of values
+    assert!(debug_str.contains("1, 2, 0, 0"));
+}
+
+#[test]
+fn test_atomic_bitarray_alignment_padding() {
+    atomic_bitarray! {
+        struct OddPadding(u 3, 5); // 15 bits total, fits in AtomicU16 (16 bits)
+    }
+    let a = OddPadding::new(0);
+    a.set(4, 7, Ordering::SeqCst);
+    assert_eq!(a.get(4, Ordering::SeqCst), 7);
+    assert_eq!(a.load(Ordering::Relaxed), 7 << (4 * 3));
+}
+
+atomic_bitarray! {
+    struct AtomicSigned1(i 1, 8);
+}
+
+#[test]
+fn test_atomic_signed_1bit() {
+    let a = AtomicSigned1::new(0);
+    a.set(0, -1, Ordering::SeqCst);
+    a.set(1, 0, Ordering::SeqCst);
+    assert_eq!(a.get(0, Ordering::SeqCst), -1);
+    assert_eq!(a.get(1, Ordering::SeqCst), 0);
+}
+
+atomic_bitarray! {
+    struct AtomicU128Single(u 128, 1);
+}
+
+#[test]
+fn test_atomic_u128_single() {
+    let a = AtomicU128Single::new(0);
+    let val = 0x12345678_90ABCDEF_12345678_90ABCDEF_u128;
+    a.set(0, val, Ordering::SeqCst);
+    assert_eq!(a.get(0, Ordering::SeqCst), val);
+}
+
+atomic_bitarray! {
+    struct LargeArray(u 8, 16); // 128 bits
+}
+
+#[test]
+fn test_large_array_snapshot_roundtrip() {
+    let a = LargeArray::new(0);
+    for i in 0..16 {
+        a.set(i, (i as u128) + 10, Ordering::Relaxed);
+    }
+
+    let snap = a.get_snapshot(Ordering::SeqCst);
+    for i in 0..16 {
+        assert_eq!(snap.get(i), (i as u128) + 10);
+    }
+
+    let mut snap2 = snap;
+    snap2.set(0, 255);
+    a.set_snapshot(snap2, Ordering::SeqCst);
+    assert_eq!(a.get(0, Ordering::Relaxed), 255);
+    assert_eq!(a.get(1, Ordering::Relaxed), 11);
 }

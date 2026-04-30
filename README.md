@@ -36,6 +36,23 @@ In high-performance domains (vector engines, network stacks, or high-frequency t
 
 ---
 
+## ⚡ Performance Highlights
+
+Under heavy contention (32 threads, 1.0M iterations each), `bitcraft` atomics outperform traditional locking by massive margins:
+
+| Metric | Pattern | Speedup vs. `Mutex` | Advantage |
+| :--- | :--- | :--- | :--- |
+| **Enum Transitions** | `atomic_bitenum!` | **22.7x Faster** | vs. `Mutex<u8>` (Direct Store) |
+| **Array Mutation (64-bit)** | `atomic_bitarray!` | **3.18x Faster** | vs. `Mutex<bitarray!>` |
+| **Array Mutation (128-bit)**| `atomic_bitarray!` | **2.63x Faster** | vs. `Mutex<[u8; 16]>` |
+| **Conditional Swap** | `compare_exchange` | **3.30x Faster** | vs. `Mutex` check-and-set |
+| **Struct Update** | `atomic_bitstruct!` | **1.14x Faster** | vs. `Mutex<StandardStruct>` (CAS) |
+
+> [!TIP]
+> Run your own hardware-aligned benchmarks using `make perf` or `make perf-atomic`.
+
+---
+
 ---
 
 ## ⚖️ The Deep Dive: `std` vs. `bitcraft`
@@ -544,6 +561,53 @@ Content: [Low 8]    [Mid 8]    [High 8]
 
 - Total Size: 3 bytes (LSB-First value).
 - `(i 3)` causes `value()` to return a native signed `i32`, properly sign-extended.
+
+### 5. `bitarray!`
+
+A high-density packed array for sub-byte elements (booleans, small integers). Automatically selects the smallest backing integer (`u8`–`u128`).
+
+```rust
+use bitcraft::bitarray;
+
+bitarray! {
+    /// A collection of 16 nibbles (4-bit integers) packed into a u64.
+    pub struct Nibbles(u 4, 16);
+}
+
+let mut arr = Nibbles::new(0);
+arr.set(0, 0xA);
+arr.set(15, 0xF);
+
+assert_eq!(arr.get(0), 0xA);
+assert_eq!(arr.get(15), 0xF);
+```
+
+### 6. `atomic_bitarray!`
+
+Thread-safe, lock-free concurrent mutation of packed bit-arrays. Uses `portable-atomic` for cross-platform compliance and 128-bit atomic support.
+
+```rust
+use bitcraft::{atomic_bitarray, Ordering};
+
+atomic_bitarray! {
+    /// 32 status flags packed into a single atomic u32.
+    pub struct AtomicFlags(bool, 32);
+}
+
+let flags = AtomicFlags::new(0);
+flags.set(5, true, Ordering::SeqCst);
+
+// High-level atomic transaction via CAS loop
+flags.update(Ordering::SeqCst, Ordering::SeqCst, |snap| {
+    if snap.get(5) {
+        snap.set(6, true);
+    }
+});
+```
+
+- **Snapshots**: Each `atomic_bitarray!` automatically generates a non-atomic `Value` struct (e.g., `AtomicFlagsValue`) for zero-cost snapshots and batch updates.
+- **CAS Patterns**: Provides `update` and `update_or_abort` for complex multi-bit transitions across the entire array without taking any locks.
+- **128-Bit Support**: Built-in support for 128-bit atomic arrays (e.g., `AtomicFlags128(bool, 128)`) via `portable-atomic`, even on platforms without native 128-bit instructions.
 
 ---
 

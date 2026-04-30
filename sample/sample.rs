@@ -1,5 +1,6 @@
 use bitcraft::{
-    atomic_bitenum, atomic_bitstruct, bitarray, bitenum, bitstruct, bytearray, bytestruct, byteval,
+    atomic_bitarray, atomic_bitenum, atomic_bitstruct, bitarray, bitenum, bitstruct, bytearray,
+    bytestruct, byteval,
 };
 use bitcraft::Ordering;
 
@@ -204,6 +205,12 @@ bitarray! { pub struct LargeBitFlags(bool, 128); } // 128 flags → u128
 bytearray! { pub struct NibbleBuffer(u 4, 64); } // 64 nibbles → [u8; 32]
 bytearray! { pub struct DeltaStream(i 7, 20); } // 20 × 7-bit signed → [u8; 18]
 bytearray! { pub struct ByteFlagArray(bool, 128); } // 128 flags → [u8; 16]
+
+// ---------------------------------------------------------------------------
+// atomic_bitarray! — thread-safe packed arrays
+// ---------------------------------------------------------------------------
+atomic_bitarray! { pub struct AtomicNibbles(u 4, 16); } // 16 nibbles → AtomicU64
+atomic_bitarray! { pub struct AtomicFlags128(bool, 128); } // 128 flags → AtomicU128
 
 fn main() {
     let config = Config::default()
@@ -490,4 +497,29 @@ fn main() {
     println!("  After casting 0xFF×16:");
     println!("  ByteFlagArray bit[100]  = {}", bf.get(100));
     println!("  LargeBitFlags bit[100]  = {}", lbf.get(100));
+
+    // 8. Demonstration of atomic_bitarray!
+    println!("\n--- atomic_bitarray! ---");
+    let atomic_nibbles = AtomicNibbles::new(0);
+    atomic_nibbles.set(0, 0xA, Ordering::SeqCst);
+    atomic_nibbles.set(15, 0xF, Ordering::SeqCst);
+    println!("AtomicNibbles:");
+    println!("  [0] = 0x{:X}", atomic_nibbles.get(0, Ordering::Relaxed));
+    println!("  [15] = 0x{:X}", atomic_nibbles.get(15, Ordering::Relaxed));
+
+    atomic_nibbles.update(Ordering::SeqCst, Ordering::Relaxed, |snap| {
+        let val: u128 = snap.get(0);
+        snap.set(0, val + 1);
+    });
+    println!(
+        "  [0] after update = 0x{:X}",
+        atomic_nibbles.get(0, Ordering::Relaxed)
+    );
+
+    let atomic_flags = AtomicFlags128::new(0);
+    atomic_flags.set(0, true, Ordering::SeqCst);
+    atomic_flags.set(127, true, Ordering::SeqCst);
+    println!("AtomicFlags128:");
+    println!("  [0] = {}", atomic_flags.get(0, Ordering::Relaxed));
+    println!("  [127] = {}", atomic_flags.get(127, Ordering::Relaxed));
 }

@@ -1,4 +1,4 @@
-use bitcraft::{atomic_bitenum, atomic_bitstruct};
+use bitcraft::{atomic_bitarray, atomic_bitenum, atomic_bitstruct};
 use core::sync::atomic::Ordering;
 use std::hint::black_box;
 use std::sync::{Arc, Mutex};
@@ -26,6 +26,14 @@ atomic_bitenum! {
         ON = 1,
         FAULT = 2,
     }
+}
+
+atomic_bitarray! {
+    struct AtomicArray(u 4, 16); // 16 nibbles -> AtomicU64 backed
+}
+
+atomic_bitarray! {
+    struct AtomicArray128(bool, 128); // 128 bits -> AtomicU128 backed
 }
 
 #[cfg(debug_assertions)]
@@ -231,4 +239,86 @@ fn test_atomic_performance_vs_mutex() {
     let dur_atomic_c = start_atomic_c.elapsed();
     println!("Atomic CAS Time:               {:?}", dur_atomic_c);
     println!("  -> CAS Speedup:              {:.2}x", dur_mutex_c.as_nanos() as f64 / dur_atomic_c.as_nanos() as f64);
+
+    // ----------------------------------------------------------------------
+    // PART E: Atomic BitArray (Concurrent Array Mutation)
+    // ----------------------------------------------------------------------
+    println!("\n--- Part E: Atomic BitArray (Concurrent Array Mutation) ---");
+
+    // 1. Mutex<[u8; 16]>
+    let mutex_array = Arc::new(Mutex::new([0u8; 16]));
+    let start_mutex_arr = Instant::now();
+    let mut handles = Vec::new();
+    for _ in 0..THREADS {
+        let arr = Arc::clone(&mutex_array);
+        handles.push(thread::spawn(move || {
+            for i in 0..ITERATIONS_PER_THREAD {
+                let mut guard = arr.lock().unwrap();
+                let idx = i % 16;
+                guard[idx] = (i % 16) as u8;
+                black_box(guard[idx]);
+            }
+        }));
+    }
+    for h in handles { h.join().unwrap(); }
+    let dur_mutex_arr = start_mutex_arr.elapsed();
+    println!("Mutex<[u8; 16]> Time:          {:?}", dur_mutex_arr);
+
+    // 2. AtomicArray (Lock-Free CAS Mutation)
+    let atomic_array = Arc::new(AtomicArray::new(0));
+    let start_atomic_arr = Instant::now();
+    let mut handles = Vec::new();
+    for _ in 0..THREADS {
+        let arr = Arc::clone(&atomic_array);
+        handles.push(thread::spawn(move || {
+            for i in 0..ITERATIONS_PER_THREAD {
+                let idx = i % 16;
+                arr.set(idx, (i % 16) as u128, Ordering::Release);
+                black_box(arr.get(idx, Ordering::Relaxed));
+            }
+        }));
+    }
+    for h in handles { h.join().unwrap(); }
+    let dur_atomic_arr = start_atomic_arr.elapsed();
+    println!("atomic_bitarray! (64-bit) Time:  {:?}", dur_atomic_arr);
+    println!("  -> Atomic Speedup vs Mutex16:  {:.2}x", dur_mutex_arr.as_nanos() as f64 / dur_atomic_arr.as_nanos() as f64);
+
+    // 3. AtomicArray128 (Lock-Free CAS Mutation)
+    let atomic_array_128 = Arc::new(AtomicArray128::new(0));
+    let start_atomic_arr_128 = Instant::now();
+    let mut handles = Vec::new();
+    for _ in 0..THREADS {
+        let arr = Arc::clone(&atomic_array_128);
+        handles.push(thread::spawn(move || {
+            for i in 0..ITERATIONS_PER_THREAD {
+                let idx = i % 128;
+                arr.set(idx, i % 2 == 0, Ordering::Release);
+                black_box(arr.get(idx, Ordering::Relaxed));
+            }
+        }));
+    }
+    for h in handles { h.join().unwrap(); }
+    let dur_atomic_arr_128 = start_atomic_arr_128.elapsed();
+    println!("atomic_bitarray! (128-bit) Time: {:?}", dur_atomic_arr_128);
+    println!("  -> Atomic Speedup vs Mutex16:  {:.2}x", dur_mutex_arr.as_nanos() as f64 / dur_atomic_arr_128.as_nanos() as f64);
+
+    // 4. Mutex<AtomicArrayValue> (Same bit-packing, but locked)
+    let mutex_bitarray = Arc::new(Mutex::new(AtomicArrayValue::new(0)));
+    let start_mutex_bit = Instant::now();
+    let mut handles = Vec::new();
+    for _ in 0..THREADS {
+        let arr = Arc::clone(&mutex_bitarray);
+        handles.push(thread::spawn(move || {
+            for i in 0..ITERATIONS_PER_THREAD {
+                let mut guard = arr.lock().unwrap();
+                let idx = i % 16;
+                guard.set(idx, (i % 16) as u128);
+                black_box(guard.get(idx));
+            }
+        }));
+    }
+    for h in handles { h.join().unwrap(); }
+    let dur_mutex_bit = start_mutex_bit.elapsed();
+    println!("Mutex<bitarray!> Time:         {:?}", dur_mutex_bit);
+    println!("  -> Atomic Speedup vs MutexBit: {:.2}x", dur_mutex_bit.as_nanos() as f64 / dur_atomic_arr.as_nanos() as f64);
 }

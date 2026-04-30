@@ -21,7 +21,7 @@ Choosing a bit manipulation library in Rust often involves balancing **Ergonomic
 | **Packed Arrays** | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (`bitarray!` / `bytearray!`)** |
 | **Signed Fields** | ✅ | ❌ | ✅ | ✅ | ✅ | **✅ (Zero-cost shift)** |
 | **Signed Enums** | ✅ | ❌ | ❌ (Custom impl) | ❌ (Custom impl) | ⚠️ (Requires trait) | **✅ (Native `i $bits`)** |
-| **Atomic CAS Loops** | ❌ (Manual only) | ❌ | ❌ | ❌ | ❌ | **✅ (`atomic_bitstruct!` / `atomic_bitenum!`)** |
+| **Atomic CAS Loops** | ❌ (Manual only) | ❌ | ❌ | ❌ | ❌ | **✅ (`atomic_bitarray!`, `atomic_bitstruct!`, `atomic_bitenum!`)** |
 | **C FFI / ABI** | ✅ | ✅ | ✅ | ✅ | ✅ | **✅ (Transparent)** |
 
 ---
@@ -43,10 +43,12 @@ We evaluated 32 concurrent threads performing 1,000,000 updates each on a shared
 
 | Metric | Pattern | Overhead vs. `Mutex` | Advantage |
 | :--- | :--- | :--- | :--- |
-| **Contention Latency** | `atomic_bitenum!` | **24.0x Faster** | Single-Instruction Update |
-| **Contention Latency** | `atomic_bitstruct!` | **1.14x Faster** | Lock-Free CAS Transaction |
-| **Conditional Transition** | `compare_exchange` | **2.75x Faster** | Atomic State Machine Swap |
-| **Parallel Throughput** | `atomic_bitstruct!` | **2.11x Faster** | Zero-Lock Uncontended Path |
+| **Contention Latency** | `atomic_bitenum!` | **22.7x Faster** | vs. `Mutex<u8>` (Single-Instruction) |
+| **Array Mutation (64-bit)** | `atomic_bitarray!` | **3.18x Faster** | vs. `Mutex<bitarray!>` (Packed Snapshot) |
+| **Array Mutation (128-bit)**| `atomic_bitarray!` | **2.63x Faster** | vs. `Mutex<[u8; 16]>` (Raw Array) |
+| **Contention Latency** | `atomic_bitstruct!` | **1.14x Faster** | vs. `Mutex<StandardStruct>` |
+| **Conditional Transition** | `compare_exchange` | **3.30x Faster** | vs. `Mutex` check-and-set |
+| **Parallel Throughput** | `atomic_bitstruct!` | **1.54x Faster** | vs. Uncontended `Mutex` Array |
 
 > **Why the massive gap?** A `Mutex` forces threads into a queue, often requiring kernel context switches under high contention. `atomic_bitenum!` uses a single CPU instruction (`store`), while `atomic_bitstruct!` uses a lock-free `fetch_update` loop. Under high contention, the lock-free approach avoids the "Thundering Herd" problem and keeps the CPU pipeline saturated.
 
@@ -102,7 +104,7 @@ If you are interfacing with C firmware or legacy network protocols, layout predi
 Most bit manipulation libraries completely ignore concurrency. If you need to share a bitfield across threads, you typically have to wrap it in a heavy synchronization primitive.
 
 * **The Locking Tax**: A `Mutex<T>` or `RwLock<T>` requires entering the kernel to put a thread to sleep if there is contention. Even without contention, it involves expensive memory bus locking.
-* **Lock-Free with `bitcraft`**: `atomic_bitstruct!` and `atomic_bitenum!` wrap standard `portable_atomic` types. They provide a **lock-free** API where threads never sleep.
+* **Lock-Free with `bitcraft`**: `atomic_bitarray!`, `atomic_bitstruct!`, and `atomic_bitenum!` wrap standard `portable_atomic` types. They provide a **lock-free** API where threads never sleep.
 * **Transactional CAS Loops**: Instead of locking the whole struct, `bitcraft` uses **Compare-And-Swap (CAS)** loops. The `.update_or_abort()` method allows you to define complex state transitions that are resolved at the hardware level. This is significantly faster in high-throughput kernels or network drivers where thousands of threads might be hitting the same status word simultaneously.
 * **No Deadlocks**: Since there are no locks, there are no deadlocks. This simplifies concurrent system design significantly.
 
@@ -132,7 +134,7 @@ Most bitfield libraries in the Rust ecosystem (`modular-bitfield`, `packed_struc
 ### 🔄 Atomic Concurrency (`atomic_bitstruct!` & `atomic_bitenum!`)
 
 Most bitfield libraries completely ignore concurrency. If you want to share a bitfield across threads, you have to wrap it in a heavy `Mutex` or `RwLock`.
-`bitcraft` provides `atomic_bitstruct!` and `atomic_bitenum!` which wrap standard `portable_atomic` types, generating a fully lock-free API. They provide a highly ergonomic `.update_or_abort()` closure pattern for building transaction-safe CAS loops that resolve concurrent mutations on disjoint bit-fields or state variants automatically, without taking any locks. This is critical for building high-throughput kernels, network stacks, and shared-memory applications.
+`bitcraft` provides `atomic_bitarray!`, `atomic_bitstruct!`, and `atomic_bitenum!` which wrap standard `portable_atomic` types, generating a fully lock-free API. They provide a highly ergonomic `.update_or_abort()` closure pattern for building transaction-safe CAS loops that resolve concurrent mutations on disjoint bit-fields, array elements, or state variants automatically, without taking any locks. This is critical for building high-throughput kernels, network stacks, and shared-memory applications.
 
 ### 🛡️ Compile-Time Bounds Checking (Zero Runtime Panic)
 

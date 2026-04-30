@@ -632,4 +632,65 @@ impl FlagBuffer {
         }
     }
 }
+
+---
+
+## 8. `atomic_bitarray!` (Concurrent Packed Arrays)
+
+Generates a thread-safe packed array with snapshot capabilities and CAS-loop updates.
+
+### **Usage**
+
+```rust
+atomic_bitarray! {
+    pub struct AtomicNibbles(u 4, 16); // 16 nibbles -> AtomicU64 backed
+}
+```
+
+### **Generated "Struct Equivalent"**
+
+```rust
+#[repr(transparent)]
+pub struct AtomicNibbles(pub portable_atomic::AtomicU64);
+
+// Snapshot type generated via bitarray!
+#[repr(transparent)]
+pub struct AtomicNibblesValue(pub u64);
+
+impl AtomicNibbles {
+    #[inline(always)]
+    pub const fn new(val: u64) -> Self {
+        Self(portable_atomic::AtomicU64::new(val))
+    }
+
+    #[inline]
+    pub fn get(&self, index: usize, order: Ordering) -> u128 {
+        let shift = index * 4;
+        let mask = 0xF;
+        ((self.0.load(order) >> shift) & mask) as u128
+    }
+
+    #[inline]
+    pub fn set(&self, index: usize, val: u128, order: Ordering) {
+        let shift = index * 4;
+        let mask = 0xF;
+        let val_masked = (val as u64 & mask) << shift;
+        self.0.fetch_update(order, Ordering::Relaxed, |raw| {
+            Some((raw & !(mask << shift)) | val_masked)
+        }).unwrap();
+    }
+
+    #[inline]
+    pub fn update<F>(&self, set_order: Ordering, fetch_order: Ordering, mut f: F) -> AtomicNibblesValue
+    where F: FnMut(&mut AtomicNibblesValue)
+    {
+        let raw = self.0.fetch_update(set_order, fetch_order, |r| {
+            let mut snap = AtomicNibblesValue::new(r);
+            f(&mut snap);
+            Some(snap.to_bits())
+        }).unwrap();
+        AtomicNibblesValue::new(raw)
+    }
+}
+```
 ```

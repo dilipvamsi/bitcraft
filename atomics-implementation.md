@@ -10,9 +10,10 @@ This architecture allows developers to define memory-efficient flags, counters, 
 
 The macros natively map to `portable_atomic` types, giving you full control over the underlying memory footprint:
 
-- **Unsigned Atomics**: `AtomicU8`, `AtomicU16`, `AtomicU32`, `AtomicU64`
-- **Signed Atomics**: `AtomicI8`, `AtomicI16`, `AtomicI32`, `AtomicI64`
-*(Note: `AtomicU128` and `AtomicI128` are not supported by the Rust standard library at the time of writing).*
+- **Unsigned Atomics**: `AtomicU8`, `AtomicU16`, `AtomicU32`, `AtomicU64`, **`AtomicU128`**
+- **Signed Atomics**: `AtomicI8`, `AtomicI16`, `AtomicI32`, `AtomicI64`, **`AtomicI128`**
+
+`bitcraft` leverages `portable-atomic` to provide 128-bit atomic support even on platforms where the Rust standard library does not yet expose them natively.
 
 Fields defined inside an `atomic_bitstruct!` inherit all the robust capabilities of the core `bitstruct!` engine. This includes:
 
@@ -375,3 +376,54 @@ if result.is_ok() {
     println!("Worker successfully transitioned state!");
 }
 ```
+
+---
+
+## 11. `atomic_bitarray!` — Atomic Packed Arrays
+
+While `atomic_bitstruct!` is optimized for heterogeneous fields (e.g., a bool, a u8, and a u16), the `atomic_bitarray!` macro is specialized for **homogeneous packed data**. It allows you to define arrays of small bit-widths (like 1-bit flags, 4-bit nibbles, or 12-bit sensor data) that are backed by a single atomic integer.
+
+### Example: Atomic Nibble Array
+
+```rust
+use bitcraft::{atomic_bitarray, Ordering};
+
+atomic_bitarray! {
+    /// 16 nibbles (4-bit integers) packed into a single AtomicU64.
+    pub struct AtomicNibbles(u 4, 16);
+}
+
+let arr = AtomicNibbles::new(0);
+
+// Atomically set the 5th nibble
+arr.set(5, 0xA, Ordering::SeqCst);
+
+// Read the 5th nibble
+let val = arr.get(5, Ordering::Relaxed); // 0xA
+```
+
+### Automatic Snapshot Generation
+
+Similar to `atomic_bitstruct!`, every `atomic_bitarray!` automatically generates a shadow `Value` struct (e.g., `AtomicNibblesValue`) which is a non-atomic `bitarray!`.
+
+- **`get_snapshot(order)`**: Fetches the entire array into a local register-backed struct.
+- **`set_snapshot(val, order)`**: Overwrites the entire array.
+- **`update(...)`**: Performs a transactional multi-element update.
+
+```rust
+arr.update(Ordering::SeqCst, Ordering::Relaxed, |snap| {
+    // Modify multiple elements in a single transaction
+    let prev = snap.get(0);
+    snap.set(0, prev + 1);
+    snap.set(1, 0xF);
+});
+```
+
+### Comparison: `atomic_bitstruct!` vs `atomic_bitarray!`
+
+| Feature | `atomic_bitstruct!` | `atomic_bitarray!` |
+| :--- | :--- | :--- |
+| **Field Types** | Heterogeneous (bool, uN, iN, Enum) | Homogeneous (uN, iN, or bool) |
+| **Access** | Named methods (`v.is_running()`) | Index-based (`v.get(i)`) |
+| **Backing** | Explicit (`AtomicU64`) | Automatic (Smallest possible) |
+| **Use Case** | Control registers, headers | Bit-maps, packed counters |

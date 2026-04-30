@@ -1,7 +1,7 @@
 # Add cargo bin to path
 export PATH := $(HOME)/.cargo/bin:$(PATH)
 
-.PHONY: all test normal fuzz perf clean help expand expand-sample
+.PHONY: all test normal fuzz perf perf-atomic clean help expand expand-sample
 
 # Default target
 all: normal fuzz
@@ -29,6 +29,10 @@ perf:
 	@echo "==> Running Performance Benchmarks (Release Mode)"
 	cargo test --release --test performance -- --nocapture
 	@echo ""
+	cargo test --release --test performance_atomic -- --nocapture
+
+# Run only atomic concurrency benchmarks
+perf-atomic:
 	@echo "==> Running Atomic Concurrency Benchmarks (Release Mode)"
 	cargo test --release --test performance_atomic -- --nocapture
 
@@ -57,6 +61,7 @@ help:
 	@echo "  make normal      Run unit tests, doc-tests, and core integration tests."
 	@echo "  make fuzz        Run property-based fuzz tests (proptest)."
 	@echo "  make perf        Run performance benchmarks in release mode (Standard + Atomic)."
+	@echo "  make perf-atomic Run only atomic concurrency benchmarks in release mode."
 	@echo "  make test        Alias for 'make normal'."
 	@echo "  make check       Check compilation without running tests."
 	@echo "  make lint        Run clippy with strict warnings."

@@ -823,16 +823,27 @@ pub const fn write_le_bits<
     }
 }
 
-mod atomic_bitstruct;
+pub mod atomic_bitarray;
 pub mod atomic_bitenum;
+mod atomic_bitstruct;
 pub mod bitarray;
-pub mod bytearray;
 mod bitenum;
 mod bitstruct;
+pub mod bytearray;
 mod bytestruct;
 mod byteval;
 mod utils;
 
+#[allow(unused_imports)]
+pub use atomic_bitarray::*;
+#[allow(unused_imports)]
+pub use atomic_bitenum::*;
+#[allow(unused_imports)]
+pub use atomic_bitstruct::*;
+#[allow(unused_imports)]
+pub use bitarray::*;
+#[allow(unused_imports)]
+pub use bytearray::*;
 pub use byteval::*;
 pub use utils::*;
 

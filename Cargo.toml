@@ -1,6 +1,6 @@
 [package]
 name = "bitcraft"
-version = "0.9.5"
+version = "0.9.6"
 edition = "2024"
 license = "MIT"
 description = "A zero-cost, hardware-aligned bitfield and enumeration generator."
@@ -18,10 +18,14 @@ exclude = [
     "sample/**/*.py",
 ]
 
+[[example]]
+name = "sample"
+path = "sample/sample.rs"
+
 [dependencies]
 paste = "1.0.15"
 bytemuck = { version = "1.25", features = ["derive"] }
-portable-atomic = "1.13.1"
+portable-atomic = { version = "1.13.1", features = ["fallback"] }
 
 [dev-dependencies]
 proptest = "1.10"
