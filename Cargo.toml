@@ -1,6 +1,6 @@
 [package]
 name = "bitcraft"
-version = "0.9.6"
+version = "1.0.0"
 edition = "2024"
 license = "MIT"
 description = "A zero-cost, hardware-aligned bitfield and enumeration generator."
@@ -21,11 +21,30 @@ exclude = [
 [[example]]
 name = "sample"
 path = "sample/sample.rs"
+required-features = ["atomics"]
+
+[[test]]
+name = "fuzz_properties"
+required-features = ["atomics"]
+
+[[test]]
+name = "atomic_tests"
+required-features = ["atomics"]
+
+[[test]]
+name = "performance_atomic"
+required-features = ["atomics"]
+
+[features]
+default = []
+alloc = []
+atomics = ["dep:portable-atomic"]
 
 [dependencies]
+
 paste = "1.0.15"
 bytemuck = { version = "1.25", features = ["derive"] }
-portable-atomic = { version = "1.13.1", features = ["fallback"] }
+portable-atomic = { version = "1.13.1", features = ["fallback"], optional = true }
 
 [dev-dependencies]
 proptest = "1.10"
