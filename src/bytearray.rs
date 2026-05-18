@@ -64,44 +64,111 @@ macro_rules! __bytearray_core {
 
             #[inline]
             pub fn get(&self, index: usize) -> $elem_ty {
-                debug_assert!(index < $count, "bytearray index out of bounds");
-                let bit_offset       = index * $width;
-                let byte_idx         = bit_offset / 8;
-                let inner_bit_offset = bit_offset % 8;
-                let bytes_to_read    = ($width + inner_bit_offset + 7) / 8;
-
-                let mut raw = 0u128;
-                for i in 0..bytes_to_read {
-                    if byte_idx + i < Self::BYTES {
-                        raw |= (self.0[byte_idx + i] as u128) << (i * 8);
-                    }
-                }
-
-                let extracted = (raw >> inner_bit_offset) & Self::MASK;
-                $crate::__bitarray_cast_get!(extracted, $elem_ty, $width, $signed_tag, $type_tag)
+                $crate::__bytearray_get!(&self.0, Self::BYTES, index, $count, $elem_ty, $width, Self::MASK, $signed_tag, $type_tag)
             }
 
             #[inline]
             pub fn set(&mut self, index: usize, value: $elem_ty) {
-                debug_assert!(index < $count, "bytearray index out of bounds");
-                let bit_offset       = index * $width;
-                let byte_idx         = bit_offset / 8;
-                let inner_bit_offset = bit_offset % 8;
+                $crate::__bytearray_set!(&mut self.0, Self::BYTES, index, $count, value, $elem_ty, $width, Self::MASK, $type_tag);
+            }
+        }
 
-                let raw_val      = $crate::__bitarray_cast_set!(value, u128, $type_tag) & Self::MASK;
-                let val_shifted  = raw_val   << inner_bit_offset;
-                let mask_shifted = Self::MASK << inner_bit_offset;
-                let bytes_to_modify = ($width + inner_bit_offset + 7) / 8;
+        $crate::paste::paste! {
+            impl $name {
+                /// Returns an iterator over the logical elements of this array.
+                #[inline]
+                pub fn iter(&self) -> [< $name Iter >]<'_> {
+                    self.into_iter()
+                }
+            }
+            pub struct [< $name Iter >]<'a> {
+                array: &'a $name,
+                index: usize,
+            }
 
-                for i in 0..bytes_to_modify {
-                    if byte_idx + i < Self::BYTES {
-                        let byte_mask = ((mask_shifted >> (i * 8)) & 0xFF) as u8;
-                        let byte_val  = ((val_shifted  >> (i * 8)) & 0xFF) as u8;
-                        self.0[byte_idx + i] &= !byte_mask;
-                        self.0[byte_idx + i] |=  byte_val;
+            impl<'a> Iterator for [< $name Iter >]<'a> {
+                type Item = $elem_ty;
+                
+                #[inline]
+                fn next(&mut self) -> Option<Self::Item> {
+                    if self.index < $count {
+                        let val = self.array.get(self.index);
+                        self.index += 1;
+                        Some(val)
+                    } else {
+                        None
+                    }
+                }
+                
+                #[inline]
+                fn size_hint(&self) -> (usize, Option<usize>) {
+                    let remaining = $count - self.index;
+                    (remaining, Some(remaining))
+                }
+            }
+
+            impl<'a> ExactSizeIterator for [< $name Iter >]<'a> {}
+
+            impl<'a> IntoIterator for &'a $name {
+                type Item = $elem_ty;
+                type IntoIter = [< $name Iter >]<'a>;
+
+                #[inline]
+                fn into_iter(self) -> Self::IntoIter {
+                    [< $name Iter >] {
+                        array: self,
+                        index: 0,
                     }
                 }
             }
         }
     };
 }
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __bytearray_get {
+    ($data:expr, $len:expr, $index:expr, $count:expr, $elem_ty:ty, $width:expr, $mask:expr, $signed_tag:ident, $type_tag:ident) => {{
+        debug_assert!($index < $count, "bytearray index out of bounds");
+        let bit_offset       = $index * $width;
+        let byte_idx         = bit_offset / 8;
+        let inner_bit_offset = bit_offset % 8;
+        let bytes_to_read    = ($width + inner_bit_offset + 7) / 8;
+
+        let mut raw = 0u128;
+        for i in 0..bytes_to_read {
+            if byte_idx + i < $len {
+                raw |= ($data[byte_idx + i] as u128) << (i * 8);
+            }
+        }
+
+        let extracted = (raw >> inner_bit_offset) & $mask;
+        $crate::__bitarray_cast_get!(extracted, $elem_ty, $width, $signed_tag, $type_tag)
+    }};
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __bytearray_set {
+    ($data:expr, $len:expr, $index:expr, $count:expr, $value:expr, $elem_ty:ty, $width:expr, $mask:expr, $type_tag:ident) => {{
+        debug_assert!($index < $count, "bytearray index out of bounds");
+        let bit_offset       = $index * $width;
+        let byte_idx         = bit_offset / 8;
+        let inner_bit_offset = bit_offset % 8;
+
+        let raw_val      = $crate::__bitarray_cast_set!($value, u128, $type_tag) & $mask;
+        let val_shifted  = raw_val   << inner_bit_offset;
+        let mask_shifted = $mask << inner_bit_offset;
+        let bytes_to_modify = ($width + inner_bit_offset + 7) / 8;
+
+        for i in 0..bytes_to_modify {
+            if byte_idx + i < $len {
+                let byte_mask = ((mask_shifted >> (i * 8)) & 0xFF) as u8;
+                let byte_val  = ((val_shifted  >> (i * 8)) & 0xFF) as u8;
+                $data[byte_idx + i] &= !byte_mask;
+                $data[byte_idx + i] |=  byte_val;
+            }
+        }
+    }};
+}
+

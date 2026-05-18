@@ -8,6 +8,9 @@
 > **Type Safety**: `bitcraft` natively supports both **unsigned** (`u8` through `u128`) and **signed** (`i8` through `i128`) base integers for underlying storage. When using a signed base, the macro enforces a strict boundary (e.g. 15 bits for `i16`) to guarantee the sign bit is never compromised. It also includes full support for interpreting the *fields themselves* as signed integers (two's complement) through a zero-cost shift-based sign extension.
 
 > [!TIP]
+> **When to use what?** With multiple specialized macros, it can be tricky to know which one to choose. See our [Use Cases Guide](usecases.md) to find the perfect macro for your real-world scenarios.
+
+> [!TIP]
 > **New to Bitfields?** See our [Ecosystem Comparison](comparisons.md) to understand how `bitcraft` differs from `modular-bitfield`, `packed_struct`, and standard Rust enums.
 
 > [!TIP]
@@ -15,6 +18,31 @@
 
 > [!IMPORTANT]
 > **Register Safety**: Using signed base types naturally restricts the total sum of allocated bits to avoid overflowing into the sign bit. For example, a `bitstruct` wrapping an `i32` can allocate a maximum of 31 bits. The internal bitwise mask generation safely executes in the unsigned domain to completely prevent unintended sign-extension bugs.
+
+---
+
+## 📦 Installation
+
+Add this to your `Cargo.toml`:
+
+```toml
+[dependencies]
+bitcraft = "1.0.0"
+```
+
+To use dynamic, heap-allocated collections (`bytevec!`, `bytebox!`), enable the `alloc` feature:
+
+```toml
+[dependencies]
+bitcraft = { version = "1.0.0", features = ["alloc"] }
+```
+
+To use lock-free concurrent structs and arrays, enable the `atomics` feature:
+
+```toml
+[dependencies]
+bitcraft = { version = "1.0.0", features = ["atomics"] }
+```
 
 ---
 
@@ -28,6 +56,7 @@ In high-performance domains (vector engines, network stacks, or high-frequency t
 - **Unique `bytestruct!` Support**: Native support for **flexible 1-16 byte spans** via any unsigned array (`[u8; N]`, `[u16; N]`, `[u32; N]`, etc.). treated as primitive-like registers.
 - **Unique `byteval!` IDs**: Instant "Packed IDs" for 24-bit, 40-bit, or 56-bit values that behave like first-class integers.
 - **`bitarray!` & `bytearray!`**: High-density packed storage for sub-byte data (e.g., 3-bit integers or booleans) with automated base-type selection and cross-byte bit manipulation.
+- **Dynamic Bit-Arrays**: Use `bytevec!` for growable bit-arrays, `bytebox!` for heap-allocated fixed-size bit-arrays, and `byteslice!` for zero-copy slicing. All feature a unified zero-cost `Iter` trait.
 - **Zero-Multiplication Engine**: High-performance bitwise operations using pre-calculated constants for all types up to 128 bits. The engine unrolls up to 16 bytes into a single contiguous register operation.
 - **Dynamic Register Routing**: Automatically selects the optimal CPU register (`u32`, `u64`, `u128`) based on total bit-width to minimize register pressure and maximize instruction throughput.
 - **Zero-Cost Abstractions**: Generated code compiles down to the exact bitwise shifts and masks you would write by hand—verified by LLV-MIR inspection.
@@ -167,11 +196,13 @@ Standard collection types like `Vec<bool>` or `[bool; N]` use 1 byte per boolean
 Consumes 8 bytes in memory.
 
 **`bitarray!` Core:**
+
 ```rust
 bitarray! { struct Flags(bool, 8); } // Consumes 1 byte (u8)
 ```
 
 **`bytearray!` Core:**
+
 ```rust
 bytearray! { struct LargeFlags(bool, 1024); } // Consumes 128 bytes ([u8; 128])
 ```
@@ -325,6 +356,9 @@ bitstruct! {
 | [**`atomic_bitstruct!`**](atomics-implementation.md) | **Portable Atomics** | **1 - 128 Bits** | **Unique**: Lock-free bit-packed concurrent fields |
 | [**`bytestruct!`**](#3-bytestruct) | **`[u8-u128; N]`** | **2 - 16 Bytes** | **Unique**: Array-backed dense buffers with register-speed |
 | [**`byteval!`**](#4-byteval) | **`[u8-u128; N]`** | **3 - 16 Bytes** | **Unique**: Packed IDs (24-bit, 40-bit) as first-class numbers |
+| [**`bitarray!`** / **`bytearray!`**](#5-bitarray) | Integer / `[u8; N]` | Constant Size | Packed collections of sub-byte data |
+| **`bytevec!`** / **`bytebox!`** | `Vec<u8>` / `Box<[u8]>` | Dynamic | **Unique**: Heap-allocated, growable bit-arrays (`alloc` required) |
+| **`byteslice!`** | `&[u8]` | Dynamic | Zero-copy views into packed bit-arrays |
 
 ---
 
@@ -417,7 +451,7 @@ Atomic operations on 128-bit fields present a unique challenge: most 64-bit CPUs
 `bitcraft` handles this via **Portable Atomic Tiering**:
 
 - **Native Hardware Path**: On supported platforms, `atomic_bitstruct!` expands to native 128-bit instructions. This allows multi-field updates across a 128-bit span to be resolved by the hardware cache-coherency engine in a single transactional step.
-- **Lock-Free Fallbacks**: On platforms lacking native 128-bit instructions, `bitcraft` utilizes `portable-atomic`'s fallback mechanisms (such as critical sections or internal spinlocks). 
+- **Lock-Free Fallbacks**: On platforms lacking native 128-bit instructions, `bitcraft` utilizes `portable-atomic`'s fallback mechanisms (such as critical sections or internal spinlocks).
 - **Deterministic Ergonomics**: Regardless of the underlying hardware capability, your code remains identical. You get a unified `update_or_abort` API that behaves like a high-level transaction, ensuring that concurrent mutations to disjoint bit-fields are resolved safely without the developer needing to manage platform-specific feature flags.
 
 ---
@@ -608,6 +642,81 @@ flags.update(Ordering::SeqCst, Ordering::SeqCst, |snap| {
 - **Snapshots**: Each `atomic_bitarray!` automatically generates a non-atomic `Value` struct (e.g., `AtomicFlagsValue`) for zero-cost snapshots and batch updates.
 - **CAS Patterns**: Provides `update` and `update_or_abort` for complex multi-bit transitions across the entire array without taking any locks.
 - **128-Bit Support**: Built-in support for 128-bit atomic arrays (e.g., `AtomicFlags128(bool, 128)`) via `portable-atomic`, even on platforms without native 128-bit instructions.
+
+### 7. `atomic_bitstruct!` and `atomic_bitenum!`
+
+These provide lock-free concurrency for bit-packed structs and state machines without using `Mutex`.
+
+```rust
+use bitcraft::{atomic_bitstruct, atomic_bitenum, Ordering};
+
+atomic_bitenum! {
+    /// A lock-free state machine wrapper.
+    pub enum WorkerState(AtomicU8, 2) {
+        IDLE = 0,
+        WORKING = 1,
+        FAILED = 2,
+    }
+}
+
+atomic_bitstruct! {
+    /// Multiple concurrent fields packed into a single 32-bit atomic.
+    pub struct WorkerMetrics(AtomicU32) {
+        pub state: WorkerState = 2,
+        pub jobs_completed: u16 = 14,
+        pub is_draining: bool = 1,
+    }
+}
+
+let metrics = WorkerMetrics::new(0);
+// Transactional, lock-free update across disjoint bit-fields:
+metrics.update_or_abort(Ordering::SeqCst, Ordering::SeqCst, |snap| {
+    if snap.state() == WorkerState::WORKING {
+        snap.set_jobs_completed(snap.jobs_completed() + 1);
+        Some(())
+    } else {
+        None
+    }
+});
+```
+
+### 8. `bytearray!`
+
+For massive arrays of sub-byte data that exceed the 128-bit limit of CPU registers, `bytearray!` generates highly optimized byte-spanning bit collections.
+
+```rust
+use bitcraft::bytearray;
+
+bytearray! {
+    /// A 1024-element bitset mapped to an inline 128-byte array.
+    pub struct PageMask(bool, 1024);
+}
+
+let mut mask = PageMask::new(0);
+mask.set(500, true);
+assert!(mask.get(500));
+```
+
+### 9. Dynamic Collections (`bytevec!`, `bytebox!`)
+
+When the size of your bit-array isn't known at compile-time or needs to grow dynamically, `bitcraft` provides heap-allocated (`alloc` required) dynamic variants.
+
+```rust
+use bitcraft::bytevec;
+
+bytevec! {
+    /// A growable bit-vector.
+    pub struct DynamicFlags(bool);
+}
+
+let mut flags = DynamicFlags::new();
+flags.push(true);
+flags.push(false);
+
+for val in flags.iter() {
+    println!("{}", val);
+}
+```
 
 ---
 

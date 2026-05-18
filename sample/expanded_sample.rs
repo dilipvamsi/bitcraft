@@ -11454,54 +11454,58 @@ impl NibbleBuffer {
     const MASK: u128 = if 4 == 128 { !0u128 } else { (1u128 << 4) - 1 };
     #[inline]
     pub fn get(&self, index: usize) -> u128 {
-        if true {
-            if !(index < 64) {
-                {
-                    ::core::panicking::panic_fmt(
-                        format_args!("bytearray index out of bounds"),
-                    );
+        {
+            if true {
+                if !(index < 64) {
+                    {
+                        ::core::panicking::panic_fmt(
+                            format_args!("bytearray index out of bounds"),
+                        );
+                    }
                 }
             }
-        }
-        let bit_offset = index * 4;
-        let byte_idx = bit_offset / 8;
-        let inner_bit_offset = bit_offset % 8;
-        let bytes_to_read = (4 + inner_bit_offset + 7) / 8;
-        let mut raw = 0u128;
-        for i in 0..bytes_to_read {
-            if byte_idx + i < Self::BYTES {
-                raw |= (self.0[byte_idx + i] as u128) << (i * 8);
+            let bit_offset = index * 4;
+            let byte_idx = bit_offset / 8;
+            let inner_bit_offset = bit_offset % 8;
+            let bytes_to_read = (4 + inner_bit_offset + 7) / 8;
+            let mut raw = 0u128;
+            for i in 0..bytes_to_read {
+                if byte_idx + i < Self::BYTES {
+                    raw |= ((&self.0)[byte_idx + i] as u128) << (i * 8);
+                }
             }
+            let extracted = (raw >> inner_bit_offset) & Self::MASK;
+            extracted as u128
         }
-        let extracted = (raw >> inner_bit_offset) & Self::MASK;
-        extracted as u128
     }
     #[inline]
     pub fn set(&mut self, index: usize, value: u128) {
-        if true {
-            if !(index < 64) {
-                {
-                    ::core::panicking::panic_fmt(
-                        format_args!("bytearray index out of bounds"),
-                    );
+        {
+            if true {
+                if !(index < 64) {
+                    {
+                        ::core::panicking::panic_fmt(
+                            format_args!("bytearray index out of bounds"),
+                        );
+                    }
                 }
             }
-        }
-        let bit_offset = index * 4;
-        let byte_idx = bit_offset / 8;
-        let inner_bit_offset = bit_offset % 8;
-        let raw_val = value as u128 & Self::MASK;
-        let val_shifted = raw_val << inner_bit_offset;
-        let mask_shifted = Self::MASK << inner_bit_offset;
-        let bytes_to_modify = (4 + inner_bit_offset + 7) / 8;
-        for i in 0..bytes_to_modify {
-            if byte_idx + i < Self::BYTES {
-                let byte_mask = ((mask_shifted >> (i * 8)) & 0xFF) as u8;
-                let byte_val = ((val_shifted >> (i * 8)) & 0xFF) as u8;
-                self.0[byte_idx + i] &= !byte_mask;
-                self.0[byte_idx + i] |= byte_val;
+            let bit_offset = index * 4;
+            let byte_idx = bit_offset / 8;
+            let inner_bit_offset = bit_offset % 8;
+            let raw_val = value as u128 & Self::MASK;
+            let val_shifted = raw_val << inner_bit_offset;
+            let mask_shifted = Self::MASK << inner_bit_offset;
+            let bytes_to_modify = (4 + inner_bit_offset + 7) / 8;
+            for i in 0..bytes_to_modify {
+                if byte_idx + i < Self::BYTES {
+                    let byte_mask = ((mask_shifted >> (i * 8)) & 0xFF) as u8;
+                    let byte_val = ((val_shifted >> (i * 8)) & 0xFF) as u8;
+                    (&mut self.0)[byte_idx + i] &= !byte_mask;
+                    (&mut self.0)[byte_idx + i] |= byte_val;
+                }
             }
-        }
+        };
     }
 }
 
@@ -11596,58 +11600,62 @@ impl DeltaStream {
     const MASK: u128 = if 7 == 128 { !0u128 } else { (1u128 << 7) - 1 };
     #[inline]
     pub fn get(&self, index: usize) -> i128 {
-        if true {
-            if !(index < 20) {
-                {
-                    ::core::panicking::panic_fmt(
-                        format_args!("bytearray index out of bounds"),
-                    );
+        {
+            if true {
+                if !(index < 20) {
+                    {
+                        ::core::panicking::panic_fmt(
+                            format_args!("bytearray index out of bounds"),
+                        );
+                    }
                 }
             }
-        }
-        let bit_offset = index * 7;
-        let byte_idx = bit_offset / 8;
-        let inner_bit_offset = bit_offset % 8;
-        let bytes_to_read = (7 + inner_bit_offset + 7) / 8;
-        let mut raw = 0u128;
-        for i in 0..bytes_to_read {
-            if byte_idx + i < Self::BYTES {
-                raw |= (self.0[byte_idx + i] as u128) << (i * 8);
+            let bit_offset = index * 7;
+            let byte_idx = bit_offset / 8;
+            let inner_bit_offset = bit_offset % 8;
+            let bytes_to_read = (7 + inner_bit_offset + 7) / 8;
+            let mut raw = 0u128;
+            for i in 0..bytes_to_read {
+                if byte_idx + i < Self::BYTES {
+                    raw |= ((&self.0)[byte_idx + i] as u128) << (i * 8);
+                }
             }
-        }
-        let extracted = (raw >> inner_bit_offset) & Self::MASK;
-        {
-            let val = extracted as i128;
-            let shift = (core::mem::size_of::<i128>() * 8) - 7;
-            (val << shift) >> shift
+            let extracted = (raw >> inner_bit_offset) & Self::MASK;
+            {
+                let val = extracted as i128;
+                let shift = (core::mem::size_of::<i128>() * 8) - 7;
+                (val << shift) >> shift
+            }
         }
     }
     #[inline]
     pub fn set(&mut self, index: usize, value: i128) {
-        if true {
-            if !(index < 20) {
-                {
-                    ::core::panicking::panic_fmt(
-                        format_args!("bytearray index out of bounds"),
-                    );
+        {
+            if true {
+                if !(index < 20) {
+                    {
+                        ::core::panicking::panic_fmt(
+                            format_args!("bytearray index out of bounds"),
+                        );
+                    }
                 }
             }
-        }
-        let bit_offset = index * 7;
-        let byte_idx = bit_offset / 8;
-        let inner_bit_offset = bit_offset % 8;
-        let raw_val = value as u128 & Self::MASK;
-        let val_shifted = raw_val << inner_bit_offset;
-        let mask_shifted = Self::MASK << inner_bit_offset;
-        let bytes_to_modify = (7 + inner_bit_offset + 7) / 8;
-        for i in 0..bytes_to_modify {
-            if byte_idx + i < Self::BYTES {
-                let byte_mask = ((mask_shifted >> (i * 8)) & 0xFF) as u8;
-                let byte_val = ((val_shifted >> (i * 8)) & 0xFF) as u8;
-                self.0[byte_idx + i] &= !byte_mask;
-                self.0[byte_idx + i] |= byte_val;
+            let bit_offset = index * 7;
+            let byte_idx = bit_offset / 8;
+            let inner_bit_offset = bit_offset % 8;
+            let raw_val = value as u128 & Self::MASK;
+            let val_shifted = raw_val << inner_bit_offset;
+            let mask_shifted = Self::MASK << inner_bit_offset;
+            let bytes_to_modify = (7 + inner_bit_offset + 7) / 8;
+            for i in 0..bytes_to_modify {
+                if byte_idx + i < Self::BYTES {
+                    let byte_mask = ((mask_shifted >> (i * 8)) & 0xFF) as u8;
+                    let byte_val = ((val_shifted >> (i * 8)) & 0xFF) as u8;
+                    (&mut self.0)[byte_idx + i] &= !byte_mask;
+                    (&mut self.0)[byte_idx + i] |= byte_val;
+                }
             }
-        }
+        };
     }
 }
 
@@ -11742,54 +11750,58 @@ impl ByteFlagArray {
     const MASK: u128 = if 1 == 128 { !0u128 } else { (1u128 << 1) - 1 };
     #[inline]
     pub fn get(&self, index: usize) -> bool {
-        if true {
-            if !(index < 128) {
-                {
-                    ::core::panicking::panic_fmt(
-                        format_args!("bytearray index out of bounds"),
-                    );
+        {
+            if true {
+                if !(index < 128) {
+                    {
+                        ::core::panicking::panic_fmt(
+                            format_args!("bytearray index out of bounds"),
+                        );
+                    }
                 }
             }
-        }
-        let bit_offset = index * 1;
-        let byte_idx = bit_offset / 8;
-        let inner_bit_offset = bit_offset % 8;
-        let bytes_to_read = (1 + inner_bit_offset + 7) / 8;
-        let mut raw = 0u128;
-        for i in 0..bytes_to_read {
-            if byte_idx + i < Self::BYTES {
-                raw |= (self.0[byte_idx + i] as u128) << (i * 8);
+            let bit_offset = index * 1;
+            let byte_idx = bit_offset / 8;
+            let inner_bit_offset = bit_offset % 8;
+            let bytes_to_read = (1 + inner_bit_offset + 7) / 8;
+            let mut raw = 0u128;
+            for i in 0..bytes_to_read {
+                if byte_idx + i < Self::BYTES {
+                    raw |= ((&self.0)[byte_idx + i] as u128) << (i * 8);
+                }
             }
+            let extracted = (raw >> inner_bit_offset) & Self::MASK;
+            extracted != 0
         }
-        let extracted = (raw >> inner_bit_offset) & Self::MASK;
-        extracted != 0
     }
     #[inline]
     pub fn set(&mut self, index: usize, value: bool) {
-        if true {
-            if !(index < 128) {
-                {
-                    ::core::panicking::panic_fmt(
-                        format_args!("bytearray index out of bounds"),
-                    );
+        {
+            if true {
+                if !(index < 128) {
+                    {
+                        ::core::panicking::panic_fmt(
+                            format_args!("bytearray index out of bounds"),
+                        );
+                    }
                 }
             }
-        }
-        let bit_offset = index * 1;
-        let byte_idx = bit_offset / 8;
-        let inner_bit_offset = bit_offset % 8;
-        let raw_val = if value { 1 } else { 0 } & Self::MASK;
-        let val_shifted = raw_val << inner_bit_offset;
-        let mask_shifted = Self::MASK << inner_bit_offset;
-        let bytes_to_modify = (1 + inner_bit_offset + 7) / 8;
-        for i in 0..bytes_to_modify {
-            if byte_idx + i < Self::BYTES {
-                let byte_mask = ((mask_shifted >> (i * 8)) & 0xFF) as u8;
-                let byte_val = ((val_shifted >> (i * 8)) & 0xFF) as u8;
-                self.0[byte_idx + i] &= !byte_mask;
-                self.0[byte_idx + i] |= byte_val;
+            let bit_offset = index * 1;
+            let byte_idx = bit_offset / 8;
+            let inner_bit_offset = bit_offset % 8;
+            let raw_val = if value { 1 } else { 0 } & Self::MASK;
+            let val_shifted = raw_val << inner_bit_offset;
+            let mask_shifted = Self::MASK << inner_bit_offset;
+            let bytes_to_modify = (1 + inner_bit_offset + 7) / 8;
+            for i in 0..bytes_to_modify {
+                if byte_idx + i < Self::BYTES {
+                    let byte_mask = ((mask_shifted >> (i * 8)) & 0xFF) as u8;
+                    let byte_val = ((val_shifted >> (i * 8)) & 0xFF) as u8;
+                    (&mut self.0)[byte_idx + i] &= !byte_mask;
+                    (&mut self.0)[byte_idx + i] |= byte_val;
+                }
             }
-        }
+        };
     }
 }
 
@@ -12328,6 +12340,242 @@ impl AtomicFlags128 {
             )
             .map(|raw| AtomicFlags128Value::new(raw))
             .map_err(|raw| AtomicFlags128Value::new(raw))
+    }
+}
+
+pub struct NibbleSlice<'a> {
+    pub data: &'a [u8],
+    pub len: usize,
+}
+
+#[automatically_derived]
+impl<'a> ::core::marker::Copy for NibbleSlice<'a> {}
+
+#[automatically_derived]
+#[doc(hidden)]
+unsafe impl<'a> ::core::clone::TrivialClone for NibbleSlice<'a> {}
+
+#[automatically_derived]
+impl<'a> ::core::clone::Clone for NibbleSlice<'a> {
+    #[inline]
+    fn clone(&self) -> NibbleSlice<'a> {
+        let _: ::core::clone::AssertParamIsClone<&'a [u8]>;
+        let _: ::core::clone::AssertParamIsClone<usize>;
+        *self
+    }
+}
+
+#[automatically_derived]
+impl<'a> ::core::marker::StructuralPartialEq for NibbleSlice<'a> {}
+
+#[automatically_derived]
+impl<'a> ::core::cmp::PartialEq for NibbleSlice<'a> {
+    #[inline]
+    fn eq(&self, other: &NibbleSlice<'a>) -> bool {
+        self.data == other.data && self.len == other.len
+    }
+}
+
+#[automatically_derived]
+impl<'a> ::core::cmp::Eq for NibbleSlice<'a> {
+    #[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    fn assert_receiver_is_total_eq(&self) -> () {
+        let _: ::core::cmp::AssertParamIsEq<&'a [u8]>;
+        let _: ::core::cmp::AssertParamIsEq<usize>;
+    }
+}
+
+#[automatically_derived]
+impl<'a> ::core::hash::Hash for NibbleSlice<'a> {
+    #[inline]
+    fn hash<__H: ::core::hash::Hasher>(&self, state: &mut __H) -> () {
+        ::core::hash::Hash::hash(&self.data, state);
+        ::core::hash::Hash::hash(&self.len, state)
+    }
+}
+
+impl<'a> core::fmt::Debug for NibbleSlice<'a> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut list = f.debug_list();
+        for i in 0..self.len {
+            list.entry(&self.get(i));
+        }
+        list.finish()
+    }
+}
+
+impl<'a> NibbleSlice<'a> {
+    pub const ELEMENT_WIDTH: usize = 4;
+    const MASK: u128 = if 4 == 128 { !0u128 } else { (1u128 << 4) - 1 };
+    #[inline]
+    pub fn new(data: &'a [u8], len: usize) -> Self {
+        Self { data, len }
+    }
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.len
+    }
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+    #[inline]
+    pub fn get(&self, index: usize) -> u128 {
+        {
+            if true {
+                if !(index < self.len) {
+                    {
+                        ::core::panicking::panic_fmt(
+                            format_args!("bytearray index out of bounds"),
+                        );
+                    }
+                }
+            }
+            let bit_offset = index * 4;
+            let byte_idx = bit_offset / 8;
+            let inner_bit_offset = bit_offset % 8;
+            let bytes_to_read = (4 + inner_bit_offset + 7) / 8;
+            let mut raw = 0u128;
+            for i in 0..bytes_to_read {
+                if byte_idx + i < self.data.len() {
+                    raw |= ((&self.data)[byte_idx + i] as u128) << (i * 8);
+                }
+            }
+            let extracted = (raw >> inner_bit_offset) & Self::MASK;
+            extracted as u128
+        }
+    }
+    #[inline]
+    pub fn as_bytes(&self) -> &'a [u8] {
+        self.data
+    }
+}
+
+pub struct NibbleSliceMut<'a> {
+    pub data: &'a mut [u8],
+    pub len: usize,
+}
+
+#[automatically_derived]
+impl<'a> ::core::marker::StructuralPartialEq for NibbleSliceMut<'a> {}
+
+#[automatically_derived]
+impl<'a> ::core::cmp::PartialEq for NibbleSliceMut<'a> {
+    #[inline]
+    fn eq(&self, other: &NibbleSliceMut<'a>) -> bool {
+        self.data == other.data && self.len == other.len
+    }
+}
+
+#[automatically_derived]
+impl<'a> ::core::cmp::Eq for NibbleSliceMut<'a> {
+    #[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    fn assert_receiver_is_total_eq(&self) -> () {
+        let _: ::core::cmp::AssertParamIsEq<&'a mut [u8]>;
+        let _: ::core::cmp::AssertParamIsEq<usize>;
+    }
+}
+
+#[automatically_derived]
+impl<'a> ::core::hash::Hash for NibbleSliceMut<'a> {
+    #[inline]
+    fn hash<__H: ::core::hash::Hasher>(&self, state: &mut __H) -> () {
+        ::core::hash::Hash::hash(&self.data, state);
+        ::core::hash::Hash::hash(&self.len, state)
+    }
+}
+
+impl<'a> core::fmt::Debug for NibbleSliceMut<'a> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut list = f.debug_list();
+        for i in 0..self.len {
+            list.entry(&self.get(i));
+        }
+        list.finish()
+    }
+}
+
+impl<'a> NibbleSliceMut<'a> {
+    pub const ELEMENT_WIDTH: usize = 4;
+    const MASK: u128 = if 4 == 128 { !0u128 } else { (1u128 << 4) - 1 };
+    #[inline]
+    pub fn new(data: &'a mut [u8], len: usize) -> Self {
+        Self { data, len }
+    }
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.len
+    }
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+    #[inline]
+    pub fn get(&self, index: usize) -> u128 {
+        {
+            if true {
+                if !(index < self.len) {
+                    {
+                        ::core::panicking::panic_fmt(
+                            format_args!("bytearray index out of bounds"),
+                        );
+                    }
+                }
+            }
+            let bit_offset = index * 4;
+            let byte_idx = bit_offset / 8;
+            let inner_bit_offset = bit_offset % 8;
+            let bytes_to_read = (4 + inner_bit_offset + 7) / 8;
+            let mut raw = 0u128;
+            for i in 0..bytes_to_read {
+                if byte_idx + i < self.data.len() {
+                    raw |= ((&self.data)[byte_idx + i] as u128) << (i * 8);
+                }
+            }
+            let extracted = (raw >> inner_bit_offset) & Self::MASK;
+            extracted as u128
+        }
+    }
+    #[inline]
+    pub fn set(&mut self, index: usize, value: u128) {
+        {
+            if true {
+                if !(index < self.len) {
+                    {
+                        ::core::panicking::panic_fmt(
+                            format_args!("bytearray index out of bounds"),
+                        );
+                    }
+                }
+            }
+            let bit_offset = index * 4;
+            let byte_idx = bit_offset / 8;
+            let inner_bit_offset = bit_offset % 8;
+            let raw_val = value as u128 & Self::MASK;
+            let val_shifted = raw_val << inner_bit_offset;
+            let mask_shifted = Self::MASK << inner_bit_offset;
+            let bytes_to_modify = (4 + inner_bit_offset + 7) / 8;
+            for i in 0..bytes_to_modify {
+                if byte_idx + i < self.data.len() {
+                    let byte_mask = ((mask_shifted >> (i * 8)) & 0xFF) as u8;
+                    let byte_val = ((val_shifted >> (i * 8)) & 0xFF) as u8;
+                    (&mut self.data)[byte_idx + i] &= !byte_mask;
+                    (&mut self.data)[byte_idx + i] |= byte_val;
+                }
+            }
+        }
+    }
+    #[inline]
+    pub fn as_bytes(&self) -> &[u8] {
+        self.data
+    }
+    #[inline]
+    pub fn as_mut_bytes(&mut self) -> &mut [u8] {
+        self.data
     }
 }
 

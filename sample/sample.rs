@@ -1,7 +1,11 @@
 use bitcraft::{
     atomic_bitarray, atomic_bitenum, atomic_bitstruct, bitarray, bitenum, bitstruct, bytearray,
-    bytestruct, byteval,
+    byteslice, bytestruct, byteval,
 };
+
+#[cfg(feature = "alloc")]
+use bitcraft::bytevec;
+
 use bitcraft::Ordering;
 
 bitenum! {
@@ -211,6 +215,23 @@ bytearray! { pub struct ByteFlagArray(bool, 128); } // 128 flags → [u8; 16]
 // ---------------------------------------------------------------------------
 atomic_bitarray! { pub struct AtomicNibbles(u 4, 16); } // 16 nibbles → AtomicU64
 atomic_bitarray! { pub struct AtomicFlags128(bool, 128); } // 128 flags → AtomicU128
+
+// ---------------------------------------------------------------------------
+// byteslice!, bytevec!, bytebox! — slice, vector, and boxed views
+// ---------------------------------------------------------------------------
+byteslice! { pub struct NibbleSlice(u 4); }
+
+#[cfg(feature = "alloc")]
+bytevec! { pub struct NibbleVec(u 4); }
+
+#[cfg(feature = "alloc")]
+bytevec! { pub struct CapVec(u 4, 128); }
+
+#[cfg(feature = "alloc")]
+bitcraft::bytebox! { pub struct BoxedNibbles(u 4, 128); }
+
+#[cfg(feature = "alloc")]
+bitcraft::bytebox! { pub struct RuntimeBoxedNibbles(u 4); }
 
 fn main() {
     let config = Config::default()

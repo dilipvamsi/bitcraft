@@ -174,11 +174,32 @@ pub use bytemuck;
 pub use paste;
 
 #[doc(hidden)]
+#[cfg(feature = "atomics")]
 pub mod reexport {
     pub use portable_atomic;
 }
 
+#[cfg(feature = "atomics")]
 pub use portable_atomic::Ordering;
+
+#[cfg(feature = "alloc")]
+extern crate alloc as alloc_crate;
+
+#[cfg(feature = "alloc")]
+#[doc(hidden)]
+pub mod alloc {
+    pub use super::alloc_crate::*;
+}
+
+#[cfg(feature = "alloc")]
+pub mod bytevec;
+
+#[cfg(feature = "alloc")]
+pub mod bytebox;
+
+pub mod byteslice;
+
+
 
 /// Error types returned by strict data structures when encountering invalid operations.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -823,8 +844,11 @@ pub const fn write_le_bits<
     }
 }
 
+#[cfg(feature = "atomics")]
 pub mod atomic_bitarray;
+#[cfg(feature = "atomics")]
 pub mod atomic_bitenum;
+#[cfg(feature = "atomics")]
 mod atomic_bitstruct;
 pub mod bitarray;
 mod bitenum;
@@ -834,10 +858,13 @@ mod bytestruct;
 mod byteval;
 mod utils;
 
+#[cfg(feature = "atomics")]
 #[allow(unused_imports)]
 pub use atomic_bitarray::*;
+#[cfg(feature = "atomics")]
 #[allow(unused_imports)]
 pub use atomic_bitenum::*;
+#[cfg(feature = "atomics")]
 #[allow(unused_imports)]
 pub use atomic_bitstruct::*;
 #[allow(unused_imports)]

@@ -693,4 +693,82 @@ impl AtomicNibbles {
     }
 }
 ```
+
+---
+
+## 9. `bytevec!`, `bytebox!`, and `byteslice!` (Dynamic Collections)
+
+These macros generate dynamic, heap-allocated bit arrays (`bytevec!`, `bytebox!`) and zero-copy reference slices (`byteslice!`) that behave like `Vec<T>`, `Box<[T]>`, and `&[T]`.
+
+### **Usage**
+
+```rust
+bytevec! {
+    pub struct DynamicFlags(bool); // Vec-like array of booleans
+}
+```
+
+### **Generated "Struct Equivalent" (`bytevec!`)**
+
+```rust
+pub struct DynamicFlags {
+    pub data: alloc::vec::Vec<u8>,
+    pub len: usize,
+}
+
+impl DynamicFlags {
+    pub const ELEMENT_WIDTH: usize = 1;
+
+    #[inline]
+    pub fn new() -> Self {
+        Self {
+            data: alloc::vec::Vec::new(),
+            len: 0,
+        }
+    }
+
+    #[inline]
+    pub fn push(&mut self, value: bool) {
+        let bit_offset = self.len * 1;
+        let required_bytes = (bit_offset + 1 + 7) / 8;
+
+        while self.data.len() < required_bytes {
+            self.data.push(0);
+        }
+
+        self.len += 1;
+        self.set(self.len - 1, value);
+    }
+
+    #[inline]
+    pub fn get(&self, index: usize) -> bool {
+        self.as_slice().get(index)
+    }
+
+    #[inline]
+    pub fn set(&mut self, index: usize, value: bool) {
+        self.as_mut_slice().set(index, value)
+    }
+
+    #[inline]
+    pub fn as_slice(&self) -> DynamicFlagsSlice<'_> {
+        DynamicFlagsSlice::new(&self.data, self.len)
+    }
+
+    #[inline]
+    pub fn iter(&self) -> DynamicFlagsSliceIter<'_> {
+        self.into_iter()
+    }
+}
+
+// Iterator implementation utilizing the unified Iter trait structure
+impl<'a> IntoIterator for &'a DynamicFlags {
+    type Item = bool;
+    type IntoIter = DynamicFlagsSliceIter<'a>;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.as_slice().into_iter()
+    }
+}
 ```

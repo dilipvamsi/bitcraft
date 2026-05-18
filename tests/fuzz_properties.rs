@@ -1,7 +1,11 @@
 use bitcraft::{
     atomic_bitarray, atomic_bitenum, atomic_bitstruct, bitarray, bitenum, bitstruct, bytearray,
-    bytestruct, byteval,
+    bytestruct, byteval, byteslice,
 };
+
+#[cfg(feature = "alloc")]
+use bitcraft::bytevec;
+
 use proptest::prelude::*;
 
 atomic_bitarray! {
@@ -1166,3 +1170,40 @@ proptest! {
         }
     }
 }
+
+byteslice! {
+    struct FuzzSlice(u 4);
+}
+
+#[cfg(feature = "alloc")]
+bytevec! {
+    struct FuzzVec(u 4);
+}
+
+#[cfg(feature = "alloc")]
+proptest! {
+    #[test]
+    fn test_bytevec_fuzz(vals in prop::collection::vec(any::<u8>(), 0..100)) {
+        let mut vec = FuzzVec::new();
+        for &v in &vals {
+            vec.push((v & 0xF) as u128);
+        }
+
+        prop_assert_eq!(vec.len(), vals.len());
+
+        for (i, &v) in vals.iter().enumerate() {
+            prop_assert_eq!(vec.get(i), (v & 0xF) as u128);
+        }
+        
+        let slice = vec.as_slice();
+        for (i, &v) in vals.iter().enumerate() {
+            prop_assert_eq!(slice.get(i), (v & 0xF) as u128);
+        }
+        
+        for _ in 0..vals.len() {
+            vec.pop();
+        }
+        prop_assert_eq!(vec.len(), 0);
+    }
+}
+

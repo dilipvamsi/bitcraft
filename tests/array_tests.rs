@@ -272,3 +272,22 @@ fn test_cast_from_bytes() {
     let back2: [u8; 16] = bytemuck::cast(bit_arr);
     assert_eq!(back2, raw, "bitarray round-trip must be lossless");
 }
+
+#[test]
+fn test_bytearray_iterators() {
+    let mut arr = LargeNibbleArray::default();
+    arr.set(0, 0xA);
+    arr.set(1, 0xB);
+    arr.set(2, 0xC);
+    
+    // Iterator test
+    let items: Vec<u128> = arr.iter().take(3).collect();
+    assert_eq!(items, vec![0xA, 0xB, 0xC]);
+    
+    // IntoIterator test
+    let mut count = 0;
+    for _ in &arr {
+        count += 1;
+    }
+    assert_eq!(count, 64);
+}

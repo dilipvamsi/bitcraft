@@ -4,25 +4,27 @@ Choosing a bit manipulation library in Rust often involves balancing **Ergonomic
 
 ## 📊 Feature Comparison Matrix
 
-| Feature | standard Rust | `bitflags` | `modular-bitfield` | `packed_struct` | `bilge` | `bitcraft` (this crate) |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Macro Type** | N/A | Declarative | Procedural | Procedural | Procedural | **Declarative** |
-| **Bit-Level Density** | ❌ (Byte-min) | ❌ (Flags only) | ✅ | ✅ | ✅ | **✅ (Bit-min)** |
-| **Memory Alignment** | Compiler-Chosen | Compiler-Chosen | Explicit | Explicit | Hardware-Aligned | **Hardware-Aligned** |
-| **Compile-Time Bounds** | ❌ | ❌ | ❌ (Runtime/Macro) | ❌ (Runtime/Macro) | ✅ (Const Eval) | **✅ (Const Eval)** |
-| **Safety** | High (UB risk) | High | High | High | Strict | **Strict (Total Types)** |
-| **`no_std` Support** | ✅ | ✅ | ✅ | ✅ | ✅ | **✅ (Core-only)** |
-| **Compile Speed** | Instant | Fast | Slow | Slow | Slow | **Blazing Fast** |
-| **Acting Primitives** | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (Direct Register Routing)** |
-| **Literal Guarding** | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (Branchless unrolling)** |
-| **Byte-Array Support** | ❌ | ❌ | ✅ (Proc-macro) | ✅ (Proc-macro) | ❌ | **✅ (Instant/Declarative)** |
-| **Odd-Int IDs (24-bit)** | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (`byteval!` Built-in)** |
-| **Signed Arrays** | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (`byteval!(i $count)`)** |
-| **Packed Arrays** | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (`bitarray!` / `bytearray!`)** |
-| **Signed Fields** | ✅ | ❌ | ✅ | ✅ | ✅ | **✅ (Zero-cost shift)** |
-| **Signed Enums** | ✅ | ❌ | ❌ (Custom impl) | ❌ (Custom impl) | ⚠️ (Requires trait) | **✅ (Native `i $bits`)** |
-| **Atomic CAS Loops** | ❌ (Manual only) | ❌ | ❌ | ❌ | ❌ | **✅ (`atomic_bitarray!`, `atomic_bitstruct!`, `atomic_bitenum!`)** |
-| **C FFI / ABI** | ✅ | ✅ | ✅ | ✅ | ✅ | **✅ (Transparent)** |
+| Feature | standard Rust | `bitflags` | `modular-bitfield` | `packed_struct` | `bilge` | `bitvec` | `bitcraft` (this crate) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Macro Type** | N/A | Declarative | Procedural | Procedural | Procedural | N/A (Structs) | **Declarative** |
+| **Bit-Level Density** | ❌ (Byte-min) | ❌ (Flags only) | ✅ | ✅ | ✅ | ✅ | **✅ (Bit-min)** |
+| **Memory Alignment** | Compiler-Chosen | Compiler-Chosen | Explicit | Explicit | Hardware-Aligned | Explicit | **Hardware-Aligned** |
+| **Compile-Time Bounds** | ❌ | ❌ | ❌ (Runtime/Macro) | ❌ (Runtime/Macro) | ✅ (Const Eval) | ❌ | **✅ (Const Eval)** |
+| **Safety** | High (UB risk) | High | High | High | Strict | High | **Strict (Total Types)** |
+| **`no_std` Support** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **✅ (Core-only)** |
+| **Compile Speed** | Instant | Fast | Slow | Slow | Slow | Fast | **Blazing Fast** |
+| **Acting Primitives** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (Direct Register Routing)** |
+| **Literal Guarding** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (Branchless unrolling)** |
+| **Byte-Array Support** | ❌ | ❌ | ✅ (Proc-macro) | ✅ (Proc-macro) | ❌ | ❌ | **✅ (Instant/Declarative)** |
+| **Odd-Int IDs (24-bit)** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (`byteval!` Built-in)** |
+| **Signed Arrays** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (`byteval!(i $count)`)** |
+| **Packed Arrays** | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | **✅ (`bitarray!` / `bytearray!`)** |
+| **Dynamic Arrays** | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | **✅ (`bytevec!` / `bytebox!`)** |
+| **Array Slicing** | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | **✅ (`byteslice!`)** |
+| **Signed Fields** | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ | **✅ (Zero-cost shift)** |
+| **Signed Enums** | ✅ | ❌ | ❌ (Custom impl) | ❌ (Custom impl) | ⚠️ (Requires trait) | ❌ | **✅ (Native `i $bits`)** |
+| **Atomic CAS Loops** | ❌ (Manual only) | ❌ | ❌ | ❌ | ❌ | ❌ | **✅ (`atomic_bitarray!`, `atomic_bitstruct!`, `atomic_bitenum!`)** |
+| **C FFI / ABI** | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ | **✅ (Transparent)** |
 
 ---
 
@@ -151,6 +153,7 @@ Standard boolean collections in Rust are notoriously inefficient. `bitarray!` an
 * **Density**: `Vec<bool>` uses 8 bits per boolean. `bitarray!` and `bytearray!` use exactly **1 bit per boolean**.
 * **Zero-Copy FFI**: `bitarray!` types are `repr(transparent)` around a primitive integer, and `bytearray!` types are `repr(transparent)` around a `[u8; N]`. This means you can cast them to/from raw buffers using `bytemuck` without iteration. `bitvec` requires complex pointer manipulation and custom iterators.
 * **Automatic Specialization**: `bitarray!` automatically selects the optimal CPU register (`u8`-`u128`) for your collection size.
+* **Dynamic Alternatives (`bytevec!`)**: `bitcraft` provides `bytevec!` and `bytebox!` as a highly performant alternative to `bitvec` when you need heap allocation. While `bitvec` operates as a generic bit-addressable engine, `bitcraft` focuses on register optimization. The `bytevec!` implementation leverages `u128` batch operations and **Acting Primitives** to perform cross-byte manipulation significantly faster without the overhead of tracking unaligned bit-pointers.
 
 ---
 

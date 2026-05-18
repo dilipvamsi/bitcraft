@@ -2,6 +2,9 @@
 
 This document details the engineering principles, memory layouts, and internal mechanisms that allow `bitcraft` to achieve zero-cost bitfield manipulation with strict type safety.
 
+> [!TIP]
+> Looking for practical examples of how these internals map to real-world software? See the [Practical Use Cases Guide](usecases.md).
+
 ---
 
 ## 🚀 1. The Efficiency Gap
@@ -14,6 +17,7 @@ In high-performance domains (vector engines, network stacks, or high-frequency t
 - **Unique `bytestruct!` Support**: Native support for **flexible 1-16 byte spans** via any unsigned array (`[u8; N]`, `[u16; N]`, `[u32; N]`, `[u64; N]`, `[u128; N]`).
 - **`bitarray!` & `bytearray!`**: High-density packed storage for sub-byte data (e.g., 3-bit integers or booleans). `bitarray!` uses **Automated Register Selection** (u8-u128) while `bytearray!` supports arbitrary-length byte arrays with cross-byte bit manipulation.
 - **Unique `byteval!` IDs**: Instant "Packed IDs" for 24-bit, 40-bit, or 56-bit values that behave like first-class integers—solving the "Odd-Width Integer" problem in one line. Native support for Signed Variants `(i $count)` via zero-cost sign extensions.
+- **Dynamic Bit-Arrays**: The `alloc`-gated `bytevec!` and `bytebox!` macros enable growable and heap-allocated bit-arrays that behave like `Vec` and `Box<[T]>`. Zero-copy views are natively supported via `byteslice!` with unified `Iter` implementations.
 - **Zero-Multiplication Engine**: High-performance bitwise operations using pre-calculated constants (`BitLength::BITS_N`) to eliminate manual multiplications in macro expansion.
 - **Hardware Alignment**: LSB-first mapping ensures your software layout matches the physical little-endian storage in modern hardware.
 - **Boilerplate-Free Ergonomics**: Automatic `Default` (zero-init) and a fluid `with_*` builder pattern come standard.
